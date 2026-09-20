@@ -50,6 +50,7 @@ model Request {
   updatedAt          DateTime  @updatedAt
   resolvedAt         DateTime?
   exitTime           DateTime? // for leave/gate-pass metadata
+  metadata           String?   // JSON string for attachments, custom fields, etc.
 }
 
 model Incident {

@@ -44,6 +44,7 @@ export class RequestEngine {
         location: payload.location,
         priority: payload.priority || 'LOW',
         status: autoApprove ? 'APPROVED' : 'PENDING',
+        metadata: payload.metadata ? JSON.stringify(payload.metadata) : null,
         // SLA logic can be injected here based on category
         SLA: payload.requestType === 'COMPLAINT' ? 24 : undefined,
       },
@@ -62,6 +63,11 @@ export class RequestEngine {
   static async assignRequest(payload: AssignRequestPayload) {
     const request = await prisma.request.findUnique({ where: { id: payload.requestId } });
     if (!request) throw new Error('Request not found');
+
+    const validNext = VALID_TRANSITIONS[request.status as RequestStatus] || [];
+    if (!validNext.includes('ASSIGNED') && request.status !== 'ASSIGNED') {
+      throw new Error(`Invalid transition from ${request.status} to ASSIGNED`);
+    }
 
     const updated = await prisma.request.update({
       where: { id: payload.requestId },

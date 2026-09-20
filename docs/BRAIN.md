@@ -80,3 +80,32 @@ The local demo must remain possible without internet.
 - Demonstrate a student filing a complaint.
 - Advance a simulated clock to trigger a live SLA breach and escalation.
 - Resolve an incident and show affected-student notification.
+
+## 16. Documentation Location
+All canonical project documentation is stored under `/docs`.
+Before starting implementation, agents must read the relevant documents from `/docs`, including:
+- `docs/BRAIN.md`
+- `docs/architect.md`
+- `docs/TEAM.md`
+- `docs/plan.md`
+- `docs/roadmap.md`
+- `docs/PRD.md`
+- `docs/RULES.md`
+- the relevant role document
+- `docs/setup.md` when environment/setup context is needed
+
+Do not assume these documents exist at repository root.
+
+## 17. Iteration Logging
+After each implementation iteration, agents must update:
+- `logs.md`
+- `state.md`
+- `task.md`
+
+These files must reflect:
+- what was completed
+- what remains
+- current blockers
+- the next actionable step
+
+Do not modify canonical planning documents merely to record implementation progress.
