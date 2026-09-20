@@ -50,8 +50,6 @@ model Request {
   updatedAt          DateTime  @updatedAt
   resolvedAt         DateTime?
   exitTime           DateTime? // for leave/gate-pass metadata
-  
-  auditLogs          AuditLog[]
 }
 
 model Incident {
@@ -80,8 +78,6 @@ model Scholarship {
 
 model AuditLog {
   id          String   @id @default(uuid())
-  requestId   String?
-  request     Request? @relation(fields: [requestId], references: [id])
   actorId     String
   actor       User     @relation(fields: [actorId], references: [id])
   action      String

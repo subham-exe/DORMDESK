@@ -1,5 +1,5 @@
 export type RequestPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type RequestStatus = 'PENDING' | 'ASSIGNED' | 'ACKNOWLEDGED' | 'PROCESSING' | 'RESOLVED' | 'VERIFIED' | 'CLOSED' | 'REJECTED';
+export type RequestStatus = 'PENDING' | 'ASSIGNED' | 'ACKNOWLEDGED' | 'PROCESSING' | 'RESOLVED' | 'VERIFIED' | 'CLOSED' | 'REJECTED' | 'APPROVED';
 export type RequestType = 'COMPLAINT' | 'LEAVE' | 'CERTIFICATE' | 'OTHER';
 
 export interface CreateRequestPayload {
@@ -9,7 +9,7 @@ export interface CreateRequestPayload {
   description: string;
   location?: string;
   priority?: RequestPriority;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface TransitionRequestPayload {

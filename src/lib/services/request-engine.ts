@@ -2,12 +2,13 @@ import { prisma } from '../db/prisma';
 import { CreateRequestPayload, TransitionRequestPayload, AssignRequestPayload, RequestStatus } from '../types/request';
 
 const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
-  PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED'],
+  PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED', 'APPROVED'],
   ASSIGNED: ['ACKNOWLEDGED', 'REJECTED'],
   ACKNOWLEDGED: ['PROCESSING', 'RESOLVED'],
   PROCESSING: ['RESOLVED', 'ASSIGNED'], // Can be reassigned
   RESOLVED: ['VERIFIED', 'PROCESSING'], // Verification fail -> back to processing
   VERIFIED: ['CLOSED'],
+  APPROVED: ['CLOSED'],
   CLOSED: [],
   REJECTED: [],
 };
@@ -18,24 +19,16 @@ async function triggerNotification(requestId: string, event: string) {
   console.log(`[Notification] Request ${requestId} event: ${event}`);
 }
 
-async function logAudit(requestId: string, actorId: string, action: string, metadata?: any) {
-  await prisma.auditLog.create({
-    data: {
-      requestId,
-      actorId,
-      action,
-      entity: 'Request',
-      entityId: requestId,
-      metadata: metadata ? JSON.stringify(metadata) : null,
-    },
-  });
+async function logAudit(requestId: string, actorId: string, action: string, metadata?: Record<string, unknown>) {
+  // TODO: Integrate with Snigdhaa's Audit service
+  console.log(`[Audit] Request ${requestId} action: ${action} by ${actorId}`, metadata || '');
 }
 
 export class RequestEngine {
   static async createRequest(payload: CreateRequestPayload) {
     // Zero-Touch auto-approval for short leaves (Differentiator)
     let autoApprove = false;
-    if (payload.requestType === 'LEAVE' && payload.metadata?.leaveDays <= 2) {
+    if (payload.requestType === 'LEAVE' && (payload.metadata?.leaveDays as number) <= 2) {
       autoApprove = true;
     }
 
@@ -50,7 +43,7 @@ export class RequestEngine {
         description: payload.description,
         location: payload.location,
         priority: payload.priority || 'LOW',
-        status: autoApprove ? 'APPROVED' : 'PENDING', // Notice APPROVED might need to map to RESOLVED for leaves
+        status: autoApprove ? 'APPROVED' : 'PENDING',
         // SLA logic can be injected here based on category
         SLA: payload.requestType === 'COMPLAINT' ? 24 : undefined,
       },
@@ -91,9 +84,7 @@ export class RequestEngine {
 
     const validNext = VALID_TRANSITIONS[request.status as RequestStatus] || [];
     if (!validNext.includes(payload.newStatus) && request.status !== payload.newStatus) {
-      // NOTE: Temporarily allowing loose transitions for hackathon flexiblity, 
-      // but ideally we throw an error here.
-      console.warn(`Invalid transition from ${request.status} to ${payload.newStatus}`);
+      throw new Error(`Invalid transition from ${request.status} to ${payload.newStatus}`);
     }
 
     const updated = await prisma.request.update({

@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -25,7 +26,7 @@ async function main() {
     },
   });
 
-  const warden = await prisma.user.create({
+  await prisma.user.create({
     data: {
       email: 'warden@example.com',
       name: 'Warden John',
@@ -94,7 +95,6 @@ async function main() {
   // Add Audit log
   await prisma.auditLog.create({
     data: {
-      requestId: request1.id,
       actorId: student.id,
       action: 'CREATED',
       entity: 'Request',
@@ -105,7 +105,6 @@ async function main() {
   
   await prisma.auditLog.create({
     data: {
-      requestId: request1.id,
       actorId: admin.id,
       action: 'ASSIGNED',
       entity: 'Request',

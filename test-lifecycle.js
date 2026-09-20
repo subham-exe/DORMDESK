@@ -1,10 +1,8 @@
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function run() {
-  const admin = await prisma.user.findFirst({ where: { role: 'Admin' } });
-  const staff = await prisma.user.findFirst({ where: { role: 'Staff' } });
-  
   const req = await prisma.request.findFirst({ where: { ticketNumber: 'WTR-042' } });
 
   console.log('--- Initial Request ---');

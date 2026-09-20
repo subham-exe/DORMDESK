@@ -9,18 +9,22 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       include: {
         requester: true,
         assignedAuthority: true,
-        auditLogs: {
-          orderBy: { timestamp: 'desc' }
-        },
         incident: true
       }
     });
 
     if (!request) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
 
-    return NextResponse.json({ success: true, data: request });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    const auditLogs = await prisma.auditLog.findMany({
+      where: { entity: 'Request', entityId: params.id },
+      orderBy: { timestamp: 'desc' },
+      include: { actor: true }
+    });
+
+    return NextResponse.json({ success: true, data: { ...request, auditLogs } });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ success: false, error: msg }, { status: 400 });
   }
 }
 
@@ -49,7 +53,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     return NextResponse.json({ success: true, data: request });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ success: false, error: msg }, { status: 400 });
   }
 }
