@@ -1,7 +1,7 @@
 # TEAM.md - Master Execution Map
 
 ## 1. Project Objective
-Build a unified, zero-budget campus operations platform ("CamPlus") for the BPUT Hackathon 2026. The platform turns student requests, complaints, and campus issues into accountable workflows through a Universal Request Engine. 
+Build an intelligent operational layer and next-generation campus operations platform ("DormDesk") for the BPUT Hackathon 2026. The platform turns student requests, complaints, and campus issues into accountable workflows through a Universal Request Engine. 
 
 **Core Principle:** "We don't digitize campus paperwork. We digitize campus accountability."
 **Architecture Principle:** One App. One Identity. One Request Engine. One Source of Truth. Zero Paid Dependencies. Local-First Demo.
