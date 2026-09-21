@@ -1,0 +1,6 @@
+{
+  "name": "DORMDESK - Campus Operations Engine",
+  "description": "Unified campus operations platform for student maintenance, requests, SLA tracking, and accountability verification.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
