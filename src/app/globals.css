@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-primary: #0f172a;
+  --color-primary-hover: #1e293b;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
+  
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
+  --color-border: #e2e8f0;
+  
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-inverse: #ffffff;
+
+  --color-info: #3b82f6;
+  --color-info-bg: #eff6ff;
+  
+  --color-success: #22c55e;
+  --color-success-bg: #f0fdf4;
+  
+  --color-warning: #eab308;
+  --color-warning-bg: #fefce8;
+  
+  --color-error: #ef4444;
+  --color-error-bg: #fef2f2;
+  
+  --color-offline: #94a3b8;
+  
+  --color-incident-low: #64748b;
+  --color-incident-medium: #eab308;
+  --color-incident-high: #f97316;
+  --color-incident-critical: #ef4444;
+
+  --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Custom elevation/shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+:root {
+  /* No dark mode needed per default design system docs, removing prefers-color-scheme */
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Base heading styles based on typography.md */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-text-primary);
+}
+
+/* Accessibility Focus States */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary);
+}

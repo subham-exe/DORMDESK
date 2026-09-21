@@ -1,4 +1,4 @@
-# CamPlus --- Roadmap (Sep 19 → Oct 10 Mid-Evaluation)
+# DormDesk --- Roadmap (Sep 19 → Oct 10 Mid-Evaluation)
 
 > Execution plan derived from `brain.md` v3 (§3A Execution Decisions) and `plan67.md`. This is the working plan for the team; `brain.md` stays the reference spec for *why*, this file is *what to do, in what order*.
 
@@ -31,7 +31,7 @@ Next.js (frontend + API routes, one codebase) · SQLite + Prisma. The primary ha
 
 ## Week 2 (Sep 26 – Oct 2): Breadth + Differentiators
 
-**Goal:** 3 workflows live, admin dashboard real, first zero-touch rule working.
+**Goal:** 3 workflows live, Operations Command Center real, first zero-touch rule working.
 
 - [ ] Add Leave/Gate-Pass and Certificate workflows **onto the same engine** — this is the test of Week 1's data model. If adding them requires new tables or duplicated logic, the foundation is wrong; fix it before moving on.
 - [ ] Admin dashboard: pending count, ageing buckets, resolution time, one recurring-issue flag, staff workload — this alone covers the 20%-weighted admin-visibility criterion
@@ -53,7 +53,7 @@ Next.js (frontend + API routes, one codebase) · SQLite + Prisma. The primary ha
 - [ ] One real accessibility moment (Differentiator 5): throttled-connection test or a cold, unfamiliar user operating the app on camera. Pick one language toggle (Odia or Hindi + English) — not both.
 - [ ] Seed realistic demo data: ~6 months of fake request history, one hostel with a planted recurring issue, one overloaded staff member, a few requests of varied age (including a long-open one) — this is what makes the dashboard look real instead of empty
 - [ ] Get real friction numbers: time an actual task (e.g. walking to get a bonafide certificate) and fold in the 37-response survey data into the Friction Scorecard (see `plan67.md` §20 / `brain.md` §35) — replace every `[measure]` placeholder
-- [ ] Live SLA breach + escalation demo, using the Week 1 clock service — advance time, watch it escalate, one-click reassign
+- [ ] Live Incident joining + SLA breach demo: Student reports problem → joins existing incident → advance time → SLA breach → escalation → staff resolution → student verification → recurring issue detected.
 - [ ] Judge Q&A prep pass (`brain.md` §35 already has a draft list — rehearse answers out loud, don't just read them)
 - [ ] Rehearse the full demo script at least 3 times, timed
 - [ ] Record a backup video of the complete flow in case of live-demo failure
@@ -64,7 +64,18 @@ Next.js (frontend + API routes, one codebase) · SQLite + Prisma. The primary ha
 
 ## Demo Script (locked shape)
 
-Pitch opening → survey stats cold (no slide) → live student-side demo (throttled/accessibility) → admin dashboard → engine reveal (add new request type live, if built) → close on adoption/rollout note. Full pitch-opening script and demo timing already drafted in this conversation and in `brain.md` §35 / `plan67.md` §20.
+**The Hero Demo:**
+1. Student reports problem
+2. Related request detected (Incident Intelligence)
+3. Student joins existing incident ("Me Too")
+4. Automatic routing & Assignment
+5. SLA countdown & warning
+6. Escalation
+7. Staff resolution & Resolution evidence
+8. Student verification (Resolve → Verify → Close)
+9. Recurring issue detected (Admin Operations Command Center)
+
+Pitch opening → survey stats cold (no slide) → Hero Demo → Operations Command Center → engine reveal (add new request type live, if built) → close on adoption/rollout note.
 
 ## Cut List (do not build these for Oct 10 — see `brain.md` §3A)
 

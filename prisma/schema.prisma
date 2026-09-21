@@ -1,0 +1,102 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  studentId      String?   @unique // Context: Student
+  staffId        String?   @unique // Context: Staff
+  
+  // Authority Model: Role + Domain + Scope (+ Permission implicitly via code)
+  role           String    @default("STUDENT") 
+  domain         String?   // e.g. "HOSTEL", "FACILITIES", "ACADEMIC"
+  scope          String?   // e.g. "Hostel B", "Institution-wide"
+  
+  department     String?
+  hostel         String?
+  room           String?
+  
+  requests       Request[] @relation("Requester")
+  assignedTo     Request[] @relation("Assignee")
+  auditLogs      AuditLog[]
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Request {
+  id                 String    @id @default(cuid())
+  ticketNumber       String    @unique // e.g. REQ-2049
+  requestType        String    // e.g. COMPLAINT, LEAVE, CERTIFICATE
+  category           String    // e.g. WATER, ELECTRICAL, BONAFIDE
+  
+  requesterId        String
+  requester          User      @relation("Requester", fields: [requesterId], references: [id])
+  
+  description        String
+  location           String?
+  priority           String    @default("MEDIUM")
+  
+  // Lifecycle: CREATE -> CLASSIFY -> ROUTE -> ASSIGN -> ACKNOWLEDGE -> PROCESS -> RESOLVE -> VERIFY -> CLOSE
+  status             String    @default("CREATE")
+  
+  assignedDepartment String?
+  assignedAuthorityId String?
+  assignedAuthority  User?     @relation("Assignee", fields: [assignedAuthorityId], references: [id])
+  
+  slaDurationHours   Int?
+  dueAt              DateTime?
+  
+  incidentId         String?
+  incident           Incident? @relation(fields: [incidentId], references: [id])
+  
+  resolutionNotes    String?
+  
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  resolvedAt         DateTime?
+  
+  auditHistory       AuditLog[]
+}
+
+model Incident {
+  id                 String    @id @default(cuid())
+  ticketNumber       String    @unique // e.g. INC-WTR-042
+  title              String
+  category           String
+  location           String
+  status             String    @default("OPEN")
+  severity           String    @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+  
+  assignedTeam       String?
+  
+  requests           Request[]
+  
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  resolvedAt         DateTime?
+}
+
+model AuditLog {
+  id                 String    @id @default(cuid())
+  actorId            String?
+  actor              User?     @relation(fields: [actorId], references: [id])
+  
+  action             String    // e.g. "STATUS_CHANGED", "ASSIGNED"
+  entity             String    // e.g. "REQUEST", "INCIDENT"
+  entityId           String
+  
+  requestId          String?
+  request            Request?  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  
+  metadata           String?   // JSON string of changes
+  
+  timestamp          DateTime  @default(now())
+}
