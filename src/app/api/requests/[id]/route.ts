@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { RequestEngine } from '@/lib/services/request-engine';
 import { prisma } from '@/lib/db/prisma';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   try {
     const request = await prisma.request.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         requester: true,
         assignedAuthority: true,
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (!request) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
 
     const auditLogs = await prisma.auditLog.findMany({
-      where: { entity: 'Request', entityId: params.id },
+      where: { entity: 'Request', entityId: resolvedParams.id },
       orderBy: { timestamp: 'desc' },
       include: { actor: true }
     });
@@ -28,7 +29,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   try {
     const body = await req.json();
     const { action, assigneeId, department, actorId, newStatus, notes } = body;
@@ -36,14 +38,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     let request;
     if (action === 'ASSIGN') {
       request = await RequestEngine.assignRequest({
-        requestId: params.id,
+        requestId: resolvedParams.id,
         assigneeId,
         department,
         actorId
       });
     } else if (action === 'TRANSITION') {
       request = await RequestEngine.transitionStatus({
-        requestId: params.id,
+        requestId: resolvedParams.id,
         newStatus,
         actorId,
         notes
