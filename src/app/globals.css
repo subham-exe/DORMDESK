@@ -5,30 +5,30 @@
   --color-primary-hover: #1e293b;
   --color-secondary: #f1f5f9;
   --color-secondary-foreground: #0f172a;
-  
+
   --color-background: #ffffff;
   --color-surface: #ffffff;
   --color-surface-muted: #f8fafc;
   --color-border: #e2e8f0;
-  
+
   --color-text-primary: #0f172a;
   --color-text-secondary: #64748b;
   --color-text-inverse: #ffffff;
 
   --color-info: #3b82f6;
   --color-info-bg: #eff6ff;
-  
+
   --color-success: #22c55e;
   --color-success-bg: #f0fdf4;
-  
+
   --color-warning: #eab308;
   --color-warning-bg: #fefce8;
-  
+
   --color-error: #ef4444;
   --color-error-bg: #fef2f2;
-  
+
   --color-offline: #94a3b8;
-  
+
   --color-incident-low: #64748b;
   --color-incident-medium: #eab308;
   --color-incident-high: #f97316;
@@ -67,3 +67,6 @@ h1, h2, h3, h4, h5, h6 {
   outline: none;
   box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary);
 }
+
+
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }

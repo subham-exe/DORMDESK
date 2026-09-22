@@ -12,17 +12,17 @@ You are the Overseer and Core Backend owner. You control the universal request e
 - **Objective:** Implement the Prisma schema on SQLite.
 - **Implementation Notes:** Centralize the `Request` table. Model the state machine. Include Scholarship entity linked to StudentProfile.
 
-## PHASE 2: Universal Request Engine
+## PHASE 2: Universal Request Engine (CURRENT / DONE)
 - **Task ID:** SUB-03
 - **Objective:** Build core CRUD and request routing logic.
 - **Implementation Notes:** Validate lifecycle status transitions (e.g., PROCESSING → RESOLVED). 
 
-## PHASE 3: Core APIs
+## PHASE 3: Core APIs (CURRENT / DONE)
 - **Task ID:** SUB-04
 - **Objective:** Expose the universal request engine APIs.
 - **Implementation Notes:** Provide endpoints that Zoya and Bonisha's mock adapters will eventually be replaced by. 
 
-## PHASE 4: Core Workflows & Scholarship
+## PHASE 4: Core Workflows & Scholarship (NEXT)
 - **Task ID:** SUB-05
 - **Objective:** Implement the specific lifecycle requirements for the required modules.
 - **Workflows:** 
@@ -31,7 +31,7 @@ You are the Overseer and Core Backend owner. You control the universal request e
   - Certificate workflow
   - Scholarship status data model & API (current year status retrieval).
 
-## PHASE 5: Config-Driven Module System
+## PHASE 5: Config-Driven Module System (PLANNED)
 - **Task ID:** SUB-06
 - **Objective:** Support dynamic addition of request types without schema changes.
 

@@ -3,13 +3,13 @@
 You own the administrative dashboard and staff tools. 
 **IMPORTANT:** You MUST NOT begin actual frontend implementation until SK clears the Design System Foundation Gate. Use the design system delivered by SK; do not invent a separate admin visual language. You may use mock adapters/interfaces matching Subham's contracts where real APIs are not ready. All dashboard values must ultimately come from actual seeded/backend data.
 
-## PHASE 0: Frontend Environment/Readiness
+## PHASE 0: Frontend Environment (NEXT)
 - **Task ID:** BON-01
 - **Objective:** Initialize the Admin layout routing and prepare mock service adapters.
 
-*(Wait for SK's Design System Foundation Gate before proceeding)*
+*(SK's Design System Foundation Gate has PASSED. You may proceed.)*
 
-## PHASE 1: Admin Shell
+## PHASE 1: Admin Shell (NEXT)
 - **Task ID:** BON-02
 - **Objective:** Build the admin login, navigation shell, and layout using SK's components.
 
