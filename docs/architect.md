@@ -93,7 +93,7 @@ shared.
                        |
                    SLA ENGINE
                        |
-              INCIDENT INTELLIGENCE
+              INCIDENT INTELLIGENCE (PLANNED)
                        |
             RESOLUTION + EVIDENCE
                        |
@@ -950,6 +950,10 @@ They are not separate servers.
 
 # 25. Frontend Architecture
 
+The main application is a Next.js App Router monolith (`src/app`). Frontend components operate strictly as Client Components (`"use client"`) leveraging REST fetches to Next.js API Routes (`/api/requests`). A separate React+Vite prototype (`dormdesk-prototype`) exists for isolated UI iteration but is not part of the production build.
+
+
+
 Recommended conceptual structure:
 
 ``` text
@@ -1206,7 +1210,7 @@ Avoid decorative dashboards that provide no operational action.
 
 # 33. AI Policy
 
-AI is optional.
+AI is completely out of scope for the current MVP. The current implementation relies 100% on deterministic rules (e.g., hardcoded auto-approvals) and manual interventions. Intelligence layers are planned for future phases.
 
 The core product must work without external AI APIs.
 

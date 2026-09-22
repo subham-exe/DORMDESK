@@ -10,16 +10,22 @@ DormDesk is an intelligent campus operations platform built around a **Universal
 
 Campus systems can digitize individual workflows, but operational problems often remain fragmented across requests, departments, and people. Once requests are digital, the system can understand relationships between them. DormDesk turns individual requests into operational intelligence.
 
-### Key Differentiators
+### Current Working Flow (IMPLEMENTED / PROTOTYPE)
 
-*   **Universal Request Engine:** All services (Complaints, Leaves, Gate Passes, Certificates, Maintenance) flow through one standardized operational engine with configurable routing, approvals, and SLAs. A new campus service should not require building an entirely new application module.
-*   **Incident Intelligence:** DormDesk groups multiple related requests (e.g., 12 students reporting "no water") into a single actionable **Incident**.
-*   **"Me Too" / Incident Joining:** Students are prompted to join an existing incident rather than creating duplicate complaints.
-*   **SLA & Explainable Escalation:** Policy-driven SLA tracking that automatically escalates requests and explains *why* a request is pending.
-*   **Zero-Touch Approval:** Configurable policy-based automation (e.g., Leave ≤ 2 days → Auto approve) completely bypasses human intervention when safe.
-*   **Student Verification:** The workflow does NOT end when staff clicks "Resolved." True accountability requires the student to verify the resolution before closure (`Resolve → Verify → Close`).
-*   **Recurring Issue Detection:** Analyzes historical incidents to identify recurring operational infrastructure problems.
-*   **Operations Command Center:** An action-oriented admin dashboard focused on "What needs attention right now?" rather than just charts.
+*   **Universal Request Engine [IMPLEMENTED]:** A unified `RequestEngine` service and schema powering Complaints and Leaves.
+*   **Request Lifecycle & State Machine [IMPLEMENTED]:** Strict backend state machine enforcing valid transitions (e.g., PENDING -> ASSIGNED).
+*   **Zero-Touch Approval [IMPLEMENTED]:** Hardcoded deterministic rule bypasses human intervention (Leave <= 2 days -> Auto approve).
+*   **Student Verification [PROTOTYPE]:** The verification state exists in the workflow model, and UI mockups exist in the student portal, but the backend transition API is pending.
+*   **SLA Tracking [PROTOTYPE]:** SLAs are assigned upon request creation (e.g., 24h for complaints) and visualized in the UI timeline, but automatic escalation policies are not yet implemented.
+
+### Target Hackathon Hero Flow (PLANNED)
+
+*   **Incident Intelligence [BACKEND PRIMITIVE ONLY]:** The `clusterIntoIncident` primitive exists, but automatic detection of related requests (e.g., 12 students reporting "no water") is planned.
+*   **"Me Too" / Incident Joining [PLANNED]:** Prompting students to join an existing incident rather than creating duplicate complaints.
+*   **SLA & Explainable Escalation [PLANNED]:** Automatic escalation via a simulated demo clock and explainable pending reasons.
+*   **Recurring Issue Detection [PLANNED]:** Analyzing historical incidents to identify recurring operational infrastructure problems.
+*   **Operations Command Center [PLANNED]:** An action-oriented admin dashboard for staff/wardens.
+*   **Configurable Workflows [PLANNED]:** Moving from hardcoded transition rules to dynamic workflow configurations.
 
 ## Architecture Concept
 

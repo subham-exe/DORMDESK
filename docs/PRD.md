@@ -17,8 +17,8 @@ Campus life is currently plagued by fragmentation:
 
 ## 3. Target Users
 - **Students:** Need a simple, low-bandwidth way to request help, track status, and view critical information with explainable transparency.
-- **Staff / Faculty:** Need clear assignment queues, reduced paperwork, and incident intelligence to group duplicate requests.
-- **Administrative Authorities:** Need an Operations Command Center providing high-level visibility into SLA breaches, workload, and recurring issues.
+- **Staff / Faculty: [NOT IMPLEMENTED]** Need clear assignment queues, reduced paperwork, and incident intelligence to group duplicate requests.
+- **Administrative Authorities: [NOT IMPLEMENTED]** Need an Operations Command Center providing high-level visibility into SLA breaches, workload, and recurring issues.
 
 ## 4. Product Vision & Core Architecture
 DormDesk is built on a **Universal Request Engine**. It is not a fragmented collection of modules.
@@ -48,48 +48,63 @@ Recurring Issue Intelligence
 ## 5. Major Differentiators
 
 ### A. Explainable Workflow Transparency
+**Status:** PLANNED
+**Evidence:** The student portal shows basic static timelines, but no dynamic text explanation is generated.
 Students should not see only "Status: Pending". They should see exact reasons:
 > "Why is this pending? The assigned technician has not acknowledged the request. SLA: 38 minutes remaining."
 
 ### B. Incident Intelligence & "Me Too"
+**Status:** BACKEND PRIMITIVE ONLY / PLANNED
+**Evidence:** `clusterIntoIncident` exists in `RequestEngine`, but no UI or automatic detection logic exists for submission.
 When multiple students report the same issue (e.g. 12 students report a water outage), DormDesk groups these into an **Incident**.
 When DormDesk detects an existing incident, a new student submitting a request should see:
 > "This issue has already been reported. [Join Incident] / [Me Too]"
 This prevents unnecessary duplicate tickets.
 
 ### C. SLA & Automatic Escalation
+**Status:** PROTOTYPE / PLANNED
+**Evidence:** `SLA` and `dueAt` schema fields are populated and visualized in the frontend, but there is no background escalation engine.
 Policy-driven escalation. Evaluates the request against configured SLA policies and automatically triggers escalation when required (not arbitrary AI decision-making).
 
 ### D. Zero-Touch Approval
+**Status:** IMPLEMENTED (Limited hardcoded automation)
+**Evidence:** `RequestEngine.createRequest` applies a deterministic rule `if (leaveDays <= 2)` to automatically approve leaves.
 Configurable policy-based automation (e.g., Leave ≤ 2 days → Auto approve) bypassing manual bottlenecks.
 
 ### E. Recurring Issue Detection
+**Status:** PLANNED
+**Evidence:** Not yet implemented in the codebase.
 DormDesk analyzes historical incidents and identifies recurring operational problems.
 > "SYSTEM INSIGHT: Recurring infrastructure issue detected."
 
 ## 6. Core Workflows
 1. **Hostel Complaint / Maintenance:**
+   - **Status:** IMPLEMENTED (Backend engine and student submission UI)
    - *Student Entry:* Submits complaint with category and description. (Or joins existing incident).
    - *Lifecycle:* Routed → Assigned → SLA tracked → Fixed → Resolved.
    - *Resolution & Audit:* Fix is **verified** by student; SLA and audit logs are recorded.
 
 2. **Leave / Gate Pass:**
+   - **Status:** IMPLEMENTED (Backend engine and student submission UI, QR pass PLANNED)
    - *Lifecycle:* Routed to Warden/HOD → Approved/Rejected (or Zero-Touch Auto-Approved).
-   - *Resolution:* Digital QR pass generated.
+   - *Resolution:* Digital QR pass generated [NOT IMPLEMENTED].
 
 3. **Certificate / Document Request:**
+   - **Status:** PLANNED
    - *Lifecycle:* Routed to Admin → Verified → Approved (or auto-issued).
 
 ## 7. Operations Command Center (Admin)
+**Status:** PLANNED (No admin portal exists yet in `src/app/admin`)
 Prioritizes:
 - **Critical intervention:** SLA breaches, unresolved high-priority incidents, severely delayed requests.
 - **Emerging issues:** Rapidly increasing complaints, recurring locations.
 - **Operational health:** Requests within SLA, average resolution time, verification rate.
 
 ## 8. Accessibility and Adoption
+**Status:** PROTOTYPE / PLANNED (Offline elements are prototyped in the separate Vite app, but not integrated)
 - Built for low-bandwidth and low-end devices.
 - Lightweight UI with PWA and offline capability.
-- Kiosk mode / assisted filing fallback (staff can file on behalf of a student using student ID).
+- Kiosk mode / assisted filing fallback [NOT IMPLEMENTED] (staff can file on behalf of a student using student ID).
 
 ## 9. MVP Scope (Hackathon Hero Demo)
 The hackathon demo must deliver one complete vertical slice:

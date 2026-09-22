@@ -7,21 +7,21 @@ You own the student application UI.
 - **Task ID:** ZOY-01
 - **Objective:** Initialize the Next.js frontend structure and prepare mock service adapters.
 
-*(Wait for SK's Design System Foundation Gate before proceeding)*
+*(SK's Design System Foundation Gate has PASSED. You may proceed.)*
 
 ## PHASE 1: Student Shell
 - **Task ID:** ZOY-02
 - **Objective:** Build the application layout, navigation, and login UI using SK's components.
 
-## PHASE 2: Universal Request/Report Flow
+## PHASE 2: Universal Request Flow (CURRENT / IN PROGRESS)
 - **Task ID:** ZOY-03
 - **Objective:** Build the dynamic submission form.
 
-## PHASE 3: Hostel Complaint
+## PHASE 3: Hostel Complaint (NEXT - Connect to Subham's APIs)
 - **Task ID:** ZOY-04
 - **Objective:** Build the specific Hostel Complaint workflow UI.
 
-## PHASE 4: Request Tracking
+## PHASE 4: Request Tracking (NEXT)
 - **Task ID:** ZOY-05
 - **Objective:** Build the timeline/detail view for a submitted request.
 

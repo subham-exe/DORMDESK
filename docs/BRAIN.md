@@ -1,7 +1,7 @@
 # BRAIN.md
 
 ## 1. Project Identity
-**Product Name:** CamPlus
+**Product Name:** DormDesk
 **Tagline:** One Platform. Every Campus Operation. Every Level.
 **Context:** BPUT Hackathon 2026, Problem Statement 07 ("Attendance, Mess, Hostel, Repeat: Campus Life, Debugged").
 
@@ -11,12 +11,29 @@ Campus operations are fragmented across paper applications, WhatsApp groups, dis
 **Core Principle:** "We don't digitize campus paperwork. We digitize campus accountability."
 
 ## 3. Product Vision
-CamPlus is a campus-wide operations platform, not just a hostel management app. The architecture revolves around a **Universal Request Engine** where every operational request follows a standardized path of identity, permission, routing, SLA, and audit. Day scholars and hostel residents use the same application, encountering only the services relevant to their context.
+DormDesk is a campus-wide operations platform, not just a hostel management app. The architecture revolves around a **Universal Request Engine** where every operational request follows a standardized path of identity, permission, routing, SLA, and audit. Day scholars and hostel residents use the same application, encountering only the services relevant to their context.
 
 ## 4. Current Implementation Status
-**CURRENT STATE:** NO CODEBASE YET.
-- The repository currently contains only planning documentation (`BRAIN.md`, `architect.md`, `plan.md`, `roadmap.md`).
-- All features and workflows described in this document are **PLANNED**.
+**CURRENT STATE:** PARTIAL MVP IMPLEMENTATION.
+**IMPLEMENTED:**
+- **Universal Request Engine:** Core `RequestEngine` service and SQLite schema power the system.
+- **Request Lifecycle/State Machine:** Strict deterministic backend state machine enforces transitions.
+- **Zero-Touch Approval:** Hardcoded leave policy automatically approves short leaves.
+
+**PROTOTYPE / PARTIAL:**
+- **Student Verification:** The verification state exists in the workflow model, and mock UI exists in the student portal, but the transition API is not yet wired.
+- **SLA Tracking:** SLA targets are calculated and visualized, but automatic escalation policies are pending.
+
+**BACKEND PRIMITIVE / NOT FULLY IMPLEMENTED:**
+- **Incident Clustering:** The `clusterIntoIncident` primitive exists in the service, but automatic detection and UI triggers are not yet implemented.
+
+**PLANNED / NOT IMPLEMENTED:**
+- Automatic Incident Intelligence and "Me Too" UX.
+- Automatic SLA escalation.
+- Recurring issue detection.
+- Operations Command Center (Admin Dashboard).
+- Configurable workflows.
+- Full offline/PWA behavior and kiosk workflows.
 
 ## 5. Technical Architecture Overview
 (See `architect.md` for full technical details)
@@ -31,16 +48,17 @@ Authority is NOT a strict linear hierarchy. It uses **Role + Domain + Scope + Pe
 - **Identity:** One Person = One Identity. Duplicate accounts are not needed for multiple contexts.
 
 ## 7. Universal Request Engine
-The core of CamPlus. Complaints, gate passes, certificates, and feedback are all rows in a single Request table, not separate disconnected systems.
+The core of DormDesk. Complaints, gate passes, certificates, and feedback are all rows in a single Request table, not separate disconnected systems.
 **Lifecycle:**
-CREATE → CLASSIFY → ROUTE → ASSIGN → ACKNOWLEDGE → PROCESS → RESOLVE → VERIFY → CLOSE
+PENDING -> ASSIGNED -> ACKNOWLEDGED -> PROCESSING -> RESOLVED -> VERIFIED -> CLOSED (Plus APPROVED/REJECTED for Zero-Touch)
 Exceptions such as reject, cancel, reopen, escalate, and auto-approve are valid workflow transitions.
-- **SLA & Escalation Engine:** Automatically escalates requests when deadlines are breached. 
-- **Zero-Touch Auto-Approval:** Low-risk requests (e.g., standard certificates, short leaves) are auto-approved by policy, completely bypassing human intervention.
+- **SLA & Escalation Engine:** Currently calculates and visualizes SLA targets (PLANNED for automatic escalation).
+- **Zero-Touch Auto-Approval:** Limited hardcoded logic (e.g. Leave <= 2 days) auto-approves requests. Configurable policies are PLANNED.
 
-## 8. Incident Intelligence (Major Differentiator)
-CamPlus clusters multiple related complaints into a single **Incident**.
-Example: 12 students report "no water" → Same category, same location → ONE INCIDENT (#WTR-042). Resolving the incident updates all 12 affected students simultaneously.
+## 8. Incident Intelligence (Major Differentiator - PLANNED)
+The vision is for DormDesk to cluster multiple related complaints into a single **Incident**.
+Example: 12 students report "no water" -> Same category, same location -> ONE INCIDENT (#WTR-042).
+*Current Truth:* A backend primitive exists for this (`clusterIntoIncident`), but automatic clustering and student "Me Too" joining UX are PLANNED.
 
 ## 9. Core Workflows
 1. **Hostel Complaint / Maintenance:** Includes duplicate detection and a "me too" Nudge button.
@@ -64,9 +82,8 @@ One centralized notification service. Targeted, event-driven announcements rathe
 
 ## 13. AI / Intelligence Philosophy
 **Optional Assistive Layer:** AI supports operational workflows but does not drive them. No mandatory paid AI APIs.
-- Assistive NLP for categorizing requests (optional).
-- Algorithmic/heuristic clustering for incidents.
-- No generic AI chatbots required for core workflows.
+Current core request workflows use deterministic rules. Intelligence capabilities such as incident detection, semantic similarity, recurring-pattern detection, and operational insights remain planned/prototyped.
+No generic AI chatbots are required for core workflows.
 
 ## 14. Data Model
 - **User:** One identity, multiple contexts (Role, Scope).

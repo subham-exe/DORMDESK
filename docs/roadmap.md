@@ -62,7 +62,7 @@ Next.js (frontend + API routes, one codebase) · SQLite + Prisma. The primary ha
 
 ---
 
-## Demo Script (locked shape)
+## TARGET HERO DEMO
 
 **The Hero Demo:**
 1. Student reports problem

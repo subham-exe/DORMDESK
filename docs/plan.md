@@ -964,23 +964,23 @@ Prioritize working end-to-end workflows over feature count.
 
 ## P0 - Must work
 
-- Login/authentication
+- Login/authentication [IMPLEMENTED]
 - Role + permission system
 - Student dashboard
-- Staff dashboard
-- Admin dashboard
-- Universal request engine
+- Staff dashboard [PLANNED]
+- Admin dashboard [PLANNED]
+- Universal request engine [IMPLEMENTED]
 - Complaint/incident workflow
-- Leave/gate-pass workflow
-- Notification system
+- Leave/gate-pass workflow [IMPLEMENTED (Partial)]
+- Notification system [PLANNED]
 - Audit trail
-- SLA + escalation (via simulated demo clock)
-- Incident clustering/matching
+- SLA + escalation (via simulated demo clock) [PLANNED]
+- Incident clustering/matching [BACKEND PRIMITIVE ONLY]
 - Hostel + day-scholar context
 
 ## P1 - Strong differentiators
 
-- Recurring issue detection
+- Recurring issue detection [PLANNED]
 - Workload analytics
 - Campus health dashboard
 - QR gate pass

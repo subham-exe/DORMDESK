@@ -3,11 +3,11 @@
 You own the supporting platform backend services. You work against defined interfaces/contracts and are fully independent from Subham's implementation. 
 **IMPORTANT:** Do NOT duplicate the request lifecycle engine, state machine, CRUD, routing, or core workflows owned by Subham. Do NOT introduce a separate distributed worker architecture.
 
-## PHASE 0: Platform Service Interfaces
+## PHASE 0: (CURRENT / DONE) Platform Service Interfaces
 - **Task ID:** SNI-01
 - **Objective:** Establish internal service interfaces based on the canonical domain contracts.
 
-## PHASE 1: Authentication
+## PHASE 1: (NEXT) Authentication
 - **Task ID:** SNI-02
 - **Objective:** Implement local, application-managed authentication.
 - **Implementation Notes:** Use NextAuth.js or custom JWT/cookies. Do not use external paid auth services.
@@ -24,7 +24,7 @@ You own the supporting platform backend services. You work against defined inter
 - **Task ID:** SNI-05
 - **Objective:** Build a centralized notification service for targeted in-app announcements.
 
-## PHASE 5: SLA + Escalation Service
+## PHASE 5: SLA + Escalation Service (NEXT - Includes Simulated Demo Clock)
 - **Task ID:** SNI-06
 - **Objective:** Implement SLA evaluation logic.
 - **Implementation Notes:** Evaluate deadlines synchronously or via API trigger. Do not build a standalone worker daemon.
