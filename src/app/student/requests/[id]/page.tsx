@@ -164,7 +164,7 @@ export default function RequestDetailsPage() {
                 </p>
                 {request.resolutionNotes && (
                   <div className="mt-3 p-3 bg-surface rounded-md border border-success text-sm text-success italic">
-                    " {request.resolutionNotes} "
+                    &quot; {request.resolutionNotes} &quot;
                   </div>
                 )}
               </div>

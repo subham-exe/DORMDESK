@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { IncidentService } from '@/lib/server/incident-service';
 import { getMockUser } from '@/lib/server/mock-auth';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const requests = await IncidentService.getIncidentRequests(id);
@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const data = await request.json();

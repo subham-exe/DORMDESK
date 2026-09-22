@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { RequestEngine } from '@/lib/server/request-engine';
 import { getMockUser } from '@/lib/server/mock-auth';
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const { action, payload } = await request.json();
