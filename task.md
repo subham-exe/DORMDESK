@@ -1,0 +1,70 @@
+# BONISHA Tasks
+
+- [x] BON-01: Initialize Admin layout routing and prepare mock service adapters.
+  - [x] Read required architecture docs.
+  - [x] Inspect existing repo structure and design system.
+  - [x] Create Admin API adapters (Requests, SLA, Incidents, Dashboard, Scholarships).
+  - [x] Setup Admin layout using existing UI patterns.
+  - [x] Create Admin routing stubs.
+  - [x] Typecheck and lint pass.
+- [x] BON-02: Build Admin login, navigation shell and layout using SK's components.
+  - [x] Build Admin login UI isolated from backend auth.
+  - [x] Implement modular Admin layout components (Sidebar, MobileNav, Header).
+  - [x] Handle responsive behavior mimicking student portal.
+  - [x] Typecheck and lint pass.
+- [x] BON-03: Build operational request queue with filters.
+  - [x] Update mock API with realistic request objects.
+  - [x] Build RequestQueueClient with search and filtering logic.
+  - [x] Implement Desktop Table view and Mobile Card view.
+  - [x] Apply empty and filtered-empty states.
+  - [x] Link to `/admin/requests/[id]` placeholder.
+  - [x] Typecheck and lint pass.
+- [x] BON-04: Build request detail view and timeline.
+  - [x] Define mock AdminRequestEvent interface.
+  - [x] Implement getRequestDetail mock adapter.
+  - [x] Build Server Component layout with summary, metadata, and SLA sections.
+  - [x] Implement chronological visual timeline UI.
+  - [x] Add empty, error, and loading state bounds.
+  - [x] Lint and typecheck pass.
+- [x] BON-05: Build assignment and status controls.
+  - [x] Extract valid transitions from RequestEngine.
+  - [x] Implement API routes for assign and status mutations.
+  - [x] Build RequestActionsClient UI with Modals and form elements.
+  - [x] Hook UI mutations to mock AdminAPI maintaining memory persistence.
+  - [x] Visually propagate updates into Request Detail and Timeline.
+  - [x] Lint and typecheck pass cleanly.
+- [x] BON-06: Build SLA/ageing visualizations and Demo Clock controls.
+  - [x] Investigate existing SLA logic and types.
+  - [x] Inject `applySLA` and dynamic SLA evaluation into AdminAPI.
+  - [x] Create SLA filter and textual badges for Request Queue.
+  - [x] Render SLA remaining time, status, and target in Request Detail.
+  - [x] Implement DemoClock floating widget in AdminLayout.
+  - [x] Use simulated time in assignment/status mutations to keep timeline logical.
+- [x] BON-07: Build Incident Management UI.
+  - [x] Investigate Incident data models and APIs.
+  - [x] Implement Incident CRUD mock logic in AdminAPI.
+  - [x] Allow Request Multi-select and incident grouping from Request Queue.
+  - [x] Build Incident List and Detail pages.
+  - [x] Present incident relationship callouts in Request Detail view.
+  - [x] Implement safe incident-level resolution cascade via standard transition logic.
+- [x] BON-08: Build Command Center.
+  - [x] Implement robust AdminAPI `getDashboardKPIs()` & `getAttentionRequests()`.
+  - [x] Integrate KPI cards cleanly navigating to Queue.
+  - [x] Implement "Needs Attention" urgency queue.
+  - [x] Implement active Incident display.
+  - [x] Display dynamically integrated SLA buckets.
+- [x] BON-09: Build workload analytics and recurring issue views.
+  - [x] Implement deterministic recurring issue detection rule.
+  - [x] Integrate backend aggregation mapping in `AdminAPI.getAnalytics()`.
+  - [x] Build Analytics Dashboard with Distribution cards (Category, Priority, Status).
+  - [x] Develop Recurring Issues table featuring time range, occurrences, and direct Request ID drill-downs.
+- [x] BON-10: Build scholarship administration visibility.
+  - [x] Integrate isolated `ScholarshipApplication` model mock within `AdminAPI`.
+  - [x] Implement `/admin/scholarships` list and metrics dashboard.
+  - [x] Implement `/admin/scholarships/[id]` application detail drill-down.
+  - [x] Build administrative mutations for scholarship status transitions.
+- [x] BON-11: Prepare the Admin routes for final integration.
+  - [x] Audit UI domains vs Service integrations.
+  - [x] Document Backend handover requirements in `/docs/BONISHA_INTEGRATION_HANDOVER.md`.
+  - [x] Ensure mock adapters are clearly marked without deleting them prematurely.
+  - [x] Execute complete regression tests (`npx tsc`, `eslint`).
