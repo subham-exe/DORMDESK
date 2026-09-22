@@ -1,6 +1,6 @@
 # ARCHITECTURE.md
 
-# Campus Life / CamPlus
+# Campus Life / DormDesk
 
 ## Technical Architecture & Engineering Baseline
 
@@ -16,7 +16,7 @@
 ## 1. Purpose
 
 This document is the technical source of truth for the Campus Life /
-CamPlus implementation.
+DormDesk implementation.
 
 It defines:
 
@@ -77,39 +77,29 @@ shared.
 # 3. High-Level Architecture
 
 ``` text
-                         USERS
-                           |
-              +------------+------------+
-              |                         |
-          Student / Staff            Admin
-              |                         |
-              +------------+------------+
-                           |
-                        Browser
-                           |
-                    Next.js Web App
-                           |
-              +------------+------------+
-              |                         |
-         UI / PWA Layer            API / Server Layer
-              |                         |
-              +------------+------------+
-                           |
-                    Service Layer
-                           |
-        +----------+-------+-------+----------+
-        |          |               |          |
-      Auth      Requests       Incidents   Notifications
-        |          |               |          |
-        |       Workflows         SLA       Audit
-        |          |               |          |
-        +----------+-------+-------+----------+
-                           |
-                         Prisma
-                           |
-                         SQLite
-                           |
-                      campus.db
+                    DORMDESK
+                       |
+             UNIVERSAL REQUEST ENGINE
+                       |
+       +---------------+---------------+
+       |               |               |
+     HOSTEL         ACADEMIC       FACILITIES
+       |               |               |
+       +---------------+---------------+
+                       |
+                 SMART ROUTING
+                       |
+                 POLICY ENGINE
+                       |
+                   SLA ENGINE
+                       |
+              INCIDENT INTELLIGENCE
+                       |
+            RESOLUTION + EVIDENCE
+                       |
+             STUDENT VERIFICATION
+                       |
+            RECURRING ISSUE DETECTION
 ```
 
 ### Important rule
@@ -1171,7 +1161,7 @@ Seed data should demonstrate:
 -   notification activity
 -   realistic workload distribution
 
-The admin dashboard must not look empty.
+The Operations Command Center must not look empty.
 
 Do not use fake numbers that claim to represent a real college.
 
@@ -1181,7 +1171,7 @@ Clearly treat seed data as demonstration data.
 
 # 32. Admin Command Center
 
-The admin dashboard should surface actionable information.
+The Operations Command Center should surface actionable information.
 
 Minimum metrics:
 

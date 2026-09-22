@@ -1,4 +1,4 @@
-# CamPlus Engineering & Execution Rules
+# DormDesk Engineering & Execution Rules
 
 ## 1. Source of Truth Hierarchy
 If documents conflict, do not silently choose a convenient interpretation. Report the conflict to the integrator (Subham). Subham decides the resolution, and canonical documentation is updated only after that decision.

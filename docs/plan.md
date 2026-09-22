@@ -8,6 +8,8 @@ Core principle:
 
 > We don't digitize campus paperwork. We digitize campus accountability.
 
+FretBox digitizes campus operations. DormDesk makes those operations intelligent and accountable.
+
 The platform should work for both students and institutional staff, with hostel operations as a major use case while remaining campus-wide.
 
 ---
@@ -41,7 +43,7 @@ Key survey signals:
 
 Do NOT position the product as merely:
 
-- A hostel management app
+- A intelligent campus operations platform
 - A student portal
 - A complaint management system
 - An AI chatbot
@@ -491,7 +493,7 @@ This can be used as the third workflow instead of communication if it produces a
 
 # 14. Admin Command Center
 
-The admin dashboard should be the product's intelligence layer.
+The Operations Command Center should be the product's intelligence layer.
 
 ## Top-level KPIs
 
@@ -1028,3 +1030,10 @@ And the institution gets a persistent operational record instead of scattered co
 Alternative pitch:
 
 > **From campus complaints to campus intelligence: one system for requests, authorities, incidents, communication, and resolution.**
+
+
+## Explainable Workflow Transparency
+Students should not see only "Status: Pending". They should see exact reasons: "Why is this pending? The assigned technician has not acknowledged the request. SLA: 38 minutes remaining."
+
+## "Me Too" / Incident Joining
+Students should not repeatedly create duplicate complaints for the same issue. When DormDesk detects an existing incident, the student should see: "This issue has already been reported. [Join Incident] / [Me Too]". This links the student to the incident and prevents unnecessary duplicate operational tickets.
