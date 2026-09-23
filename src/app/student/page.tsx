@@ -20,7 +20,9 @@ export default function StudentDashboard() {
       try {
         const stored = localStorage.getItem("dormdesk_dismissed_announcements");
         if (stored) return new Set(JSON.parse(stored));
-      } catch (e) {}
+      } catch {
+        // ignore error
+      }
     }
     return new Set();
   });

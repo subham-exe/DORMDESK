@@ -434,7 +434,7 @@ export const AdminAPI = {
     };
   },
 
-  async getScholarshipStats(academicYear: string, _scope?: string): Promise<ScholarshipStats> {
+  async getScholarshipStats(academicYear: string): Promise<ScholarshipStats> {
     const apps = await prisma.scholarship.findMany();
     return {
       academicYear,
@@ -446,7 +446,7 @@ export const AdminAPI = {
     };
   },
 
-  async updateScholarshipStatus(id: string, newStatus: ScholarshipStatus, _notes?: string): Promise<boolean> {
+  async updateScholarshipStatus(id: string, newStatus: ScholarshipStatus): Promise<boolean> {
     await verifyAdminAuthority();
     try {
       await prisma.scholarship.update({

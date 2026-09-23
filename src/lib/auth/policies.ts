@@ -34,6 +34,7 @@ export const ROLE_POLICIES: PolicyMatrix = {
   },
   Staff: {
     Request: { Read: ['Department', 'Own'], Update: ['Department'] },
-    Incident: { Read: ['Department', 'Own'], Update: ['Department'] }
+    Incident: { Read: ['Department', 'Own'], Update: ['Department'] },
+    Scholarship: { Read: ['Any'], Update: ['Any'], Verify: ['Any'], Approve: ['Any'] }
   }
 };

@@ -1,27 +1,48 @@
-import { NextResponse } from "next/server";
-import { AdminAPI, ScholarshipStatus } from "@/lib/admin/api";
+import { NextResponse } from 'next/server';
+import { requireAuth, requirePermission } from '@/lib/auth/session';
+import { ScholarshipService, ScholarshipState } from '@/lib/services/scholarship';
+import { prisma } from '@/lib/db/prisma';
+import { Permission } from '@/lib/auth/policies';
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const body = await req.json();
-    const { status, notes } = body;
-
-    if (!status) {
-      return NextResponse.json({ error: "Missing status" }, { status: 400 });
+    const { from, to } = body;
+    
+    if (!from || !to) {
+      return NextResponse.json({ error: 'Missing from/to state' }, { status: 400 });
     }
 
-    const success = await AdminAPI.updateScholarshipStatus(id, status as ScholarshipStatus, notes);
-
-    if (!success) {
-      return NextResponse.json({ error: "Scholarship not found or invalid transition" }, { status: 400 });
+    const user = await requireAuth();
+    const scholarship = await prisma.scholarship.findUnique({ where: { id } });
+    if (!scholarship) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true });
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      return NextResponse.json({ error: err.message }, { status: 500 });
+    let requiredPerm: Permission = 'Update';
+    if (to === 'APPROVED' || to === 'REJECTED') {
+      requiredPerm = 'Verify';
+    } else if (to === 'SANCTIONED' || to === 'DISBURSED' || to === 'CANCELLED') {
+      requiredPerm = 'Approve';
     }
-    return NextResponse.json({ error: "Unknown error" }, { status: 500 });
+
+    await requirePermission('Scholarship', requiredPerm, scholarship);
+
+    const updated = await ScholarshipService.transitionState(
+      id,
+      from as ScholarshipState,
+      to as ScholarshipState,
+      user.id,
+      user.role
+    );
+    
+    return NextResponse.json(updated);
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === 'UNAUTHORIZED') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (error instanceof Error && error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    
+    console.error(error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal Server Error' }, { status: 400 });
   }
 }
