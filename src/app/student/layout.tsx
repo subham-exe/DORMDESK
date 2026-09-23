@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, ListTodo, Bell, User } from "lucide-react";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -44,14 +45,29 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
-        <header className="md:hidden bg-surface border-b border-border p-4 sticky top-0 z-10 flex justify-between items-center">
-          <h1 className="text-lg font-bold text-primary">DormDesk</h1>
-          <div className="w-8 h-8 bg-info-bg text-info rounded-full flex items-center justify-center font-bold text-sm">
-            ST
+      <main className="flex-1 overflow-y-auto pb-16 md:pb-0 flex flex-col">
+        {/* Desktop Header */}
+        <header className="hidden md:flex justify-end items-center p-4 border-b border-border bg-surface sticky top-0 z-10">
+          <div className="flex items-center gap-4">
+            <NotificationDropdown />
+            <div className="w-8 h-8 bg-info-bg text-info rounded-full flex items-center justify-center font-bold text-sm">
+              ST
+            </div>
           </div>
         </header>
-        <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto">
+
+        {/* Mobile Header */}
+        <header className="md:hidden bg-surface border-b border-border p-4 sticky top-0 z-10 flex justify-between items-center">
+          <h1 className="text-lg font-bold text-primary">DormDesk</h1>
+          <div className="flex items-center gap-3">
+            <NotificationDropdown />
+            <div className="w-8 h-8 bg-info-bg text-info rounded-full flex items-center justify-center font-bold text-sm">
+              ST
+            </div>
+          </div>
+        </header>
+        
+        <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto w-full">
           {children}
         </div>
       </main>

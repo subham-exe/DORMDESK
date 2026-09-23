@@ -167,3 +167,13 @@
   - Built out "Digital Certificate" card inside the request detail route. It uniquely displays for `requestType === "CERTIFICATE"` when `status === "APPROVED"` or `"CLOSED"`, rendering a mock download PDF payload.
 - **Blockers**: None.
 - **Next Actionable Step**: Begin ZOY-08 (Scholarship Status).
+
+## Iteration 17: ZOY-08 Scholarship Status
+- **Date**: 2026-09-23
+- **Completed**:
+  - Analyzed `prisma.schema` to discover the `Scholarship` model mapping (e.g. `ELIGIBLE`, `APPLIED`, `APPROVED`, etc).
+  - Built out the missing `GET /api/scholarships` student endpoint natively hitting Prisma.
+  - Injected an interactive "Scholarship Status" card into the dashboard `src/app/student/page.tsx` reflecting real-time backend state, with graceful fallbacks (EmptyState) if no scholarship exists.
+  - Engineered the dedicated `src/app/student/scholarship/page.tsx` detail route displaying application info, dynamically mapped lifecycle timelines (incorporating exception scenarios like `REJECTED`), and embedded action prompts (e.g. "Submit Documents" leading into Universal Form) based on `ELIGIBLE` status.
+- **Blockers**: None.
+- **Next Actionable Step**: Begin ZOY-09 (Notifications).

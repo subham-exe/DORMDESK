@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Clock, CheckCircle, AlertTriangle, ChevronRight, FileText, ListTodo, GraduationCap } from "lucide-react";
+import { Plus, Clock, CheckCircle, AlertTriangle, ChevronRight, FileText, ListTodo, GraduationCap, Megaphone, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,15 +13,26 @@ import { EmptyState } from "@/components/ui/empty-state";
 export default function StudentDashboard() {
   const [requests, setRequests] = useState<any[]>([]);
   const [scholarship, setScholarship] = useState<any>(null);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [dismissedAnnouncements, setDismissedAnnouncements] = useState<Set<string>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("dormdesk_dismissed_announcements");
+        if (stored) return new Set(JSON.parse(stored));
+      } catch (e) {}
+    }
+    return new Set();
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [reqsRes, scholRes] = await Promise.all([
+        const [reqsRes, scholRes, anncRes] = await Promise.all([
           fetch("/api/requests?requesterId=mock-user-123"),
-          fetch("/api/scholarships?studentId=mock-user-123")
+          fetch("/api/scholarships?studentId=mock-user-123"),
+          fetch("/api/announcements")
         ]);
         
         if (!reqsRes.ok) throw new Error("Failed to load requests.");
@@ -32,6 +43,13 @@ export default function StudentDashboard() {
           const scholData = await scholRes.json();
           if (scholData.success) {
             setScholarship(scholData.data);
+          }
+        }
+
+        if (anncRes.ok) {
+          const anncData = await anncRes.json();
+          if (anncData.success) {
+            setAnnouncements(anncData.data);
           }
         }
       } catch (err: any) {
@@ -77,8 +95,44 @@ export default function StudentDashboard() {
     }
   };
 
+  const dismissAnnouncement = (id: string) => {
+    setDismissedAnnouncements(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      localStorage.setItem("dormdesk_dismissed_announcements", JSON.stringify(Array.from(next)));
+      return next;
+    });
+  };
+
+  const activeAnnouncements = announcements.filter(a => !dismissedAnnouncements.has(a.id));
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
+      {/* Announcements */}
+      {!loading && activeAnnouncements.length > 0 && (
+        <div className="space-y-3 mb-6">
+          {activeAnnouncements.map(announcement => (
+            <div key={announcement.id} className="bg-info-bg border border-info rounded-lg p-4 flex gap-3 relative">
+              <Megaphone className="w-5 h-5 text-info shrink-0 mt-0.5" />
+              <div className="flex-1 pr-6">
+                <h3 className="font-semibold text-info">{announcement.title}</h3>
+                <p className="text-sm text-info/90 mt-1">{announcement.message}</p>
+                <p className="text-xs text-info/70 mt-2 font-medium">
+                  {new Date(announcement.date).toLocaleDateString()}
+                </p>
+              </div>
+              <button 
+                onClick={() => dismissAnnouncement(announcement.id)}
+                className="absolute top-3 right-3 text-info hover:bg-info/10 p-1 rounded-md transition-colors"
+                aria-label="Dismiss announcement"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Header & Primary Action */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>

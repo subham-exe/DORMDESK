@@ -97,3 +97,9 @@
 - [x] ZOY-07: Certificate Workflow
   - [x] Appended "Request Certificate" quick-action button to Student Dashboard.
   - [x] Injected "Digital Certificate" card with a ready-to-download state in `src/app/student/requests/[id]/page.tsx`.
+
+- [x] ZOY-08: Scholarship Status
+  - [x] Implemented `/api/scholarships` endpoint integrating `prisma.scholarship`.
+  - [x] Integrated Scholarship card into Student Dashboard.
+  - [x] Created `src/app/student/scholarship/page.tsx` dedicated detail view.
+  - [x] Displayed lifecycle tracking based on status enum from schema.
