@@ -87,3 +87,9 @@
   - [x] Replaced raw audit logs with a structured, state-derived timeline visualization.
   - [x] Represented `PENDING` -> `CLOSED` standard lifecycle using friendly names.
   - [x] Handled exception branching visually (e.g. `REJECTED`, `CANCELLED`, `ESCALATED`, `APPROVED`).
+
+- [x] ZOY-06: Leave/Gate Pass UI
+  - [x] Installed `react-qr-code`.
+  - [x] Verified `src/app/student/requests/new/page.tsx` properly parses `leaveDays` to a number.
+  - [x] Rendered the Digital Gate Pass card in `src/app/student/requests/[id]/page.tsx`.
+  - [x] Rendered a "Request Leave" quick-action button in `src/app/student/page.tsx`.

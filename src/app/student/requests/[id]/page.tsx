@@ -8,7 +8,7 @@ import QRCode from "react-qr-code";
 import { 
   ArrowLeft, Clock, CheckCircle, AlertTriangle, User, 
   MapPin, Calendar, FileText, Check, X, ShieldAlert,
-  QrCode
+  QrCode, Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -226,6 +226,7 @@ export default function RequestDetailsPage() {
   const canCancel = ["PENDING", "ROUTED"].includes(request.status);
   const isResolved = request.status === "RESOLVED";
   const isGatePassValid = request.requestType === "LEAVE" && (request.status === "APPROVED" || request.status === "CLOSED");
+  const isCertificateValid = request.requestType === "CERTIFICATE" && (request.status === "APPROVED" || request.status === "CLOSED");
 
   // Generate QR payload for Gate Pass
   const qrPayload = isGatePassValid ? JSON.stringify({
@@ -303,6 +304,46 @@ export default function RequestDetailsPage() {
                 <p className="text-center text-xs text-text-secondary mt-2 font-mono">
                   {request.ticketNumber}
                 </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Digital Certificate */}
+      {isCertificateValid && (
+        <Card className="border-success shadow-sm overflow-hidden">
+          <div className="bg-success-bg border-b border-success px-5 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="w-6 h-6 text-success" />
+              <h2 className="font-bold text-success text-lg">Digital Certificate</h2>
+            </div>
+            {getStatusBadge(request.status)}
+          </div>
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start justify-between">
+              <div className="flex-1 space-y-4 w-full">
+                <div className="bg-surface-muted p-4 rounded border border-border">
+                  <h3 className="font-semibold text-text-primary text-lg mb-1">{request.category.replace(/_/g, ' ')}</h3>
+                  <p className="text-sm text-text-secondary mb-3">Issued to: <span className="font-medium text-text-primary">{request.requesterId}</span></p>
+                  <p className="text-sm text-text-primary">
+                    This document has been verified and digitally approved by the administrative authority.
+                  </p>
+                </div>
+                
+                <div className="bg-success-bg/50 p-3 rounded text-sm text-success font-medium">
+                  Your certificate is ready. Click download to save a digital copy or print it.
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-3 min-w-[150px]">
+                <Button 
+                  className="w-full bg-success hover:bg-success/90 text-white"
+                  onClick={() => alert("Downloading certificate...")}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download PDF
+                </Button>
               </div>
             </div>
           </CardContent>

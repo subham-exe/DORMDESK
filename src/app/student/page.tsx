@@ -79,6 +79,12 @@ export default function StudentDashboard() {
               Request Leave
             </Button>
           </Link>
+          <Link href="/student/requests/new?type=CERTIFICATE" passHref>
+            <Button size="lg" variant="outline" className="w-full sm:w-auto shadow-sm border-success text-success hover:bg-success-bg">
+              <FileText className="mr-2 h-5 w-5" />
+              Request Certificate
+            </Button>
+          </Link>
           <Link href="/student/requests/new" passHref>
             <Button size="lg" className="w-full sm:w-auto shadow-md">
               <Plus className="mr-2 h-5 w-5" />

@@ -146,3 +146,14 @@
   - Added smart extraction of historic transition timestamps for completed timeline milestones.
 - **Blockers**: None.
 - **Next Actionable Step**: Begin ZOY-06 (Leave/Gate Pass UI).
+
+## Iteration 15: ZOY-06 Leave/Gate Pass UI
+- **Date**: 2026-09-23
+- **Completed**:
+  - Ensured `leaveDays` properly parses as a number when mapped to the Request `metadata` JSON payload.
+  - Added "Request Leave" prominent quick-action button on Student Dashboard.
+  - Sourced and installed `react-qr-code` to generate client-side offline-friendly QR code gate passes.
+  - Built out "Digital Gate Pass" dynamically rendered in the Request Details page. The Pass uniquely displays for `requestType === "LEAVE"` and `status === "APPROVED" || "CLOSED"`.
+  - Encoded student, ticket, and request data string strictly onto the generated QR payload.
+- **Blockers**: None.
+- **Next Actionable Step**: Begin ZOY-07 (Certificate Workflow).
