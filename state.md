@@ -26,3 +26,19 @@
 
 **Dependencies**:
 - Handover to Backend/Integration team.
+
+---
+# ZOYA State
+
+**Current Phase**: ZOY-03 Completed
+**Completed Phases**: ZOY-01, ZOY-02, ZOY-03
+**Pending Phases**: ZOY-04, ZOY-05, ZOY-06, ZOY-07, ZOY-08, ZOY-09, ZOY-10, ZOY-11
+
+**Routing Status**:
+- `/student` - Student layout and dashboard
+- `/student/requests/new` - Dynamic universal request submission form
+- `/student/requests` - Student request list
+
+**Dependencies**:
+- Subham's Request Engine API (`/api/requests`) is used directly for creation.
+

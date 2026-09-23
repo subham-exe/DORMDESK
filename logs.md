@@ -115,3 +115,14 @@
   - Ran full regression checks (`tsc`, `lint`) to ensure the Admin Shell remains perfectly intact for the handover.
 - **Blockers**: None.
 - **Next Actionable Step**: The BONISHA roadmap is fully complete. Await final sign-off.
+
+## Iteration 12: ZOY-03 Universal Request Flow
+- **Date**: 2026-09-23
+- **Completed**:
+  - Refactored `src/app/student/requests/new/page.tsx` to use dynamic state rendering.
+  - Implemented conditional rendering of categories based on Request Type.
+  - Added specific Location field logic for Maintenance.
+  - Added `leaveDays` field specifically for Leave/Gate Pass to trigger Zero-Touch backend approval.
+  - Mapped specific dynamic inputs to the `metadata` JSON object on the `CreateRequestPayload`.
+- **Blockers**: None.
+- **Next Actionable Step**: Begin ZOY-04 (Hostel Complaint specifics) and ZOY-05 (Request Tracking).

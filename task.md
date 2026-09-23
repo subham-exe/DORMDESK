@@ -68,3 +68,10 @@
   - [x] Document Backend handover requirements in `/docs/BONISHA_INTEGRATION_HANDOVER.md`.
   - [x] Ensure mock adapters are clearly marked without deleting them prematurely.
   - [x] Execute complete regression tests (`npx tsc`, `eslint`).
+
+- [x] ZOY-01 & ZOY-02: Initialized Student routing shell and dashboard.
+- [x] ZOY-03: Universal Request Flow
+  - [x] Refactored `src/app/student/requests/new/page.tsx` to dynamic form.
+  - [x] Implemented type-specific fields (e.g., leaveDays).
+  - [x] Mapped specific fields to `metadata` JSON object.
+  - [x] Bound form to existing POST `/api/requests` endpoint.

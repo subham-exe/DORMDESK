@@ -16,6 +16,7 @@ export default function CreateRequestPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [requestType, setRequestType] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -23,12 +24,24 @@ export default function CreateRequestPage() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
+    const selectedType = formData.get("requestType") as string;
+
+    const metadata: Record<string, any> = {};
+    if (selectedType === "LEAVE") {
+      const leaveDaysStr = formData.get("leaveDays");
+      if (leaveDaysStr) {
+        metadata.leaveDays = parseInt(leaveDaysStr as string, 10);
+      }
+    }
+
     const data = {
-      requestType: formData.get("requestType"),
+      requestType: selectedType,
       category: formData.get("category"),
       location: formData.get("location") || undefined,
       description: formData.get("description"),
       priority: formData.get("priority") || "MEDIUM",
+      requesterId: "mock-user-123", // In a real app this would come from session
+      metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
     };
 
     try {
@@ -44,10 +57,47 @@ export default function CreateRequestPage() {
       }
 
       const newRequest = await response.json();
-      router.push(`/student/requests/${newRequest.id}`);
+      router.push(`/student/requests/${newRequest.data.id}`);
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
+    }
+  };
+
+  const renderCategoryOptions = () => {
+    switch (requestType) {
+      case "MAINTENANCE":
+        return (
+          <>
+            <option value="ELECTRICAL">Electrical (Fan, Light, etc)</option>
+            <option value="PLUMBING">Plumbing (Water, Washroom)</option>
+            <option value="CARPENTRY">Carpentry (Bed, Door)</option>
+            <option value="CLEANING">Cleaning & Hygiene</option>
+            <option value="WIFI">Wi-Fi & Internet</option>
+            <option value="OTHER">Other</option>
+          </>
+        );
+      case "LEAVE":
+        return (
+          <>
+            <option value="HOME">Going Home</option>
+            <option value="MEDICAL">Medical Emergency</option>
+            <option value="OUTING">Local Outing</option>
+            <option value="OTHER">Other</option>
+          </>
+        );
+      case "CERTIFICATE":
+        return (
+          <>
+            <option value="BONAFIDE">Bonafide Certificate</option>
+            <option value="CONDUCT">Conduct Certificate</option>
+            <option value="TRANSFER">Transfer Certificate</option>
+            <option value="OTHER">Other</option>
+          </>
+        );
+      case "GENERAL":
+      default:
+        return <option value="OTHER">Other</option>;
     }
   };
 
@@ -76,7 +126,13 @@ export default function CreateRequestPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="requestType">What do you need?</Label>
-              <Select id="requestType" name="requestType" required>
+              <Select 
+                id="requestType" 
+                name="requestType" 
+                required
+                value={requestType}
+                onChange={(e) => setRequestType(e.target.value)}
+              >
                 <option value="">Select a type...</option>
                 <option value="MAINTENANCE">Hostel Complaint / Maintenance</option>
                 <option value="LEAVE">Leave / Gate Pass</option>
@@ -85,45 +141,62 @@ export default function CreateRequestPage() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select id="category" name="category" required>
-                <option value="">Select category...</option>
-                <option value="ELECTRICAL">Electrical (Fan, Light, etc)</option>
-                <option value="PLUMBING">Plumbing (Water, Washroom)</option>
-                <option value="CARPENTRY">Carpentry (Bed, Door)</option>
-                <option value="CLEANING">Cleaning & Hygiene</option>
-                <option value="WIFI">Wi-Fi & Internet</option>
-                <option value="OTHER">Other</option>
-              </Select>
-            </div>
+            {requestType && (
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select id="category" name="category" required>
+                  <option value="">Select category...</option>
+                  {renderCategoryOptions()}
+                </Select>
+              </div>
+            )}
 
-            <div className="space-y-2">
-              <label htmlFor="location" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Location (Optional)</label>
-              <Input 
-                id="location" 
-                name="location" 
-                placeholder="e.g. Room 402, Block A" 
-              />
-              <p className="text-xs text-text-secondary">Leave blank if this is a general request (like a certificate).</p>
-            </div>
+            {requestType === "LEAVE" && (
+              <div className="space-y-2">
+                <Label htmlFor="leaveDays">Number of Days</Label>
+                <Input 
+                  id="leaveDays" 
+                  name="leaveDays" 
+                  type="number"
+                  min="1"
+                  max="30"
+                  required
+                  placeholder="e.g. 2" 
+                />
+                <p className="text-xs text-text-secondary">Requests of 2 days or fewer are auto-approved.</p>
+              </div>
+            )}
 
-            <div className="space-y-2">
-              <label htmlFor="description" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Description *</label>
-              <Textarea 
-                id="description" 
-                name="description" 
-                placeholder="Please describe the issue in detail..." 
-                rows={4} 
-                required 
-              />
-            </div>
+            {requestType === "MAINTENANCE" && (
+              <div className="space-y-2">
+                <label htmlFor="location" className="text-sm font-medium leading-none">Location *</label>
+                <Input 
+                  id="location" 
+                  name="location" 
+                  placeholder="e.g. Room 402, Block A" 
+                  required
+                />
+              </div>
+            )}
+
+            {requestType && (
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium leading-none">Description *</label>
+                <Textarea 
+                  id="description" 
+                  name="description" 
+                  placeholder="Please describe the issue or reason in detail..." 
+                  rows={4} 
+                  required 
+                />
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex justify-end gap-3 border-t border-border pt-4">
             <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !requestType}>
               {loading ? "Submitting..." : (
                 <>
                   <Send className="w-4 h-4 mr-2" />
