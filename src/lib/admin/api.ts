@@ -107,10 +107,8 @@ export interface AdminRequestDetail extends AdminRequest {
   events: AdminRequestEvent[];
 }
 
-let demoClockOffset = 0;
-
 function calculateSLA(createdAt: Date, dueAt: Date | null, resolvedAt: Date | null, status: string): { ageingHours: number, slaStatus: "ON_TRACK" | "WARNING" | "BREACHED" } {
-  const simulatedNow = Date.now() + demoClockOffset;
+  const simulatedNow = Date.now();
   
   if (["RESOLVED", "VERIFIED", "CLOSED", "REJECTED", "CANCELLED"].includes(status)) {
     const endMs = resolvedAt ? resolvedAt.getTime() : new Date().getTime();
@@ -164,23 +162,6 @@ function mapToAdminRequest(req: any): AdminRequest {
   };
 }
 
-// ----------------------------------------------------------------------
-// MOCK SCHOLARSHIP DATA (Kept isolated as per instructions)
-// ----------------------------------------------------------------------
-const MOCK_SCHOLARSHIPS: ScholarshipApplication[] = [
-  {
-    id: "schol-001",
-    applicationNumber: "SCH-2026-001",
-    studentId: "stu-101",
-    studentName: "Rahul Sharma",
-    programName: "Merit-cum-Means Grant",
-    status: "PENDING_REVIEW",
-    submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    amountRequested: 50000,
-  }
-];
-
 // Helper for hackathon basic RBAC logic
 export async function verifyAdminAuthority(actorId?: string) {
   if (!actorId) {
@@ -197,16 +178,6 @@ export async function verifyAdminAuthority(actorId?: string) {
 }
 
 export const AdminAPI = {
-  // Demo Clock
-  getDemoClockOffset() {
-    return demoClockOffset;
-  },
-  advanceDemoClock(hours: number) {
-    demoClockOffset += hours * 1000 * 60 * 60;
-  },
-  resetDemoClock() {
-    demoClockOffset = 0;
-  },
 
   // Requests
   async listRequests(filters?: { status?: RequestStatus; category?: string; assigneeId?: string; priority?: RequestPriority }): Promise<AdminRequest[]> {
@@ -435,32 +406,57 @@ export const AdminAPI = {
 
   // Scholarships
   async listScholarshipApplications(): Promise<ScholarshipApplication[]> {
-    return MOCK_SCHOLARSHIPS;
+    const apps = await prisma.scholarship.findMany({ include: { student: true } });
+    return apps.map(app => ({
+      id: app.id,
+      applicationNumber: `SCH-${app.id.substring(0,8)}`,
+      studentId: app.studentId,
+      studentName: app.student.name,
+      programName: "General Scholarship",
+      status: app.status as ScholarshipStatus,
+      submittedAt: app.updatedAt.toISOString(),
+      updatedAt: app.updatedAt.toISOString(),
+    }));
   },
 
   async getScholarshipApplication(id: string): Promise<ScholarshipApplication | null> {
-    const app = MOCK_SCHOLARSHIPS.find(a => a.id === id);
-    return app || null;
-  },
-
-  async getScholarshipStats(academicYear: string, _scope?: string): Promise<ScholarshipStats> {
+    const app = await prisma.scholarship.findUnique({ where: { id }, include: { student: true } });
+    if (!app) return null;
     return {
-      academicYear,
-      totalEligible: 0,
-      applied: MOCK_SCHOLARSHIPS.length,
-      underVerification: MOCK_SCHOLARSHIPS.filter(a => a.status === "UNDER_VERIFICATION").length,
-      approved: MOCK_SCHOLARSHIPS.filter(a => a.status === "APPROVED").length,
-      disbursed: MOCK_SCHOLARSHIPS.filter(a => a.status === "DISBURSED").length,
+      id: app.id,
+      applicationNumber: `SCH-${app.id.substring(0,8)}`,
+      studentId: app.studentId,
+      studentName: app.student.name,
+      programName: "General Scholarship",
+      status: app.status as ScholarshipStatus,
+      submittedAt: app.updatedAt.toISOString(),
+      updatedAt: app.updatedAt.toISOString(),
     };
   },
 
-  async updateScholarshipStatus(id: string, newStatus: ScholarshipStatus, notes?: string): Promise<boolean> {
-    const idx = MOCK_SCHOLARSHIPS.findIndex(a => a.id === id);
-    if (idx === -1) return false;
-    MOCK_SCHOLARSHIPS[idx].status = newStatus;
-    MOCK_SCHOLARSHIPS[idx].updatedAt = new Date().toISOString();
-    if (notes) MOCK_SCHOLARSHIPS[idx].notes = notes;
-    return true;
+  async getScholarshipStats(academicYear: string, _scope?: string): Promise<ScholarshipStats> {
+    const apps = await prisma.scholarship.findMany();
+    return {
+      academicYear,
+      totalEligible: 0,
+      applied: apps.length,
+      underVerification: apps.filter(a => a.status === "UNDER_VERIFICATION").length,
+      approved: apps.filter(a => a.status === "APPROVED").length,
+      disbursed: apps.filter(a => a.status === "DISBURSED").length,
+    };
+  },
+
+  async updateScholarshipStatus(id: string, newStatus: ScholarshipStatus, _notes?: string): Promise<boolean> {
+    await verifyAdminAuthority();
+    try {
+      await prisma.scholarship.update({
+        where: { id },
+        data: { status: newStatus }
+      });
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   // Analytics

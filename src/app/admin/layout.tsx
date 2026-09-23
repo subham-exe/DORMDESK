@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import { AdminSidebar } from "./components/admin-sidebar";
 import { AdminMobileNav } from "./components/admin-mobile-nav";
 import { AdminHeader } from "./components/admin-header";
-import { DemoClock } from "./components/demo-clock";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -28,11 +27,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </main>
 
-      {/* Bottom Tab Bar for Mobile */}
       <AdminMobileNav />
-
-      {/* SLA Demo Clock Widget */}
-      <DemoClock />
     </div>
   );
 }
