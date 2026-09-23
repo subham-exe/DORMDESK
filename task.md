@@ -93,3 +93,7 @@
   - [x] Verified `src/app/student/requests/new/page.tsx` properly parses `leaveDays` to a number.
   - [x] Rendered the Digital Gate Pass card in `src/app/student/requests/[id]/page.tsx`.
   - [x] Rendered a "Request Leave" quick-action button in `src/app/student/page.tsx`.
+
+- [x] ZOY-07: Certificate Workflow
+  - [x] Appended "Request Certificate" quick-action button to Student Dashboard.
+  - [x] Injected "Digital Certificate" card with a ready-to-download state in `src/app/student/requests/[id]/page.tsx`.

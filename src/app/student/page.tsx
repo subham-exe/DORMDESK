@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Clock, CheckCircle, AlertTriangle, ChevronRight, FileText, ListTodo } from "lucide-react";
+import { Plus, Clock, CheckCircle, AlertTriangle, ChevronRight, FileText, ListTodo, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,23 +12,35 @@ import { EmptyState } from "@/components/ui/empty-state";
 
 export default function StudentDashboard() {
   const [requests, setRequests] = useState<any[]>([]);
+  const [scholarship, setScholarship] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchRequests() {
+    async function fetchData() {
       try {
-        const response = await fetch("/api/requests?requesterId=mock-user-123");
-        if (!response.ok) throw new Error("Failed to load requests.");
-        const data = await response.json();
-        setRequests(data);
+        const [reqsRes, scholRes] = await Promise.all([
+          fetch("/api/requests?requesterId=mock-user-123"),
+          fetch("/api/scholarships?studentId=mock-user-123")
+        ]);
+        
+        if (!reqsRes.ok) throw new Error("Failed to load requests.");
+        const reqsData = await reqsRes.json();
+        setRequests(reqsData);
+        
+        if (scholRes.ok) {
+          const scholData = await scholRes.json();
+          if (scholData.success) {
+            setScholarship(scholData.data);
+          }
+        }
       } catch (err: any) {
         setError(err.message);
       } finally {
         setLoading(false);
       }
     }
-    fetchRequests();
+    fetchData();
   }, []);
 
   const activeRequests = requests.filter(r => !["CLOSED", "REJECTED", "CANCELLED"].includes(r.status));
@@ -53,6 +65,13 @@ export default function StudentDashboard() {
       case "ESCALATED":
       case "REJECTED":
         return <Badge variant="error">{status}</Badge>;
+      case "DISBURSED":
+      case "SANCTIONED":
+        return <Badge variant="success">{status}</Badge>;
+      case "UNDER_VERIFICATION":
+        return <Badge variant="warning">{status}</Badge>;
+      case "ELIGIBLE":
+        return <Badge variant="info">{status}</Badge>;
       default:
         return <Badge variant="default">{status}</Badge>;
     }
@@ -124,6 +143,46 @@ export default function StudentDashboard() {
             <p className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-8 mx-auto" /> : requests.filter(r => r.status === "ESCALATED").length}</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Scholarship Section */}
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4">Scholarship Status</h2>
+        {loading ? (
+          <Skeleton className="h-24 w-full" />
+        ) : scholarship ? (
+          <Card className="border-info shadow-sm overflow-hidden">
+            <div className="bg-info-bg border-b border-info px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="w-5 h-5 text-info" />
+                <h3 className="font-semibold text-info">Merit Scholarship {scholarship.academicYear}</h3>
+              </div>
+              {getStatusBadge(scholarship.status)}
+            </div>
+            <CardContent className="p-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
+              <div>
+                <p className="text-sm text-text-secondary">Application ID</p>
+                <p className="font-medium font-mono text-sm">{scholarship.id.split('-')[0].toUpperCase()}</p>
+              </div>
+              <div>
+                <p className="text-sm text-text-secondary">Last Updated</p>
+                <p className="font-medium text-sm">{new Date(scholarship.updatedAt).toLocaleDateString()}</p>
+              </div>
+              <Link href="/student/scholarship" passHref>
+                <Button variant="outline" size="sm">View Details</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="bg-surface-muted border-dashed shadow-none">
+            <CardContent className="p-6 text-center">
+              <GraduationCap className="w-8 h-8 mx-auto text-text-secondary mb-2" />
+              <p className="font-medium">No Active Scholarships</p>
+              <p className="text-sm text-text-secondary mb-4">You have not applied for or been awarded any scholarships yet.</p>
+              <Button variant="outline" size="sm" onClick={() => alert("Redirecting to application portal...")}>Apply Now</Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Recent Requests */}

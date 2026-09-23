@@ -157,3 +157,13 @@
   - Encoded student, ticket, and request data string strictly onto the generated QR payload.
 - **Blockers**: None.
 - **Next Actionable Step**: Begin ZOY-07 (Certificate Workflow).
+
+## Iteration 16: ZOY-07 Certificate Workflow
+- **Date**: 2026-09-23
+- **Completed**:
+  - Investigated frontend requirements for Certificate Workflow.
+  - Verified `src/app/student/requests/new/page.tsx` already successfully handles `requestType === "CERTIFICATE"` and maps standard fields natively.
+  - Appended "Request Certificate" action tile to `src/app/student/page.tsx` dashboard for rapid access.
+  - Built out "Digital Certificate" card inside the request detail route. It uniquely displays for `requestType === "CERTIFICATE"` when `status === "APPROVED"` or `"CLOSED"`, rendering a mock download PDF payload.
+- **Blockers**: None.
+- **Next Actionable Step**: Begin ZOY-08 (Scholarship Status).
