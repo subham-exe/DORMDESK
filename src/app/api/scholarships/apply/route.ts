@@ -20,9 +20,6 @@ export async function POST() {
     if (error instanceof Error && error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     
     console.error(error);
-    if (error instanceof Error && ('code' in error && error.code === 'P2002' || error.message.includes('Unique constraint'))) {
-      return NextResponse.json({ error: 'Scholarship record already exists' }, { status: 400 });
-    }
     if (error instanceof Error && error.message.includes('not eligible')) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }

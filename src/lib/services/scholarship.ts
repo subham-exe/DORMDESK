@@ -31,11 +31,9 @@ const STATE_TRANSITIONS: Record<ScholarshipState, ScholarshipState[]> = {
 
 // Deterministic eligibility check based purely on existing schema
 function isEligible(user: User): boolean {
-  if (user.role !== 'Student') return false;
-  if (!user.year) return false;
-  
-  // Minimal MVP Rule: Second year onwards and resident are eligible for this specific hackathon demo scholarship.
-  return user.year >= 2 && user.isResident === true;
+  // MVP Rule: We can only deterministically verify the user is a student.
+  // No other eligibility rules are explicitly documented in the repository.
+  return user.role === 'Student';
 }
 
 export class ScholarshipService {
@@ -48,7 +46,7 @@ export class ScholarshipService {
 
   /**
    * Initializes the scholarship record. Only succeeds if student is eligible.
-   * Can only be done once per student due to unique constraint.
+   * Fully idempotent: returns the existing record if already initialized.
    */
   static async initialize(userId: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -58,8 +56,16 @@ export class ScholarshipService {
       throw new Error('User is not eligible for scholarship');
     }
 
-    // Rely on Prisma's unique constraint to prevent duplicates.
-    const scholarship = await prisma.scholarship.create({
+    // Idempotency: check if already exists
+    let scholarship = await prisma.scholarship.findUnique({
+      where: { studentId: userId }
+    });
+
+    if (scholarship) {
+      return scholarship; // Already initialized, return safely
+    }
+
+    scholarship = await prisma.scholarship.create({
       data: {
         studentId: userId,
         academicYear: new Date().getFullYear().toString(),
