@@ -6,7 +6,8 @@ const prisma = new PrismaClient();
 const bcrypt = require('bcryptjs');
 
 async function main() {
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  const password = process.env.SEED_PASSWORD || 'password123';
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   // Clear existing data
   await prisma.auditLog.deleteMany();
