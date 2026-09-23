@@ -1,5 +1,6 @@
 import { prisma } from '../db/prisma';
 import { CreateRequestPayload, TransitionRequestPayload, AssignRequestPayload, RequestStatus } from '../types/request';
+import { AuditService } from './audit';
 
 const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED', 'APPROVED'],
@@ -21,14 +22,12 @@ async function triggerNotification(requestId: string, event: string) {
 
 async function logAudit(requestId: string, actorId: string, action: string, metadata?: Record<string, unknown>) {
   try {
-    await prisma.auditLog.create({
-      data: {
-        entity: 'Request',
-        entityId: requestId,
-        actorId: actorId,
-        action: action,
-        metadata: metadata ? JSON.stringify(metadata) : null,
-      }
+    await AuditService.log({
+      actorId,
+      action,
+      domain: 'Request',
+      targetId: requestId,
+      metadata
     });
   } catch (e) {
     console.error('Failed to save audit log', e);
