@@ -27,7 +27,7 @@ export function NotificationDropdown() {
   useEffect(() => {
     const fetchNotifs = async () => {
       try {
-        const res = await fetch("/api/notifications?studentId=mock-user-123");
+        const res = await fetch("/api/notifications");
         if (res.ok) {
           const data = await res.json();
           if (data.success) {

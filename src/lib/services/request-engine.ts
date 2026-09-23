@@ -1,10 +1,11 @@
 import { prisma } from '../db/prisma';
 import { CreateRequestPayload, TransitionRequestPayload, AssignRequestPayload, RequestStatus } from '../types/request';
 import { AuditService } from './audit';
+import { NotificationService } from './notification';
 
 const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
-  PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED', 'APPROVED'],
-  ASSIGNED: ['ACKNOWLEDGED', 'REJECTED'],
+  PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED', 'APPROVED', 'CANCELLED'],
+  ASSIGNED: ['ACKNOWLEDGED', 'REJECTED', 'CANCELLED'],
   ACKNOWLEDGED: ['PROCESSING', 'RESOLVED'],
   PROCESSING: ['RESOLVED', 'ASSIGNED'], // Can be reassigned
   RESOLVED: ['VERIFIED', 'PROCESSING'], // Verification fail -> back to processing
@@ -12,12 +13,19 @@ const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   APPROVED: ['CLOSED'],
   CLOSED: [],
   REJECTED: [],
+  CANCELLED: [],
 };
 
-// Hook placeholders for Snigdhaa's Platform Services
 async function triggerNotification(requestId: string, event: string) {
-  // TODO: Integrate with Snigdhaa's Notification service
-  console.log(`[Notification] Request ${requestId} event: ${event}`);
+  const req = await prisma.request.findUnique({ where: { id: requestId }});
+  if (!req) return;
+  await NotificationService.create({
+    recipientId: req.requesterId,
+    title: 'Request Update',
+    message: `Your request status changed: ${event}`,
+    type: 'UPDATE',
+    metadata: { requestId }
+  });
 }
 
 async function logAudit(requestId: string, actorId: string, action: string, metadata?: Record<string, unknown>) {

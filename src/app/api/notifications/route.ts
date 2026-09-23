@@ -6,12 +6,34 @@ export async function GET() {
   try {
     const user = await requireAuth();
     const notifications = await NotificationService.list(user.id);
-    return NextResponse.json(notifications);
+    
+    // Map to Zoya's expected structure
+    const data = notifications.map(n => {
+      let link;
+      try {
+        if (n.metadata) {
+          const parsed = JSON.parse(n.metadata);
+          if (parsed.requestId) {
+            link = `/student/requests/${parsed.requestId}`;
+          }
+        }
+      } catch (e) {
+        // ignore JSON parse error
+      }
+      
+      return {
+        ...n,
+        timestamp: n.createdAt,
+        link
+      };
+    });
+
+    return NextResponse.json({ success: true, data });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.message === 'UNAUTHORIZED') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }

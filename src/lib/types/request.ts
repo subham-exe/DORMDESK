@@ -1,5 +1,5 @@
 export type RequestPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-export type RequestStatus = 'PENDING' | 'ASSIGNED' | 'ACKNOWLEDGED' | 'PROCESSING' | 'RESOLVED' | 'VERIFIED' | 'CLOSED' | 'REJECTED' | 'APPROVED';
+export type RequestStatus = 'PENDING' | 'ASSIGNED' | 'ACKNOWLEDGED' | 'PROCESSING' | 'RESOLVED' | 'VERIFIED' | 'CLOSED' | 'REJECTED' | 'APPROVED' | 'CANCELLED';
 export type RequestType = 'COMPLAINT' | 'LEAVE' | 'CERTIFICATE' | 'OTHER';
 
 export interface CreateRequestPayload {

@@ -4,14 +4,14 @@ import { ScholarshipService, ScholarshipState } from '@/lib/services/scholarship
 import { prisma } from '@/lib/db/prisma';
 import { Permission } from '@/lib/auth/policies';
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const body = await req.json();
-    const { from, to } = body;
+    const to = body.to || body.status;
     
-    if (!from || !to) {
-      return NextResponse.json({ error: 'Missing from/to state' }, { status: 400 });
+    if (!to) {
+      return NextResponse.json({ error: 'Missing target state (status or to)' }, { status: 400 });
     }
 
     const user = await requireAuth();
@@ -19,6 +19,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (!scholarship) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
+
+    const from = scholarship.status;
 
     let requiredPerm: Permission = 'Update';
     if (to === 'APPROVED' || to === 'REJECTED') {

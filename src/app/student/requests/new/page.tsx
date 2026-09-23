@@ -52,7 +52,7 @@ function RequestForm() {
       location: formData.get("location") || undefined,
       description: formData.get("description"),
       priority: formData.get("priority") || "MEDIUM",
-      requesterId: "mock-user-123", // In a real app this would come from session
+       // In a real app this would come from session
       metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
     };
 

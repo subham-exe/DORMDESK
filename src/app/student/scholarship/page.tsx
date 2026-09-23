@@ -28,7 +28,7 @@ export default function ScholarshipDetailsPage() {
   useEffect(() => {
     async function fetchScholarship() {
       try {
-        const response = await fetch("/api/scholarships?studentId=mock-user-123");
+        const response = await fetch("/api/scholarships");
         if (!response.ok) throw new Error("Failed to load scholarship.");
         const data = await response.json();
         if (data.success && data.data) {

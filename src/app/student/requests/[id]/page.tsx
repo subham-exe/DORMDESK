@@ -88,15 +88,28 @@ export default function RequestDetailsPage() {
   const handleAction = async (action: string, payload: any = {}) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/requests/${id}/transition`, {
-        method: "POST",
+      let newStatus = payload.newStatus;
+      const notes = payload.reason;
+
+      if (action === 'VERIFY') {
+        newStatus = 'VERIFIED';
+      } else if (action === 'REOPEN') {
+        newStatus = 'PROCESSING';
+      }
+
+      const res = await fetch(`/api/requests/${id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, payload: { ...payload, mockRole: "STUDENT" } })
+        body: JSON.stringify({ 
+          action: 'TRANSITION', 
+          newStatus, 
+          notes 
+        })
       });
       
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || `Failed to ${action.toLowerCase()}`);
+        throw new Error(errorData.error || `Failed to transition request`);
       }
       
       // Refresh data

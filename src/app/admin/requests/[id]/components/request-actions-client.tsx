@@ -11,8 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
-  PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED', 'APPROVED'],
-  ASSIGNED: ['ACKNOWLEDGED', 'REJECTED'],
+  PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED', 'APPROVED', 'CANCELLED'],
+  ASSIGNED: ['ACKNOWLEDGED', 'REJECTED', 'CANCELLED'],
   ACKNOWLEDGED: ['PROCESSING', 'RESOLVED'],
   PROCESSING: ['RESOLVED', 'ASSIGNED'],
   RESOLVED: ['VERIFIED', 'PROCESSING'],
@@ -20,6 +20,7 @@ const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   APPROVED: ['CLOSED'],
   CLOSED: [],
   REJECTED: [],
+  CANCELLED: [],
 };
 
 export function RequestActionsClient({ request, staffList }: { request: AdminRequestDetail, staffList: {id: string, name: string, department: string}[] }) {
