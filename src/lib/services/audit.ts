@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { Domain } from '@/lib/auth/policies';
 
 export interface AuditEvent {
-  actorId: string;
+  actorId?: string | null;
   action: string;
   domain: Domain | string;
   targetId: string;
@@ -48,7 +48,7 @@ export class AuditService {
    * Appends an immutable audit event to the ledger.
    */
   static async log(event: AuditEvent) {
-    if (!event.actorId || !event.action || !event.domain || !event.targetId) {
+    if (event.actorId === undefined || !event.action || !event.domain || !event.targetId) {
       throw new Error('AuditLog validation failed: Missing required fields');
     }
 

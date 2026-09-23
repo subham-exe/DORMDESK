@@ -222,7 +222,7 @@ export const AdminAPI = {
       id: log.id,
       action: log.action,
       timestamp: log.timestamp.toISOString(),
-      actor: { name: log.actor.name, id: log.actorId },
+      actor: { name: log.actor?.name || 'SYSTEM', id: log.actorId || 'SYSTEM' },
       metadata: log.metadata ? JSON.parse(log.metadata) : undefined
     }));
 
