@@ -107,7 +107,8 @@ export class ScholarshipService {
         status: from
       },
       data: {
-        status: to
+        status: to,
+        updatedAt: new Date()
       }
     });
 

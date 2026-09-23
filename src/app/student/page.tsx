@@ -39,8 +39,15 @@ export default function StudentDashboard() {
         ]);
         
         let fetchedRequests = [];
-        if (reqsRes && reqsRes.ok) {
-          fetchedRequests = await reqsRes.json();
+        if (reqsRes) {
+          if (reqsRes.ok) {
+            fetchedRequests = await reqsRes.json();
+          } else {
+            const errData = await reqsRes.json().catch(() => ({}));
+            throw new Error(errData.error || `Failed to fetch requests: ${reqsRes.status}`);
+          }
+        } else {
+          throw new Error("Network error fetching requests");
         }
 
         // Get offline pending requests

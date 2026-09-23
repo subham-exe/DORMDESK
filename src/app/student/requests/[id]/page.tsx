@@ -69,8 +69,19 @@ export default function RequestDetailsPage() {
       
       const resData = await res.json();
       if (resData.success && resData.data) {
-        setRequest(resData.data);
-        setAuditLogs(resData.data.auditLogs || []);
+        const reqData = resData.data;
+        if (typeof reqData.metadata === 'string') {
+          try { reqData.metadata = JSON.parse(reqData.metadata); } catch (e) {}
+        }
+        if (reqData.auditLogs) {
+          reqData.auditLogs.forEach((log: any) => {
+            if (typeof log.metadata === 'string') {
+              try { log.metadata = JSON.parse(log.metadata); } catch (e) {}
+            }
+          });
+        }
+        setRequest(reqData);
+        setAuditLogs(reqData.auditLogs || []);
       } else {
         throw new Error(resData.error || "Failed to load request details");
       }
@@ -235,7 +246,7 @@ export default function RequestDetailsPage() {
       case "DRAFT":
       case "SUBMITTED":
       case "CLASSIFIED":
-      case "ROUTED":
+      case "ASSIGNED":
       case "PENDING":
         return <Badge variant="info">{status}</Badge>;
       case "ASSIGNED":
@@ -259,7 +270,7 @@ export default function RequestDetailsPage() {
     }
   };
 
-  const canCancel = ["PENDING", "ROUTED"].includes(request.status);
+  const canCancel = ["PENDING", "ASSIGNED"].includes(request.status);
   const isResolved = request.status === "RESOLVED";
   const isGatePassValid = request.requestType === "LEAVE" && (request.status === "APPROVED" || request.status === "CLOSED");
   const isCertificateValid = request.requestType === "CERTIFICATE" && (request.status === "APPROVED" || request.status === "CLOSED");

@@ -107,14 +107,14 @@ export interface AdminRequestDetail extends AdminRequest {
   events: AdminRequestEvent[];
 }
 
-function calculateSLA(createdAt: Date, dueAt: Date | null, resolvedAt: Date | null, status: string): { ageingHours: number, slaStatus: "ON_TRACK" | "WARNING" | "BREACHED" } {
+function calculateSLA(createdAt: Date, dueAt: Date | null, resolvedAt: Date | null, status: string, updatedAt: Date): { ageingHours: number, slaStatus: "ON_TRACK" | "WARNING" | "BREACHED" } {
   const simulatedNow = Date.now();
   
-  if (["RESOLVED", "VERIFIED", "CLOSED", "REJECTED", "CANCELLED"].includes(status)) {
-    const endMs = resolvedAt ? resolvedAt.getTime() : new Date().getTime();
+  if (["RESOLVED", "VERIFIED", "CLOSED", "REJECTED", "CANCELLED", "APPROVED"].includes(status)) {
+    const endMs = resolvedAt ? resolvedAt.getTime() : updatedAt.getTime();
     const createdMs = createdAt.getTime();
     const ageingHours = Math.max(0, Math.round(((endMs - createdMs) / (1000 * 60 * 60)) * 10) / 10);
-    return { ageingHours, slaStatus: "ON_TRACK" }; // if resolved, it's not breached anymore for the live dashboard, or you can keep it breached if overdue
+    return { ageingHours, slaStatus: "ON_TRACK" }; // if resolved, it's not breached anymore for the live dashboard
   }
 
   const createdMs = createdAt.getTime();
@@ -138,7 +138,7 @@ function calculateSLA(createdAt: Date, dueAt: Date | null, resolvedAt: Date | nu
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapToAdminRequest(req: any): AdminRequest {
-  const sla = calculateSLA(req.createdAt, req.dueAt, req.resolvedAt, req.status);
+  const sla = calculateSLA(req.createdAt, req.dueAt, req.resolvedAt, req.status, req.updatedAt);
   return {
     id: req.id,
     ticketNumber: req.ticketNumber,

@@ -14,7 +14,7 @@ export type PolicyMatrix = {
 export const ROLE_POLICIES: PolicyMatrix = {
   Student: {
     Request: { Create: ['Own'], Read: ['Own'], Update: ['Own'] },
-    Scholarship: { Read: ['Own'], Create: ['Own'] },
+    Scholarship: { Read: ['Own'], Create: ['Own'], Update: ['Own'] },
     User: { Read: ['Own'], Update: ['Own'] }
   },
   Warden: {

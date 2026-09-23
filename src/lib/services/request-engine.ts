@@ -115,7 +115,7 @@ export class RequestEngine {
       where: { id: payload.requestId },
       data: {
         status: payload.newStatus,
-        ...(payload.newStatus === 'RESOLVED' ? { resolvedAt: new Date() } : {}),
+        resolvedAt: payload.newStatus === 'RESOLVED' ? new Date() : (payload.newStatus === 'PROCESSING' || payload.newStatus === 'ASSIGNED' ? null : undefined), updatedAt: new Date(),
       },
     });
 
@@ -139,7 +139,7 @@ export class RequestEngine {
 
     await prisma.request.updateMany({
       where: { id: { in: requestIds } },
-      data: { incidentId: incident.id },
+      data: { incidentId: incident.id, updatedAt: new Date() },
     });
 
     return incident;
