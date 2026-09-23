@@ -81,3 +81,9 @@
   - [x] Implemented `?type=COMPLAINT` URL pre-selection workflow via `useSearchParams`.
   - [x] Added strict complaint categories: Electrical, Plumbing, Furniture, Cleanliness, Room, Wi-Fi, Water, Other.
   - [x] Added "Report Complaint" quick action to the student dashboard.
+
+- [x] ZOY-05: Request Tracking Timeline / Detail
+  - [x] Fixed API call bug to reuse payload `auditLogs` and avoid 404s.
+  - [x] Replaced raw audit logs with a structured, state-derived timeline visualization.
+  - [x] Represented `PENDING` -> `CLOSED` standard lifecycle using friendly names.
+  - [x] Handled exception branching visually (e.g. `REJECTED`, `CANCELLED`, `ESCALATED`, `APPROVED`).

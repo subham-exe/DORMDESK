@@ -136,3 +136,13 @@
   - Enforced strict category parameters (Electrical, Plumbing, etc.) without mutating backend DB structures or design system elements.
 - **Blockers**: None.
 - **Next Actionable Step**: Begin ZOY-05 (Request Tracking).
+
+## Iteration 14: ZOY-05 Request Tracking Timeline
+- **Date**: 2026-09-23
+- **Completed**:
+  - Investigated frontend missing audit logs error caused by calling nonexistent `/audit` route.
+  - Consolidated data fetch in `src/app/student/requests/[id]/page.tsx` to utilize `auditLogs` populated by backend `GET` payload.
+  - Replaced the textual timeline with an advanced visual timeline indicating Upcoming, Current, Completed, and Exception nodes natively parsing `auditLogs`.
+  - Added smart extraction of historic transition timestamps for completed timeline milestones.
+- **Blockers**: None.
+- **Next Actionable Step**: Begin ZOY-06 (Leave/Gate Pass UI).

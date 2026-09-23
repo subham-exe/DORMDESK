@@ -4,9 +4,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import QRCode from "react-qr-code";
 import { 
   ArrowLeft, Clock, CheckCircle, AlertTriangle, User, 
-  MapPin, Calendar, FileText, Check, X, ShieldAlert 
+  MapPin, Calendar, FileText, Check, X, ShieldAlert,
+  QrCode
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -223,6 +225,15 @@ export default function RequestDetailsPage() {
 
   const canCancel = ["PENDING", "ROUTED"].includes(request.status);
   const isResolved = request.status === "RESOLVED";
+  const isGatePassValid = request.requestType === "LEAVE" && (request.status === "APPROVED" || request.status === "CLOSED");
+
+  // Generate QR payload for Gate Pass
+  const qrPayload = isGatePassValid ? JSON.stringify({
+    ticket: request.ticketNumber,
+    type: "GATE_PASS",
+    status: request.status,
+    student: request.requesterId
+  }) : "";
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-8">
@@ -240,6 +251,63 @@ export default function RequestDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Digital Gate Pass */}
+      {isGatePassValid && (
+        <Card className="border-info shadow-sm overflow-hidden">
+          <div className="bg-info-bg border-b border-info px-5 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <QrCode className="w-6 h-6 text-info" />
+              <h2 className="font-bold text-info text-lg">Digital Gate Pass</h2>
+            </div>
+            {getStatusBadge(request.status)}
+          </div>
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start justify-between">
+              <div className="flex-1 space-y-4 w-full">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-text-secondary">Request Type</p>
+                    <p className="font-semibold">{request.requestType}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-text-secondary">Category</p>
+                    <p className="font-semibold">{request.category}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-text-secondary">Leave Days</p>
+                    <p className="font-semibold">{request.metadata?.leaveDays || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-text-secondary">Student ID</p>
+                    <p className="font-semibold">{request.requesterId}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <p className="text-sm font-medium text-text-secondary">Reason / Destination</p>
+                  <p className="text-sm mt-1">{request.description}</p>
+                </div>
+                
+                <div className="bg-info-bg/50 p-3 rounded text-sm text-info font-medium">
+                  Show this QR code at the gate for verification.
+                </div>
+              </div>
+              
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-border">
+                <QRCode 
+                  value={qrPayload}
+                  size={150}
+                  level="Q"
+                />
+                <p className="text-center text-xs text-text-secondary mt-2 font-mono">
+                  {request.ticketNumber}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Verification Banner */}
       {isResolved && (

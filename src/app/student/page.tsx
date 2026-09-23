@@ -73,6 +73,12 @@ export default function StudentDashboard() {
               Report Complaint
             </Button>
           </Link>
+          <Link href="/student/requests/new?type=LEAVE" passHref>
+            <Button size="lg" variant="outline" className="w-full sm:w-auto shadow-sm border-info text-info hover:bg-info-bg">
+              <FileText className="mr-2 h-5 w-5" />
+              Request Leave
+            </Button>
+          </Link>
           <Link href="/student/requests/new" passHref>
             <Button size="lg" className="w-full sm:w-auto shadow-md">
               <Plus className="mr-2 h-5 w-5" />
