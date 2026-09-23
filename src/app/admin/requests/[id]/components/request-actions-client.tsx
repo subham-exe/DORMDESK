@@ -22,14 +22,7 @@ const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   REJECTED: [],
 };
 
-const STAFF_LIST = [
-  { id: "stf-201", name: "Ramesh Electrician", department: "Maintenance" },
-  { id: "wrd-001", name: "Warden Sharma", department: "Hostel Admin" },
-  { id: "stf-301", name: "Plumber Singh", department: "Maintenance" },
-  { id: "stf-401", name: "Network Admin", department: "IT" },
-];
-
-export function RequestActionsClient({ request }: { request: AdminRequestDetail }) {
+export function RequestActionsClient({ request, staffList }: { request: AdminRequestDetail, staffList: {id: string, name: string, department: string}[] }) {
   const router = useRouter();
   
   // Assignment State
@@ -52,7 +45,7 @@ export function RequestActionsClient({ request }: { request: AdminRequestDetail 
     setAssignError("");
 
     try {
-      const staff = STAFF_LIST.find(s => s.id === selectedStaff);
+      const staff = staffList.find(s => s.id === selectedStaff);
       
       const res = await fetch(`/api/admin/requests/${request.id}/assign`, {
         method: "POST",
@@ -124,7 +117,7 @@ export function RequestActionsClient({ request }: { request: AdminRequestDetail 
             aria-label="Select staff"
           >
             <option value="">Select Staff...</option>
-            {STAFF_LIST.map(staff => (
+            {staffList.map(staff => (
               <option key={staff.id} value={staff.id}>{staff.name} ({staff.department})</option>
             ))}
           </Select>

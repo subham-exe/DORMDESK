@@ -51,9 +51,8 @@ export default async function AdminIncidentDetailPage({ params }: { params: Prom
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Details & Affected Requests */}
         <div className="lg:col-span-2 space-y-6">
-          <Card>
+          <Card className="border-2 border-border bg-surface-muted">
             <CardHeader>
               <CardTitle>Affected Requests ({affectedRequests.length})</CardTitle>
             </CardHeader>
@@ -100,7 +99,7 @@ export default async function AdminIncidentDetailPage({ params }: { params: Prom
         <div className="space-y-6">
           <IncidentActionsClient incident={incident} />
 
-          <Card>
+          <Card className="border-2 border-border bg-surface-muted">
             <CardHeader className="pb-3 border-b border-border">
               <CardTitle className="text-lg text-text-primary">Incident Details</CardTitle>
             </CardHeader>

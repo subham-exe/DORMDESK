@@ -10,10 +10,10 @@ export const dynamic = "force-dynamic";
 
 const getStatusBadgeVariant = (status: string): BadgeVariant => {
   switch (status) {
-    case "PENDING": return "warning";
-    case "ASSIGNED": return "info";
-    case "ACKNOWLEDGED": return "info";
-    case "PROCESSING": return "info";
+    case "PENDING": return "info";
+    case "ASSIGNED": return "warning";
+    case "ACKNOWLEDGED": return "warning";
+    case "PROCESSING": return "warning";
     case "RESOLVED": return "success";
     case "VERIFIED": return "success";
     case "CLOSED": return "default";
@@ -36,6 +36,7 @@ const getPriorityBadgeVariant = (priority: string): BadgeVariant => {
 export default async function RequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const request = await AdminAPI.getRequestDetail(resolvedParams.id);
+  const staffList = await AdminAPI.listStaffDirectory();
 
   if (!request) {
     return notFound();
@@ -274,8 +275,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
             </CardContent>
           </Card>
           
-          {/* Assignment and Status Mutations */}
-          <RequestActionsClient request={request} />
+          <RequestActionsClient request={request} staffList={staffList} />
         </div>
 
       </div>
