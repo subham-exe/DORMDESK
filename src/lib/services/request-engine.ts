@@ -1,9 +1,11 @@
 import { prisma } from '../db/prisma';
 import { CreateRequestPayload, TransitionRequestPayload, AssignRequestPayload, RequestStatus } from '../types/request';
+import { AuditService } from './audit';
+import { NotificationService } from './notification';
 
 const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
-  PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED', 'APPROVED'],
-  ASSIGNED: ['ACKNOWLEDGED', 'REJECTED'],
+  PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED', 'APPROVED', 'CANCELLED'],
+  ASSIGNED: ['ACKNOWLEDGED', 'REJECTED', 'CANCELLED'],
   ACKNOWLEDGED: ['PROCESSING', 'RESOLVED'],
   PROCESSING: ['RESOLVED', 'ASSIGNED'], // Can be reassigned
   RESOLVED: ['VERIFIED', 'PROCESSING'], // Verification fail -> back to processing
@@ -11,24 +13,29 @@ const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   APPROVED: ['CLOSED'],
   CLOSED: [],
   REJECTED: [],
+  CANCELLED: [],
 };
 
-// Hook placeholders for Snigdhaa's Platform Services
 async function triggerNotification(requestId: string, event: string) {
-  // TODO: Integrate with Snigdhaa's Notification service
-  console.log(`[Notification] Request ${requestId} event: ${event}`);
+  const req = await prisma.request.findUnique({ where: { id: requestId }});
+  if (!req) return;
+  await NotificationService.create({
+    recipientId: req.requesterId,
+    title: 'Request Update',
+    message: `Your request status changed: ${event}`,
+    type: 'UPDATE',
+    metadata: { requestId }
+  });
 }
 
 async function logAudit(requestId: string, actorId: string, action: string, metadata?: Record<string, unknown>) {
   try {
-    await prisma.auditLog.create({
-      data: {
-        entity: 'Request',
-        entityId: requestId,
-        actorId: actorId,
-        action: action,
-        metadata: metadata ? JSON.stringify(metadata) : null,
-      }
+    await AuditService.log({
+      actorId,
+      action,
+      domain: 'Request',
+      targetId: requestId,
+      metadata
     });
   } catch (e) {
     console.error('Failed to save audit log', e);
@@ -108,7 +115,7 @@ export class RequestEngine {
       where: { id: payload.requestId },
       data: {
         status: payload.newStatus,
-        ...(payload.newStatus === 'RESOLVED' ? { resolvedAt: new Date() } : {}),
+        resolvedAt: payload.newStatus === 'RESOLVED' ? new Date() : (payload.newStatus === 'PROCESSING' || payload.newStatus === 'ASSIGNED' ? null : undefined), updatedAt: new Date(),
       },
     });
 
@@ -132,7 +139,7 @@ export class RequestEngine {
 
     await prisma.request.updateMany({
       where: { id: { in: requestIds } },
-      data: { incidentId: incident.id },
+      data: { incidentId: incident.id, updatedAt: new Date() },
     });
 
     return incident;

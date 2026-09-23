@@ -69,8 +69,19 @@ export default function RequestDetailsPage() {
       
       const resData = await res.json();
       if (resData.success && resData.data) {
-        setRequest(resData.data);
-        setAuditLogs(resData.data.auditLogs || []);
+        const reqData = resData.data;
+        if (typeof reqData.metadata === 'string') {
+          try { reqData.metadata = JSON.parse(reqData.metadata); } catch (e) {}
+        }
+        if (reqData.auditLogs) {
+          reqData.auditLogs.forEach((log: any) => {
+            if (typeof log.metadata === 'string') {
+              try { log.metadata = JSON.parse(log.metadata); } catch (e) {}
+            }
+          });
+        }
+        setRequest(reqData);
+        setAuditLogs(reqData.auditLogs || []);
       } else {
         throw new Error(resData.error || "Failed to load request details");
       }
@@ -88,15 +99,28 @@ export default function RequestDetailsPage() {
   const handleAction = async (action: string, payload: any = {}) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/requests/${id}/transition`, {
-        method: "POST",
+      let newStatus = payload.newStatus;
+      const notes = payload.reason;
+
+      if (action === 'VERIFY') {
+        newStatus = 'VERIFIED';
+      } else if (action === 'REOPEN') {
+        newStatus = 'PROCESSING';
+      }
+
+      const res = await fetch(`/api/requests/${id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, payload: { ...payload, mockRole: "STUDENT" } })
+        body: JSON.stringify({ 
+          action: 'TRANSITION', 
+          newStatus, 
+          notes 
+        })
       });
       
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || `Failed to ${action.toLowerCase()}`);
+        throw new Error(errorData.error || `Failed to transition request`);
       }
       
       // Refresh data
@@ -222,7 +246,7 @@ export default function RequestDetailsPage() {
       case "DRAFT":
       case "SUBMITTED":
       case "CLASSIFIED":
-      case "ROUTED":
+      case "ASSIGNED":
       case "PENDING":
         return <Badge variant="info">{status}</Badge>;
       case "ASSIGNED":
@@ -246,7 +270,7 @@ export default function RequestDetailsPage() {
     }
   };
 
-  const canCancel = ["PENDING", "ROUTED"].includes(request.status);
+  const canCancel = ["PENDING", "ASSIGNED"].includes(request.status);
   const isResolved = request.status === "RESOLVED";
   const isGatePassValid = request.requestType === "LEAVE" && (request.status === "APPROVED" || request.status === "CLOSED");
   const isCertificateValid = request.requestType === "CERTIFICATE" && (request.status === "APPROVED" || request.status === "CLOSED");

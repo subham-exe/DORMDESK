@@ -1,4 +1,6 @@
 import { SignJWT, jwtVerify, JWTPayload } from 'jose';
+import { authorize } from './rbac';
+import { Domain, Permission } from './policies';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/prisma';
 
@@ -20,7 +22,7 @@ export async function decrypt(session: string | undefined = '') {
       algorithms: ['HS256'],
     });
     return payload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -74,6 +76,16 @@ export async function requireAuth() {
   const user = await getCurrentUser();
   if (!user) {
     throw new Error('UNAUTHORIZED');
+  }
+  return user;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function requirePermission(domain: Domain, permission: Permission, resource?: any) {
+  const user = await requireAuth();
+  const isAllowed = authorize(user, domain, permission, resource);
+  if (!isAllowed) {
+    throw new Error('FORBIDDEN');
   }
   return user;
 }

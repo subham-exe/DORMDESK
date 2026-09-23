@@ -20,7 +20,9 @@ export default function StudentDashboard() {
       try {
         const stored = localStorage.getItem("dormdesk_dismissed_announcements");
         if (stored) return new Set(JSON.parse(stored));
-      } catch (e) {}
+      } catch {
+        // ignore error
+      }
     }
     return new Set();
   });
@@ -31,14 +33,21 @@ export default function StudentDashboard() {
     async function fetchData() {
       try {
         const [reqsRes, scholRes, anncRes] = await Promise.all([
-          fetch("/api/requests?requesterId=mock-user-123").catch(() => null),
-          fetch("/api/scholarships?studentId=mock-user-123").catch(() => null),
+          fetch("/api/requests").catch(() => null),
+          fetch("/api/scholarships?").catch(() => null),
           fetch("/api/announcements").catch(() => null)
         ]);
         
         let fetchedRequests = [];
-        if (reqsRes && reqsRes.ok) {
-          fetchedRequests = await reqsRes.json();
+        if (reqsRes) {
+          if (reqsRes.ok) {
+            fetchedRequests = await reqsRes.json();
+          } else {
+            const errData = await reqsRes.json().catch(() => ({}));
+            throw new Error(errData.error || `Failed to fetch requests: ${reqsRes.status}`);
+          }
+        } else {
+          throw new Error("Network error fetching requests");
         }
 
         // Get offline pending requests
@@ -86,7 +95,7 @@ export default function StudentDashboard() {
               } catch { }
            }
            // Refresh after sync
-           const newReqsRes = await fetch("/api/requests?requesterId=mock-user-123");
+           const newReqsRes = await fetch("/api/requests");
            if (newReqsRes.ok) setRequests(await newReqsRes.json());
         }
 

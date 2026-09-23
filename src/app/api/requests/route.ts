@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RequestEngine } from '@/lib/services/request-engine';
 import { prisma } from '@/lib/db/prisma';
+import { requireAuth } from '@/lib/auth/session';
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const requesterId = searchParams.get('requesterId');
-
-    if (!requesterId) {
-      return NextResponse.json({ success: false, error: 'requesterId is required' }, { status: 400 });
-    }
+    const user = await requireAuth();
 
     const requests = await prisma.request.findMany({
-      where: { requesterId },
+      where: { requesterId: user.id },
       orderBy: { updatedAt: 'desc' }
     });
 
@@ -26,13 +22,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await requireAuth();
     const body = await req.json();
-    const { requestType, category, requesterId, description, location, priority, metadata } = body;
+    const { requestType, category, description, location, priority, metadata } = body;
 
     const request = await RequestEngine.createRequest({
       requestType,
       category,
-      requesterId,
+      requesterId: user.id,
       description,
       location,
       priority,

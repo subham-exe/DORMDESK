@@ -9,17 +9,7 @@ export function NotificationDropdown() {
   const [open, setOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [readIds, setReadIds] = useState<Set<string>>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("dormdesk_read_notifications");
-        if (stored) {
-          return new Set(JSON.parse(stored));
-        }
-      } catch { }
-    }
-    return new Set();
-  });
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -27,7 +17,7 @@ export function NotificationDropdown() {
   useEffect(() => {
     const fetchNotifs = async () => {
       try {
-        const res = await fetch("/api/notifications?studentId=mock-user-123");
+        const res = await fetch("/api/notifications");
         if (res.ok) {
           const data = await res.json();
           if (data.success) {
@@ -53,24 +43,23 @@ export function NotificationDropdown() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const unreadCount = notifications.filter(n => !readIds.has(n.id)).length;
+  const unreadCount = notifications.filter(n => !n.readAt && !readIds.has(n.id)).length;
 
-  const markAsRead = (id: string) => {
-    setReadIds(prev => {
-      const next = new Set(prev);
-      next.add(id);
-      localStorage.setItem("dormdesk_read_notifications", JSON.stringify(Array.from(next)));
-      return next;
-    });
+  const markAsRead = async (id: string) => {
+    setReadIds(prev => new Set(prev).add(id));
+    await fetch(`/api/notifications/${id}/read`, { method: "PATCH" }).catch(() => {});
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    const unread = notifications.filter(n => !n.readAt && !readIds.has(n.id));
     setReadIds(prev => {
       const next = new Set(prev);
-      notifications.forEach(n => next.add(n.id));
-      localStorage.setItem("dormdesk_read_notifications", JSON.stringify(Array.from(next)));
+      unread.forEach(n => next.add(n.id));
       return next;
     });
+    await Promise.all(
+      unread.map(n => fetch(`/api/notifications/${n.id}/read`, { method: "PATCH" }).catch(() => {}))
+    );
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -121,7 +110,7 @@ export function NotificationDropdown() {
               <div className="divide-y divide-border">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {notifications.map((n: any) => {
-                  const isRead = readIds.has(n.id);
+                  const isRead = !!n.readAt || readIds.has(n.id);
                   return (
                     <div 
                       key={n.id} 

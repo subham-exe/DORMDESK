@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RequestEngine } from '@/lib/services/request-engine';
 import { prisma } from '@/lib/db/prisma';
+import { requireAuth } from '@/lib/auth/session';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   try {
+    await requireAuth();
     const request = await prisma.request.findUnique({
       where: { id: resolvedParams.id },
       include: {
@@ -32,8 +34,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   try {
+    const user = await requireAuth();
     const body = await req.json();
-    const { action, assigneeId, department, actorId, newStatus, notes } = body;
+    const { action, assigneeId, department, newStatus, notes } = body;
+    const actorId = user.id;
 
     let request;
     if (action === 'ASSIGN') {

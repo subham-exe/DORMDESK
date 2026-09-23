@@ -1,66 +1,39 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
+import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth/session';
+import { NotificationService } from '@/lib/services/notification';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const studentId = searchParams.get('studentId') || 'mock-user-123';
-
-    // Get all requests for the student
-    const requests = await prisma.request.findMany({
-      where: { requesterId: studentId },
-      select: { id: true, ticketNumber: true, requestType: true }
-    });
-
-    const requestIds = requests.map(r => r.id);
-
-    // Get audit logs for these requests (acting as notifications)
-    const logs = await prisma.auditLog.findMany({
-      where: {
-        entity: 'Request',
-        entityId: { in: requestIds },
-        OR: [
-          { actorId: { not: studentId } },
-          { action: 'AUTO_APPROVED' }
-        ]
-      },
-      orderBy: { timestamp: 'desc' },
-      take: 20
-    });
-
-    const notifications = logs.map(log => {
-      const req = requests.find(r => r.id === log.entityId);
-      let title = `Update on ${req?.ticketNumber || 'Request'}`;
-      let message = `An action was taken: ${log.action}`;
-      
-      if (log.action === 'STATUS_CHANGED') {
-        try {
-          const meta = JSON.parse(log.metadata || '{}');
-          title = `Status Updated: ${req?.ticketNumber}`;
-          message = `Your ${req?.requestType} is now ${meta.newStatus}.`;
-        } catch { }
-      } else if (log.action === 'AUTO_APPROVED') {
-        title = `Auto-Approved: ${req?.ticketNumber}`;
-        message = `Your leave request was automatically approved.`;
-      } else if (log.action === 'ASSIGNED') {
-        title = `Assigned: ${req?.ticketNumber}`;
-        message = `Your request has been assigned for processing.`;
+    const user = await requireAuth();
+    const notifications = await NotificationService.list(user.id);
+    
+    // Map to Zoya's expected structure
+    const data = notifications.map(n => {
+      let link;
+      try {
+        if (n.metadata) {
+          const parsed = JSON.parse(n.metadata);
+          if (parsed.requestId) {
+            link = `/student/requests/${parsed.requestId}`;
+          }
+        }
+      } catch (e) {
+        // ignore JSON parse error
       }
-
+      
       return {
-        id: log.id,
-        title,
-        message,
-        type: 'UPDATE',
-        timestamp: log.timestamp,
-        link: `/student/requests/${log.entityId}`
+        ...n,
+        timestamp: n.createdAt,
+        link
       };
     });
 
-    return NextResponse.json({ success: true, data: notifications });
-  } catch (error: unknown) {
-    console.error('Fetch Notifications Error:', error);
-    const msg = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    return NextResponse.json({ success: true, data });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.message === 'UNAUTHORIZED') {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }

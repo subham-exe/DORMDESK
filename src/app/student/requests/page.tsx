@@ -21,7 +21,7 @@ export default function RequestListPage() {
   useEffect(() => {
     async function fetchRequests() {
       try {
-        const response = await fetch("/api/requests?requesterId=mock-user-123");
+        const response = await fetch("/api/requests");
         if (!response.ok) throw new Error("Failed to load requests.");
         const data = await response.json();
         setRequests(data);
