@@ -111,3 +111,12 @@
   - [x] Injected `NotificationDropdown` securely into mobile and desktop headers inside `src/app/student/layout.tsx`.
   - [x] Implemented `/api/announcements` mock API.
   - [x] Embedded a dismissible Announcement Banner into `src/app/student/page.tsx` capturing mock output.
+
+- [x] ZOY-10: Offline/PWA
+  - [x] Defined Next.js standard `src/app/manifest.ts` PWA specification.
+  - [x] Wrote native lightweight `sw.js` script with cache-first static resolution and offline interception.
+  - [x] Abstracted navigator logic into global `<OfflineProvider>` rendering animated offline/back-online banners.
+  - [x] Constructed `offline-store.ts` implementing a structured IndexedDB queuing mechanism.
+  - [x] Augmented Request submission to dump unsynced packets gracefully into IndexedDB.
+  - [x] Adapted StudentDashboard to silently flush IndexedDB queue elements to the API backend when connectivity restores.
+

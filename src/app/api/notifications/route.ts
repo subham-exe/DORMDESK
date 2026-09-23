@@ -19,7 +19,10 @@ export async function GET(req: NextRequest) {
       where: {
         entity: 'Request',
         entityId: { in: requestIds },
-        actorId: { not: studentId } // Actions by system or admins
+        OR: [
+          { actorId: { not: studentId } },
+          { action: 'AUTO_APPROVED' }
+        ]
       },
       orderBy: { timestamp: 'desc' },
       take: 20

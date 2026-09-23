@@ -1,5 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RequestEngine } from '@/lib/services/request-engine';
+import { prisma } from '@/lib/db/prisma';
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const requesterId = searchParams.get('requesterId');
+
+    if (!requesterId) {
+      return NextResponse.json({ success: false, error: 'requesterId is required' }, { status: 400 });
+    }
+
+    const requests = await prisma.request.findMany({
+      where: { requesterId },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    return NextResponse.json(requests);
+  } catch (error: unknown) {
+    console.error('Fetch Requests Error:', error);
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {

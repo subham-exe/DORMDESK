@@ -20,8 +20,19 @@ async function triggerNotification(requestId: string, event: string) {
 }
 
 async function logAudit(requestId: string, actorId: string, action: string, metadata?: Record<string, unknown>) {
-  // TODO: Integrate with Snigdhaa's Audit service
-  console.log(`[Audit] Request ${requestId} action: ${action} by ${actorId}`, metadata || '');
+  try {
+    await prisma.auditLog.create({
+      data: {
+        entity: 'Request',
+        entityId: requestId,
+        actorId: actorId,
+        action: action,
+        metadata: metadata ? JSON.stringify(metadata) : null,
+      }
+    });
+  } catch (e) {
+    console.error('Failed to save audit log', e);
+  }
 }
 
 export class RequestEngine {
@@ -54,7 +65,7 @@ export class RequestEngine {
     await triggerNotification(request.id, 'CREATED');
     
     if (autoApprove) {
-      await logAudit(request.id, 'SYSTEM', 'AUTO_APPROVED', { reason: 'Leave <= 2 days' });
+      await logAudit(request.id, payload.requesterId, 'AUTO_APPROVED', { reason: 'Leave <= 2 days' });
     }
 
     return request;

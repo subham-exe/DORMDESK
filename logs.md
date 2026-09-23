@@ -190,3 +190,16 @@
   - Executed robust testing verifying parsing consistency and responsive UX. Passed `npm run lint` and `npm run build`.
 - **Blockers**: None.
 - **Next Actionable Step**: Begin ZOY-10 (Offline/PWA).
+
+## Iteration 19: ZOY-10 Offline/PWA Experience
+- **Date**: 2026-09-23
+- **Completed**:
+  - Implemented Next.js `manifest.ts` standard configuration bridging PWA lifecycle events.
+  - Shipped `public/sw.js` handling dynamic caching of static frontend artifacts to satisfy baseline offline accessibility, heavily ensuring `api/*` calls bypass caching to guarantee data accuracy and privacy boundaries.
+  - Designed an `OfflineProvider` Context/UI wrapper dynamically injected into the RootLayout rendering floating status banners natively tracking `window.addEventListener('offline')`.
+  - Configured `offline-store.ts` orchestrating localized IndexedDB storage blocks for queued data.
+  - Integrated IndexedDB interception into `src/app/student/requests/new/page.tsx`, storing pending JSON packets securely locally with fallback user prompts when a submission attempts to execute while unlinked from the backend.
+  - Upgraded Dashboard `page.tsx` state to merge actual server API responses natively alongside any `PENDING_SYNC` objects cached inside IndexedDB. Dashboard automatically replays pending payloads upon restoring connectivity.
+  - Tested layout parsing across edge states smoothly preventing UI locking. Ran linting & building processes successfully.
+- **Blockers**: None.
+- **Next Actionable Step**: Final Integration Handover (ZOY-11).

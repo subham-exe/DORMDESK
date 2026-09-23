@@ -52,6 +52,19 @@ export const getOfflineRequests = async () => {
   });
 };
 
+export const getOfflineRequest = async (id: number) => {
+  const db = await openOfflineDB();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new Promise<any>((resolve, reject) => {
+    const tx = db.transaction("requests", "readonly");
+    const store = tx.objectStore("requests");
+    const req = store.get(id);
+    
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+};
+
 export const deleteOfflineRequest = async (id: number) => {
   const db = await openOfflineDB();
   return new Promise((resolve, reject) => {

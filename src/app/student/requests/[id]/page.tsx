@@ -15,6 +15,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { getOfflineRequest } from "@/lib/services/offline-store";
 
 const LIFECYCLE = [
   { status: "PENDING", label: "Submitted" },
@@ -43,6 +44,26 @@ export default function RequestDetailsPage() {
 
   const fetchData = async () => {
     try {
+      const idStr = Array.isArray(id) ? id[0] : id;
+      if (idStr?.startsWith("offline-")) {
+        const localId = parseInt(idStr.replace("offline-", ""), 10);
+        const offReq = await getOfflineRequest(localId);
+        if (offReq) {
+          setRequest({
+            ...offReq,
+            id: idStr,
+            ticketNumber: `OFFLINE-${localId}`,
+            status: "PENDING_SYNC",
+            createdAt: new Date(offReq._timestamp).toISOString(),
+            updatedAt: new Date(offReq._timestamp).toISOString(),
+          });
+          setAuditLogs([]);
+          return;
+        } else {
+          throw new Error("Offline request not found.");
+        }
+      }
+
       const res = await fetch(`/api/requests/${id}`);
       if (!res.ok) throw new Error("Failed to load request details");
       
@@ -218,6 +239,8 @@ export default function RequestDetailsPage() {
         return <Badge variant="error">{status}</Badge>;
       case "CANCELLED":
         return <Badge variant="default">CANCELLED</Badge>;
+      case "PENDING_SYNC":
+        return <Badge variant="secondary" className="bg-surface-muted text-text-secondary border-dashed">Pending Sync</Badge>;
       default:
         return <Badge variant="default">{status}</Badge>;
     }
