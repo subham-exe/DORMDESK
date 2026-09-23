@@ -1,4 +1,6 @@
 import { RequestStatus, RequestPriority, RequestType } from "../types/request";
+import { prisma } from "../db/prisma";
+import { RequestEngine } from "../services/request-engine";
 
 export interface AdminRequest {
   id: string;
@@ -105,172 +107,65 @@ export interface AdminRequestDetail extends AdminRequest {
   events: AdminRequestEvent[];
 }
 
-const MOCK_REQUESTS: AdminRequest[] = [
-  {
-    id: "req-001",
-    ticketNumber: "REQ-2026-001",
-    requestType: "COMPLAINT",
-    category: "Plumbing",
-    requesterId: "stu-101",
-    requesterName: "Rahul Sharma",
-    description: "Water tap is leaking continuously in Room 204.",
-    location: "Hostel B - Room 204",
-    priority: "MEDIUM",
-    status: "PENDING",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    dueAt: new Date(Date.now() + 1000 * 60 * 60 * 22).toISOString(),
-    slaStatus: "ON_TRACK",
-    ageingHours: 2,
-  },
-  {
-    id: "req-002",
-    ticketNumber: "REQ-2026-002",
-    requestType: "COMPLAINT",
-    category: "Electrical",
-    requesterId: "stu-102",
-    requesterName: "Anjali Gupta",
-    description: "Fan regulator is broken, fan stuck at max speed.",
-    location: "Hostel A - Room 112",
-    priority: "LOW",
-    status: "ASSIGNED",
-    assignedDepartment: "Maintenance",
-    assignedAuthorityId: "stf-201",
-    assignedAuthorityName: "Ramesh Electrician",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    dueAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    slaStatus: "BREACHED",
-    ageingHours: 26,
-  },
-  {
-    id: "req-003",
-    ticketNumber: "REQ-2026-003",
-    requestType: "LEAVE",
-    category: "Outstation",
-    requesterId: "stu-103",
-    requesterName: "Karan Singh",
-    description: "Going home for Diwali holidays.",
-    priority: "MEDIUM",
-    status: "ACKNOWLEDGED",
-    assignedDepartment: "Hostel Admin",
-    assignedAuthorityId: "wrd-001",
-    assignedAuthorityName: "Warden Sharma",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-    slaStatus: "ON_TRACK",
-    ageingHours: 5,
-  },
-  {
-    id: "req-004",
-    ticketNumber: "REQ-2026-004",
-    requestType: "CERTIFICATE",
-    category: "Bonafide",
-    requesterId: "stu-104",
-    requesterName: "Priya Das",
-    description: "Need bonafide certificate for bank loan.",
-    priority: "HIGH",
-    status: "PROCESSING",
-    assignedDepartment: "Academic Office",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
-    dueAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-    slaStatus: "WARNING",
-    ageingHours: 48,
-  },
-  {
-    id: "req-005",
-    ticketNumber: "REQ-2026-005",
-    requestType: "COMPLAINT",
-    category: "Internet",
-    requesterId: "stu-105",
-    requesterName: "Vikram Patel",
-    description: "Wi-Fi is completely down in the entire wing.",
-    location: "Hostel C - Ground Floor",
-    priority: "CRITICAL",
-    status: "PENDING",
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    dueAt: new Date(Date.now() + 1000 * 60 * 60 * 3).toISOString(),
-    slaStatus: "ON_TRACK",
-    ageingHours: 0.5,
-    incidentId: "inc-001"
-  },
-  {
-    id: "req-006",
-    ticketNumber: "REQ-2026-006",
-    requestType: "COMPLAINT",
-    category: "Internet",
-    requesterId: "stu-106",
-    requesterName: "Sneha Nair",
-    description: "Cannot connect to the network in Room 102, keeps dropping.",
-    location: "Hostel C - Ground Floor",
-    priority: "HIGH",
-    status: "ACKNOWLEDGED",
-    assignedDepartment: "IT Support",
-    assignedAuthorityId: "stf-401",
-    assignedAuthorityName: "Network Admin",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(),
-    dueAt: new Date(Date.now() + 1000 * 60 * 60 * 22).toISOString(),
-    slaStatus: "ON_TRACK",
-    ageingHours: 2,
-    incidentId: "inc-001"
-  }
-];
-
-const MOCK_EVENTS: Record<string, AdminRequestEvent[]> = {};
-
-const MOCK_INCIDENTS: AdminIncident[] = [
-  {
-    id: "inc-001",
-    incidentNumber: "INC-2026-001",
-    title: "Block A Network Outage",
-    category: "Internet",
-    location: "Block A",
-    status: "OPEN",
-    affectedStudentCount: 15,
-    assignedTeam: "Network Admin",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
-    slaStatus: "WARNING",
-  }
-];
-
 let demoClockOffset = 0;
 
-function applySLA(req: AdminRequest): AdminRequest {
+function calculateSLA(createdAt: Date, dueAt: Date | null, resolvedAt: Date | null, status: string): { ageingHours: number, slaStatus: "ON_TRACK" | "WARNING" | "BREACHED" } {
   const simulatedNow = Date.now() + demoClockOffset;
   
-  // Freeze SLA if resolved/closed
-  if (["RESOLVED", "VERIFIED", "CLOSED", "REJECTED", "CANCELLED"].includes(req.status)) {
-    const endMs = new Date(req.updatedAt).getTime();
-    const createdMs = new Date(req.createdAt).getTime();
-    // In a real system, you'd use the actual resolved timestamp.
+  if (["RESOLVED", "VERIFIED", "CLOSED", "REJECTED", "CANCELLED"].includes(status)) {
+    const endMs = resolvedAt ? resolvedAt.getTime() : new Date().getTime();
+    const createdMs = createdAt.getTime();
     const ageingHours = Math.max(0, Math.round(((endMs - createdMs) / (1000 * 60 * 60)) * 10) / 10);
-    return { ...req, ageingHours };
+    return { ageingHours, slaStatus: "ON_TRACK" }; // if resolved, it's not breached anymore for the live dashboard, or you can keep it breached if overdue
   }
 
-  const createdMs = new Date(req.createdAt).getTime();
+  const createdMs = createdAt.getTime();
   const ageingMs = simulatedNow - createdMs;
   const ageingHours = Math.max(0, Math.round((ageingMs / (1000 * 60 * 60)) * 10) / 10);
 
   let slaStatus: "ON_TRACK" | "WARNING" | "BREACHED" = "ON_TRACK";
-  if (req.dueAt) {
-    const dueMs = new Date(req.dueAt).getTime();
+  if (dueAt) {
+    const dueMs = dueAt.getTime();
     if (simulatedNow >= dueMs) {
       slaStatus = "BREACHED";
     } else if (dueMs - simulatedNow <= 1000 * 60 * 60 * 6) { 
-      // 6 hours warning threshold for demo purposes
       slaStatus = "WARNING";
     }
+  } else if (ageingHours > 24) {
+    slaStatus = "BREACHED";
   }
 
-  return { ...req, slaStatus, ageingHours };
+  return { ageingHours, slaStatus };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapToAdminRequest(req: any): AdminRequest {
+  const sla = calculateSLA(req.createdAt, req.dueAt, req.resolvedAt, req.status);
+  return {
+    id: req.id,
+    ticketNumber: req.ticketNumber,
+    requestType: req.requestType as RequestType,
+    category: req.category,
+    requesterId: req.requesterId,
+    requesterName: req.requester?.name || "Unknown",
+    description: req.description,
+    location: req.location || undefined,
+    priority: req.priority as RequestPriority,
+    status: req.status as RequestStatus,
+    assignedDepartment: req.assignedDepartment || undefined,
+    assignedAuthorityId: req.assignedAuthorityId || undefined,
+    assignedAuthorityName: req.assignedAuthority?.name || undefined,
+    createdAt: req.createdAt.toISOString(),
+    updatedAt: req.updatedAt.toISOString(),
+    dueAt: req.dueAt ? req.dueAt.toISOString() : undefined,
+    slaStatus: sla.slaStatus,
+    ageingHours: sla.ageingHours,
+    incidentId: req.incidentId || undefined
+  };
 }
 
 // ----------------------------------------------------------------------
-// MOCK SCHOLARSHIP DATA (Isolated for BON-10 visibility)
+// MOCK SCHOLARSHIP DATA (Kept isolated as per instructions)
 // ----------------------------------------------------------------------
 const MOCK_SCHOLARSHIPS: ScholarshipApplication[] = [
   {
@@ -283,40 +178,23 @@ const MOCK_SCHOLARSHIPS: ScholarshipApplication[] = [
     submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
     amountRequested: 50000,
-  },
-  {
-    id: "schol-002",
-    applicationNumber: "SCH-2026-002",
-    studentId: "stu-108",
-    studentName: "Aditi Desai",
-    programName: "Research Travel Grant",
-    status: "UNDER_VERIFICATION",
-    submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    amountRequested: 15000,
-    notes: "Awaiting recommendation letter from guide.",
-  },
-  {
-    id: "schol-003",
-    applicationNumber: "SCH-2026-003",
-    studentId: "stu-112",
-    studentName: "Vikas Kumar",
-    programName: "Merit-cum-Means Grant",
-    status: "APPROVED",
-    submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-    amountRequested: 50000,
   }
 ];
 
-// ----------------------------------------------------------------------
-// MOCK ADAPTER LAYER (BON-11 INTEGRATION BOUNDARY)
-// ----------------------------------------------------------------------
-// The following AdminAPI object isolates all admin data access from the UI.
-// To complete the backend handover:
-// 1. Swap these mock methods with actual calls to `RequestEngine` (or API endpoints).
-// 2. Remove the MOCK_REQUESTS, MOCK_INCIDENTS, and MOCK_SCHOLARSHIPS arrays.
-// 3. Move metric aggregations (KPIs, Analytics) into optimized backend queries.
+// Helper for hackathon basic RBAC logic
+export async function verifyAdminAuthority(actorId?: string) {
+  if (!actorId) {
+    // If not provided by client, fallback to fetching any admin for the demo
+    const defaultAdmin = await prisma.user.findFirst({ where: { role: { in: ['Admin', 'Warden'] } } });
+    if (!defaultAdmin) throw new Error("No admin user found in database");
+    return defaultAdmin;
+  }
+  const user = await prisma.user.findUnique({ where: { id: actorId } });
+  if (!user || !['Admin', 'Warden', 'Staff', 'Faculty'].includes(user.role)) {
+    throw new Error("Unauthorized: Actor is not an admin or staff");
+  }
+  return user;
+}
 
 export const AdminAPI = {
   // Demo Clock
@@ -332,239 +210,170 @@ export const AdminAPI = {
 
   // Requests
   async listRequests(filters?: { status?: RequestStatus; category?: string; assigneeId?: string; priority?: RequestPriority }): Promise<AdminRequest[]> {
-    let results = MOCK_REQUESTS.map(applySLA);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {};
     if (filters) {
-      if (filters.status) {
-        results = results.filter(r => r.status === filters.status);
-      }
-      if (filters.category) {
-        results = results.filter(r => r.category === filters.category);
-      }
-      if (filters.assigneeId) {
-        results = results.filter(r => r.assignedAuthorityId === filters.assigneeId);
-      }
-      if (filters.priority) {
-        results = results.filter(r => r.priority === filters.priority);
-      }
+      if (filters.status) where.status = filters.status;
+      if (filters.category) where.category = filters.category;
+      if (filters.assigneeId) where.assignedAuthorityId = filters.assigneeId;
+      if (filters.priority) where.priority = filters.priority;
     }
 
-    return results;
+    const requests = await prisma.request.findMany({
+      where,
+      include: {
+        requester: true,
+        assignedAuthority: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return requests.map(mapToAdminRequest);
   },
 
   async getRequestDetail(id: string): Promise<AdminRequestDetail | null> {
-    const requests = await this.listRequests();
-    const req = requests.find(r => r.id === id);
+    const req = await prisma.request.findUnique({
+      where: { id },
+      include: {
+        requester: true,
+        assignedAuthority: true
+      }
+    });
     if (!req) return null;
 
-    if (!MOCK_EVENTS[id]) {
-      // Generate initial mock timeline based on status
-      const events: AdminRequestEvent[] = [
-        {
-          id: `evt-${id}-0`,
-          action: "SUBMITTED",
-          timestamp: req.createdAt,
-          actor: { name: req.requesterName, id: req.requesterId }
-        }
-      ];
+    const auditLogs = await prisma.auditLog.findMany({
+      where: { entity: "Request", entityId: id },
+      include: { actor: true },
+      orderBy: { timestamp: 'desc' }
+    });
 
-      if (req.status !== "PENDING") {
-        events.push({
-          id: `evt-${id}-1`,
-          action: "ASSIGNED",
-          timestamp: new Date(new Date(req.createdAt).getTime() + 1000 * 60 * 10).toISOString(),
-          actor: { name: "System Auto-Assign", id: "sys-001" },
-          metadata: { assignedTo: req.assignedAuthorityName }
-        });
-      }
-
-      if (["ACKNOWLEDGED", "PROCESSING", "RESOLVED", "VERIFIED", "CLOSED"].includes(req.status)) {
-        events.push({
-          id: `evt-${id}-2`,
-          action: "STATUS_CHANGED",
-          timestamp: new Date(new Date(req.createdAt).getTime() + 1000 * 60 * 30).toISOString(),
-          actor: { name: req.assignedAuthorityName || "System", id: req.assignedAuthorityId || "sys-001" },
-          metadata: { newStatus: "ACKNOWLEDGED" }
-        });
-      }
-
-      MOCK_EVENTS[id] = events;
-    }
+    const events: AdminRequestEvent[] = auditLogs.map(log => ({
+      id: log.id,
+      action: log.action,
+      timestamp: log.timestamp.toISOString(),
+      actor: { name: log.actor.name, id: log.actorId },
+      metadata: log.metadata ? JSON.parse(log.metadata) : undefined
+    }));
 
     return {
-      ...req,
-      events: [...MOCK_EVENTS[id]].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      ...mapToAdminRequest(req),
+      events
     };
   },
 
   async assignRequest(id: string, assigneeId: string, department: string): Promise<boolean> {
-    const reqIndex = MOCK_REQUESTS.findIndex(r => r.id === id);
-    if (reqIndex === -1) return false;
-
-    // Determine staff name (mocking a DB lookup)
-    const staffNames: Record<string, string> = {
-      "stf-201": "Ramesh Electrician",
-      "wrd-001": "Warden Sharma",
-      "stf-301": "Plumber Singh",
-      "stf-401": "Network Admin",
-    };
-    const staffName = staffNames[assigneeId] || "Assigned Staff";
-
-    const simulatedNow = new Date(Date.now() + demoClockOffset).toISOString();
-
-    const updatedReq = { 
-      ...MOCK_REQUESTS[reqIndex], 
-      assignedAuthorityId: assigneeId,
-      assignedAuthorityName: staffName,
-      assignedDepartment: department,
-      status: "ASSIGNED" as RequestStatus,
-      updatedAt: simulatedNow
-    };
-    
-    MOCK_REQUESTS[reqIndex] = updatedReq;
-
-    // Append to timeline
-    if (MOCK_EVENTS[id]) {
-      MOCK_EVENTS[id].push({
-        id: `evt-${id}-${Date.now()}`,
-        action: "ASSIGNED",
-        timestamp: simulatedNow,
-        actor: { name: "Current Admin", id: "adm-001" }, // Mock actor
-        metadata: { assignedTo: staffName }
+    const actor = await verifyAdminAuthority();
+    try {
+      await RequestEngine.assignRequest({
+        requestId: id,
+        assigneeId,
+        department,
+        actorId: actor.id
       });
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
     }
-
-    return true;
   },
 
   async updateRequestStatus(id: string, status: RequestStatus, notes?: string): Promise<boolean> {
-    const reqIndex = MOCK_REQUESTS.findIndex(r => r.id === id);
-    if (reqIndex === -1) return false;
-
-    const currentReq = MOCK_REQUESTS[reqIndex];
-    
-    // Simulate valid transitions check
-    const validTransitions: Record<RequestStatus, RequestStatus[]> = {
-      PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED', 'APPROVED'],
-      ASSIGNED: ['ACKNOWLEDGED', 'REJECTED'],
-      ACKNOWLEDGED: ['PROCESSING', 'RESOLVED'],
-      PROCESSING: ['RESOLVED', 'ASSIGNED'],
-      RESOLVED: ['VERIFIED', 'PROCESSING'],
-      VERIFIED: ['CLOSED'],
-      APPROVED: ['CLOSED'],
-      CLOSED: [],
-      REJECTED: [],
-    };
-
-    const allowed = validTransitions[currentReq.status] || [];
-    if (!allowed.includes(status) && currentReq.status !== status) {
-       console.error(`Invalid transition from ${currentReq.status} to ${status}`);
-       return false;
-    }
-
-    const simulatedNow = new Date(Date.now() + demoClockOffset).toISOString();
-
-    const updatedReq = { 
-      ...currentReq, 
-      status,
-      updatedAt: simulatedNow
-    };
-    
-    MOCK_REQUESTS[reqIndex] = updatedReq;
-
-    // Append to timeline
-    if (MOCK_EVENTS[id]) {
-      MOCK_EVENTS[id].push({
-        id: `evt-${id}-${Date.now()}`,
-        action: status,
-        timestamp: simulatedNow,
-        actor: { name: "Current Admin", id: "adm-001" }, // Mock actor
-        metadata: notes ? { resolutionNotes: notes } : undefined
+    const actor = await verifyAdminAuthority();
+    try {
+      await RequestEngine.transitionStatus({
+        requestId: id,
+        newStatus: status,
+        notes,
+        actorId: actor.id
       });
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
     }
-
-    return true;
   },
 
   // Incidents
   async listIncidents(): Promise<AdminIncident[]> {
-    return MOCK_INCIDENTS;
+    const incidents = await prisma.incident.findMany({
+      include: { _count: { select: { requests: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return incidents.map(inc => ({
+      id: inc.id,
+      incidentNumber: inc.id.substring(0, 8),
+      title: inc.title,
+      category: inc.category,
+      location: inc.location,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      status: inc.status as any,
+      affectedStudentCount: inc._count.requests,
+      assignedTeam: inc.assignedDepartment,
+      createdAt: inc.createdAt.toISOString(),
+      updatedAt: inc.updatedAt.toISOString(),
+      slaStatus: "ON_TRACK"
+    }));
   },
 
   async getIncident(id: string): Promise<AdminIncident | null> {
-    const inc = MOCK_INCIDENTS.find(i => i.id === id);
-    return inc || null;
+    const inc = await prisma.incident.findUnique({
+      where: { id },
+      include: { _count: { select: { requests: true } } }
+    });
+    if (!inc) return null;
+    return {
+      id: inc.id,
+      incidentNumber: inc.id.substring(0, 8),
+      title: inc.title,
+      category: inc.category,
+      location: inc.location,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      status: inc.status as any,
+      affectedStudentCount: inc._count.requests,
+      assignedTeam: inc.assignedDepartment,
+      createdAt: inc.createdAt.toISOString(),
+      updatedAt: inc.updatedAt.toISOString(),
+      slaStatus: "ON_TRACK"
+    };
   },
 
   async groupRequestsIntoIncident(incidentId: string | null, title: string, requestIds: string[]): Promise<string | null> {
-    const simulatedNow = new Date(Date.now() + demoClockOffset).toISOString();
-    let targetIncidentId: string | null = incidentId;
+    const targetIncidentId: string | null = incidentId;
     
-    // Check if any selected requests already belong to an incident to merge into
-    const existingIncidents = MOCK_REQUESTS
-      .filter(r => requestIds.includes(r.id) && r.incidentId)
-      .map(r => r.incidentId);
-
-    if (existingIncidents.length > 0) {
-      targetIncidentId = existingIncidents[0] as string;
-      const incIndex = MOCK_INCIDENTS.findIndex(i => i.id === targetIncidentId);
-      if (incIndex !== -1) {
-        MOCK_INCIDENTS[incIndex].affectedStudentCount += requestIds.length; // rough addition
-        MOCK_INCIDENTS[incIndex].updatedAt = simulatedNow;
-      }
+    // In a real app, you might find existing incident ID if they are already grouped
+    if (!targetIncidentId) {
+      const inc = await RequestEngine.clusterIntoIncident(requestIds, title, "Grouped Incident", "General", "Multiple", "General");
+      return inc.id;
     } else {
-      targetIncidentId = `inc-new-${Date.now()}`;
-      const newInc: AdminIncident = {
-        id: targetIncidentId,
-        incidentNumber: `INC-2026-${MOCK_INCIDENTS.length + 101}`,
-        title: title,
-        category: "Operational Incident",
-        location: "Multiple Locations",
-        status: "OPEN",
-        affectedStudentCount: requestIds.length,
-        createdAt: simulatedNow,
-        updatedAt: simulatedNow,
-        slaStatus: "ON_TRACK"
-      };
-      MOCK_INCIDENTS.push(newInc);
+      // Just update existing
+      await prisma.request.updateMany({
+        where: { id: { in: requestIds } },
+        data: { incidentId: targetIncidentId }
+      });
+      return targetIncidentId;
     }
-
-    requestIds.forEach(reqId => {
-      const reqIndex = MOCK_REQUESTS.findIndex(r => r.id === reqId);
-      if (reqIndex !== -1) {
-        MOCK_REQUESTS[reqIndex].incidentId = targetIncidentId!;
-        MOCK_REQUESTS[reqIndex].updatedAt = simulatedNow;
-
-        if (!MOCK_EVENTS[reqId]) MOCK_EVENTS[reqId] = [];
-        MOCK_EVENTS[reqId].push({
-          id: `evt-${reqId}-${Date.now()}`,
-          action: "GROUPED",
-          timestamp: simulatedNow,
-          actor: { name: "Current Admin", id: "adm-001" },
-          metadata: { incidentId: targetIncidentId, title }
-        });
-      }
-    });
-
-    return targetIncidentId;
   },
 
   async resolveIncident(incidentId: string, resolutionNotes: string): Promise<boolean> {
-    const incIndex = MOCK_INCIDENTS.findIndex(i => i.id === incidentId);
-    if (incIndex === -1) return false;
+    const actor = await verifyAdminAuthority();
+    
+    await prisma.incident.update({
+      where: { id: incidentId },
+      data: { status: 'RESOLVED', resolvedAt: new Date() }
+    });
 
-    const simulatedNow = new Date(Date.now() + demoClockOffset).toISOString();
+    const requests = await prisma.request.findMany({
+      where: { incidentId, status: { notIn: ['RESOLVED', 'VERIFIED', 'CLOSED', 'REJECTED', 'APPROVED'] } }
+    });
 
-    // Mark incident resolved
-    MOCK_INCIDENTS[incIndex].status = "RESOLVED";
-    MOCK_INCIDENTS[incIndex].updatedAt = simulatedNow;
-
-    // Cascade resolution to requests
-    const affectedReqs = MOCK_REQUESTS.filter(r => r.incidentId === incidentId);
-    for (const req of affectedReqs) {
-      // Only resolve active requests
-      if (["PENDING", "ASSIGNED", "ACKNOWLEDGED", "PROCESSING"].includes(req.status)) {
-        await this.updateRequestStatus(req.id, "RESOLVED", resolutionNotes);
-      }
+    for (const req of requests) {
+      await RequestEngine.transitionStatus({
+        requestId: req.id,
+        newStatus: 'RESOLVED',
+        notes: resolutionNotes,
+        actorId: actor.id
+      });
     }
 
     return true;
@@ -607,7 +416,6 @@ export const AdminAPI = {
   async getAttentionRequests(): Promise<AdminRequest[]> {
     const reqs = await this.listRequests();
     
-    // An item needs attention if it's active and (BREACHED, WARNING, or unassigned/PENDING > 24h)
     return reqs
       .filter(r => {
         const isFrozen = ["RESOLVED", "VERIFIED", "CLOSED", "REJECTED", "CANCELLED", "APPROVED"].includes(r.status);
@@ -617,7 +425,6 @@ export const AdminAPI = {
         return false;
       })
       .sort((a, b) => {
-        // Sort order: BREACHED first, then WARNING, then by ageing
         if (a.slaStatus === "BREACHED" && b.slaStatus !== "BREACHED") return -1;
         if (b.slaStatus === "BREACHED" && a.slaStatus !== "BREACHED") return 1;
         if (a.slaStatus === "WARNING" && b.slaStatus !== "WARNING") return -1;
@@ -636,10 +443,10 @@ export const AdminAPI = {
     return app || null;
   },
 
-  async getScholarshipStats(academicYear: string, scope?: string): Promise<ScholarshipStats> {
+  async getScholarshipStats(academicYear: string, _scope?: string): Promise<ScholarshipStats> {
     return {
       academicYear,
-      totalEligible: 0, // Mock contract boundary 
+      totalEligible: 0,
       applied: MOCK_SCHOLARSHIPS.length,
       underVerification: MOCK_SCHOLARSHIPS.filter(a => a.status === "UNDER_VERIFICATION").length,
       approved: MOCK_SCHOLARSHIPS.filter(a => a.status === "APPROVED").length,
@@ -650,12 +457,9 @@ export const AdminAPI = {
   async updateScholarshipStatus(id: string, newStatus: ScholarshipStatus, notes?: string): Promise<boolean> {
     const idx = MOCK_SCHOLARSHIPS.findIndex(a => a.id === id);
     if (idx === -1) return false;
-
-    const simulatedNow = new Date(Date.now() + demoClockOffset).toISOString();
     MOCK_SCHOLARSHIPS[idx].status = newStatus;
-    MOCK_SCHOLARSHIPS[idx].updatedAt = simulatedNow;
+    MOCK_SCHOLARSHIPS[idx].updatedAt = new Date().toISOString();
     if (notes) MOCK_SCHOLARSHIPS[idx].notes = notes;
-
     return true;
   },
 
@@ -693,32 +497,22 @@ export const AdminAPI = {
 
   async getRecurringIssues(): Promise<RecurringIssue[]> {
     const reqs = await this.listRequests();
-    
-    // Group requests by a deterministic pattern: "Category | Location"
     const groups: Record<string, AdminRequest[]> = {};
     
     for (const r of reqs) {
-      // Exclude requests with no location
       if (!r.location) continue;
-      
       const patternKey = `${r.category}|${r.location}`;
       if (!groups[patternKey]) groups[patternKey] = [];
       groups[patternKey].push(r);
     }
 
     const issues: RecurringIssue[] = [];
-    
-    // RECURRENCE THRESHOLD: 
-    // Set to 2 for this demo environment due to the small underlying dataset.
-    // In a production environment, this might be >= 3 within a 30-day window.
     const RECURRENCE_THRESHOLD = 2;
 
     let index = 1;
-    for (const [key, groupReqs] of Object.entries(groups)) {
+    for (const [, groupReqs] of Object.entries(groups)) {
       if (groupReqs.length >= RECURRENCE_THRESHOLD) {
-        // Sort chronologically to find first and last seen
         const sorted = groupReqs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        
         issues.push({
           id: `rec-issue-${index++}`,
           pattern: `${sorted[0].category} issue in ${sorted[0].location}`,
@@ -732,7 +526,17 @@ export const AdminAPI = {
       }
     }
 
-    // Sort by most occurrences first
     return issues.sort((a, b) => b.occurrences - a.occurrences);
+  },
+
+  async listStaffDirectory(): Promise<Array<{ id: string, name: string, department: string }>> {
+    const staff = await prisma.user.findMany({
+      where: { role: { in: ['Staff', 'Warden', 'Admin', 'Faculty'] } }
+    });
+    return staff.map(s => ({
+      id: s.id,
+      name: s.name,
+      department: s.department || 'General'
+    }));
   }
 };

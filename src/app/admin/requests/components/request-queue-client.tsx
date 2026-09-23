@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Filter, AlertCircle, Clock, Link as LinkIcon, FilterX } from "lucide-react";
+import { Search, AlertCircle, Clock, Link as LinkIcon, FilterX } from "lucide-react";
 import { AdminRequest } from "@/lib/admin/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge, BadgeVariant } from "@/components/ui/badge";
@@ -67,7 +67,7 @@ export function RequestQueueClient({ initialRequests }: { initialRequests: Admin
       });
       if (!res.ok) throw new Error("Failed to group requests");
       
-      const data = await res.json();
+      await res.json();
       setIsGroupModalOpen(false);
       setSelectedIds([]);
       setIncidentTitle("");
@@ -83,10 +83,10 @@ export function RequestQueueClient({ initialRequests }: { initialRequests: Admin
 
   const getStatusBadgeVariant = (status: string): BadgeVariant => {
     switch (status) {
-      case "PENDING": return "warning";
-      case "ASSIGNED": return "info";
-      case "ACKNOWLEDGED": return "info";
-      case "PROCESSING": return "info";
+      case "PENDING": return "info";
+      case "ASSIGNED": return "warning";
+      case "ACKNOWLEDGED": return "warning";
+      case "PROCESSING": return "warning";
       case "RESOLVED": return "success";
       case "VERIFIED": return "success";
       case "CLOSED": return "default";

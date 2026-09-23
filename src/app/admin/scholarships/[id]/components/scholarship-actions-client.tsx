@@ -22,7 +22,7 @@ export function ScholarshipActionsClient({ application }: { application: Scholar
       } else {
         alert("Failed to update status");
       }
-    } catch (e) {
+    } catch {
       alert("Error updating status");
     } finally {
       setLoading(false);

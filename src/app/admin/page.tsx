@@ -167,7 +167,7 @@ export default async function AdminDashboardPage() {
                     href={`/admin/incidents/${inc.id}`}
                     className="block group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
                   >
-                    <Card className="transition-colors hover:border-warning/50 border-warning/20 bg-warning-bg">
+                    <Card className="transition-colors hover:border-text-secondary border-2 border-border bg-surface-muted">
                       <CardContent className="p-4 space-y-2">
                         <div className="flex items-start justify-between gap-2">
                           <h4 className="font-semibold text-sm text-text-primary line-clamp-1">{inc.title}</h4>
