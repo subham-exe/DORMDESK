@@ -14,6 +14,17 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 
+const LIFECYCLE = [
+  { status: "PENDING", label: "Submitted" },
+  { status: "ASSIGNED", label: "Assigned" },
+  { status: "ACKNOWLEDGED", label: "Acknowledged" },
+  { status: "PROCESSING", label: "In Progress" },
+  { status: "RESOLVED", label: "Resolved" },
+  { status: "VERIFIED", label: "Verified" },
+  { status: "CLOSED", label: "Closed" }
+];
+const EXCEPTIONS = ["REJECTED", "CANCELLED", "ESCALATED"];
+
 export default function RequestDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -30,18 +41,15 @@ export default function RequestDetailsPage() {
 
   const fetchData = async () => {
     try {
-      const [reqRes, auditRes] = await Promise.all([
-        fetch(`/api/requests/${id}`),
-        fetch(`/api/requests/${id}/audit`)
-      ]);
+      const res = await fetch(`/api/requests/${id}`);
+      if (!res.ok) throw new Error("Failed to load request details");
       
-      if (!reqRes.ok) throw new Error("Failed to load request details");
-      const reqData = await reqRes.json();
-      setRequest(reqData);
-
-      if (auditRes.ok) {
-        const auditData = await auditRes.json();
-        setAuditLogs(auditData);
+      const resData = await res.json();
+      if (resData.success && resData.data) {
+        setRequest(resData.data);
+        setAuditLogs(resData.data.auditLogs || []);
+      } else {
+        throw new Error(resData.error || "Failed to load request details");
       }
     } catch (err: any) {
       setError(err.message);
@@ -78,6 +86,88 @@ export default function RequestDetailsPage() {
     }
   };
 
+  const getTimelineSteps = () => {
+    if (!request) return [];
+    
+    const isException = EXCEPTIONS.includes(request.status);
+    const reachedStates = new Set<string>();
+    const stateTimestamps: Record<string, string> = {};
+    
+    // Add PENDING natively as created
+    reachedStates.add("PENDING");
+    stateTimestamps["PENDING"] = request.createdAt;
+    
+    // Check audit logs for transitions
+    auditLogs.forEach(log => {
+      if (log.action === "STATUS_CHANGED" && log.metadata?.newStatus) {
+        reachedStates.add(log.metadata.newStatus);
+        stateTimestamps[log.metadata.newStatus] = log.timestamp;
+      }
+      if (log.action === "CREATED") {
+         stateTimestamps["PENDING"] = log.timestamp;
+      }
+    });
+
+    reachedStates.add(request.status);
+
+    const steps = [];
+    let currentIdx = LIFECYCLE.findIndex(s => s.status === request.status);
+    
+    if (currentIdx === -1) {
+       for (let i = LIFECYCLE.length - 1; i >= 0; i--) {
+         if (reachedStates.has(LIFECYCLE[i].status)) {
+           currentIdx = i;
+           break;
+         }
+       }
+    }
+
+    // Auto-approve leaves might skip directly to APPROVED (which maps to CLOSED ideally, but it's an exception if not in LIFECYCLE)
+    // Wait, RequestEngine has APPROVED -> CLOSED. APPROVED is an exception state? Let's check `VALID_TRANSITIONS` in RequestEngine.
+    // Actually, let's just make APPROVED an exception for the student view (meaning it branches off PENDING).
+    // Or we map APPROVED to CLOSED directly.
+    
+    for (let i = 0; i < LIFECYCLE.length; i++) {
+      const step = LIFECYCLE[i];
+      const isCompleted = isException ? (i <= currentIdx) : (i < currentIdx);
+      const isCurrent = i === currentIdx && !isException;
+      
+      steps.push({
+        ...step,
+        state: isCurrent ? 'CURRENT' : (isCompleted ? 'COMPLETED' : 'UPCOMING'),
+        timestamp: stateTimestamps[step.status]
+      });
+      
+      if (i === currentIdx && isException) {
+         steps.push({
+           status: request.status,
+           label: request.status === "REJECTED" ? "Rejected" : 
+                  request.status === "CANCELLED" ? "Cancelled" : 
+                  request.status === "APPROVED" ? "Approved" :
+                  request.status === "ESCALATED" ? "Escalated" : request.status,
+           state: 'EXCEPTION',
+           timestamp: stateTimestamps[request.status] || new Date().toISOString()
+         });
+      }
+    }
+    
+    // Handle case where request is APPROVED right away and currentIdx is 0 (PENDING)
+    if (request.status === "APPROVED" && currentIdx === 0 && !isException) {
+      // If APPROVED wasn't in EXCEPTIONS, let's make sure it shows
+      const hasApproved = steps.some(s => s.status === "APPROVED");
+      if (!hasApproved) {
+        steps.splice(1, 0, {
+          status: "APPROVED",
+          label: "Approved",
+          state: "COMPLETED",
+          timestamp: stateTimestamps["APPROVED"] || new Date().toISOString()
+        });
+      }
+    }
+    
+    return steps;
+  };
+
   if (loading) {
     return (
       <div className="space-y-6 max-w-3xl mx-auto">
@@ -110,6 +200,7 @@ export default function RequestDetailsPage() {
       case "SUBMITTED":
       case "CLASSIFIED":
       case "ROUTED":
+      case "PENDING":
         return <Badge variant="info">{status}</Badge>;
       case "ASSIGNED":
       case "ACKNOWLEDGED":
@@ -118,6 +209,7 @@ export default function RequestDetailsPage() {
       case "RESOLVED":
       case "VERIFIED":
       case "CLOSED":
+      case "APPROVED":
         return <Badge variant="success">{status}</Badge>;
       case "ESCALATED":
       case "REJECTED":
@@ -129,7 +221,7 @@ export default function RequestDetailsPage() {
     }
   };
 
-  const canCancel = ["CREATE", "CLASSIFY", "ROUTED"].includes(request.status);
+  const canCancel = ["PENDING", "ROUTED"].includes(request.status);
   const isResolved = request.status === "RESOLVED";
 
   return (
@@ -241,6 +333,20 @@ export default function RequestDetailsPage() {
                   {request.description}
                 </p>
               </div>
+              
+              {request.metadata && Object.keys(request.metadata).length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-text-secondary mb-1">Additional Information</h4>
+                  <div className="bg-surface-muted p-4 rounded-md border border-border text-sm">
+                    {Object.entries(request.metadata).map(([key, val]) => (
+                      <div key={key} className="flex mb-1 last:mb-0">
+                        <span className="font-medium text-text-secondary w-32 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                        <span className="text-text-primary">{String(val)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -266,41 +372,69 @@ export default function RequestDetailsPage() {
             </Card>
           )}
 
-          {/* Timeline / Audit */}
+          {/* Timeline */}
           <Card>
             <CardHeader className="pb-3 border-b border-border">
-              <CardTitle className="text-lg text-text-primary">Timeline</CardTitle>
+              <CardTitle className="text-lg text-text-primary">Status Timeline</CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
-              {auditLogs.length > 0 ? (
-                <div className="relative border-l-2 border-border ml-3 pl-5 space-y-6">
-                  {auditLogs.map((log: any, index: number) => {
-                    const isLast = index === auditLogs.length - 1;
-                    return (
-                      <div key={log.id} className="relative">
-                        <div className={`absolute -left-[27px] w-3 h-3 rounded-full border-2 border-surface ${isLast ? 'bg-info' : 'bg-border'}`}></div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-text-primary">
-                            {log.action.replace(/_/g, ' ')}
-                          </span>
-                          <span className="text-xs text-text-secondary flex items-center gap-1 mt-0.5">
-                            <Clock className="w-3 h-3" />
-                            {new Date(log.timestamp).toLocaleString()} 
-                            {log.actor?.name && ` • by ${log.actor.name}`}
-                          </span>
-                          {log.metadata?.resolutionNotes && (
-                            <div className="mt-2 text-sm text-text-secondary bg-surface-muted p-2 rounded border border-border">
-                              Note: {log.metadata.resolutionNotes}
-                            </div>
-                          )}
-                        </div>
+            <CardContent className="pt-5">
+              <div className="relative ml-2 space-y-6">
+                {getTimelineSteps().map((step, index, arr) => {
+                  const isLast = index === arr.length - 1;
+                  
+                  // Connective line logic
+                  let lineClass = "bg-border";
+                  if (step.state === 'COMPLETED' || step.state === 'CURRENT') {
+                     // Next step determines if the line should be colored
+                     const nextStep = arr[index + 1];
+                     if (nextStep && (nextStep.state === 'COMPLETED' || nextStep.state === 'CURRENT' || nextStep.state === 'EXCEPTION')) {
+                        lineClass = "bg-info";
+                        // If exception is next, make line error colored
+                        if (nextStep.state === 'EXCEPTION') lineClass = "bg-error";
+                     }
+                  }
+                  
+                  // Node style logic
+                  let nodeClass = "bg-surface border-border";
+                  let icon = null;
+                  
+                  if (step.state === 'COMPLETED') {
+                    nodeClass = "bg-info border-info";
+                    icon = <Check className="w-3 h-3 text-white" />;
+                  } else if (step.state === 'CURRENT') {
+                    nodeClass = "bg-surface border-info border-[3px]";
+                  } else if (step.state === 'EXCEPTION') {
+                    nodeClass = "bg-error border-error";
+                    icon = <X className="w-3 h-3 text-white" />;
+                  }
+
+                  return (
+                    <div key={step.status} className="relative flex gap-4">
+                      {!isLast && (
+                        <div className={`absolute left-[11px] top-7 bottom-[-24px] w-[2px] ${lineClass}`}></div>
+                      )}
+                      
+                      <div className={`relative z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${nodeClass}`}>
+                        {icon}
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-text-secondary text-center py-4">No timeline events recorded yet.</p>
-              )}
+                      
+                      <div className="flex flex-col pb-2">
+                        <span className={`text-sm font-medium ${
+                          step.state === 'EXCEPTION' ? 'text-error' :
+                          (step.state === 'UPCOMING' ? 'text-text-secondary' : 'text-text-primary')
+                        }`}>
+                          {step.label}
+                        </span>
+                        {step.timestamp && step.state !== 'UPCOMING' && (
+                          <span className="text-xs text-text-secondary mt-0.5">
+                            {new Date(step.timestamp).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -329,7 +463,7 @@ export default function RequestDetailsPage() {
                 </div>
               )}
 
-              {request.dueAt && !["RESOLVED", "VERIFIED", "CLOSED", "REJECTED", "CANCELLED"].includes(request.status) && (
+              {request.dueAt && !["RESOLVED", "VERIFIED", "CLOSED", "REJECTED", "CANCELLED", "APPROVED"].includes(request.status) && (
                 <div>
                   <p className="text-sm font-medium text-text-secondary mb-1">SLA Deadline</p>
                   {(() => {
@@ -360,7 +494,7 @@ export default function RequestDetailsPage() {
                   disabled={actionLoading}
                   onClick={() => {
                     if (confirm('Are you sure you want to cancel this request?')) {
-                      handleAction('CANCEL');
+                      handleAction('TRANSITION', { newStatus: 'CANCELLED' });
                     }
                   }}
                 >

@@ -75,3 +75,9 @@
   - [x] Implemented type-specific fields (e.g., leaveDays).
   - [x] Mapped specific fields to `metadata` JSON object.
   - [x] Bound form to existing POST `/api/requests` endpoint.
+
+- [x] ZOY-04: Hostel Complaint Workflow UI
+  - [x] Corrected canonical RequestType payload to exactly `COMPLAINT` and `OTHER`.
+  - [x] Implemented `?type=COMPLAINT` URL pre-selection workflow via `useSearchParams`.
+  - [x] Added strict complaint categories: Electrical, Plumbing, Furniture, Cleanliness, Room, Wi-Fi, Water, Other.
+  - [x] Added "Report Complaint" quick action to the student dashboard.

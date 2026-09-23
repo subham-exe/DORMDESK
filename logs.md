@@ -126,3 +126,13 @@
   - Mapped specific dynamic inputs to the `metadata` JSON object on the `CreateRequestPayload`.
 - **Blockers**: None.
 - **Next Actionable Step**: Begin ZOY-04 (Hostel Complaint specifics) and ZOY-05 (Request Tracking).
+
+## Iteration 13: ZOY-04 Hostel Complaint UI
+- **Date**: 2026-09-23
+- **Completed**:
+  - Rectified frontend payload violation by strictly passing `COMPLAINT` and `OTHER` as `requestType` to match canonical API schema.
+  - Initialized form with `?type=COMPLAINT` using `useSearchParams`.
+  - Upgraded Student Dashboard to include a visible "Report Complaint" action button pushing to the specific pre-filled route.
+  - Enforced strict category parameters (Electrical, Plumbing, etc.) without mutating backend DB structures or design system elements.
+- **Blockers**: None.
+- **Next Actionable Step**: Begin ZOY-05 (Request Tracking).
