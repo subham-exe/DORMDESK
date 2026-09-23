@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Send } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function CreateRequestPage() {
+function RequestForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialType = searchParams.get("type");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [requestType, setRequestType] = useState<string>("");
+  
+  // Validate initialType against supported types
+  const validTypes = ["COMPLAINT", "LEAVE", "CERTIFICATE", "OTHER"];
+  const defaultType = initialType && validTypes.includes(initialType.toUpperCase()) 
+    ? initialType.toUpperCase() 
+    : "";
+    
+  const [requestType, setRequestType] = useState<string>(defaultType);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -66,14 +77,16 @@ export default function CreateRequestPage() {
 
   const renderCategoryOptions = () => {
     switch (requestType) {
-      case "MAINTENANCE":
+      case "COMPLAINT":
         return (
           <>
-            <option value="ELECTRICAL">Electrical (Fan, Light, etc)</option>
-            <option value="PLUMBING">Plumbing (Water, Washroom)</option>
-            <option value="CARPENTRY">Carpentry (Bed, Door)</option>
-            <option value="CLEANING">Cleaning & Hygiene</option>
-            <option value="WIFI">Wi-Fi & Internet</option>
+            <option value="ELECTRICAL">Electrical</option>
+            <option value="PLUMBING">Plumbing</option>
+            <option value="FURNITURE">Furniture</option>
+            <option value="CLEANLINESS">Cleanliness</option>
+            <option value="ROOM">Room</option>
+            <option value="WIFI">Wi-Fi</option>
+            <option value="WATER">Water</option>
             <option value="OTHER">Other</option>
           </>
         );
@@ -95,25 +108,16 @@ export default function CreateRequestPage() {
             <option value="OTHER">Other</option>
           </>
         );
-      case "GENERAL":
+      case "OTHER":
       default:
         return <option value="OTHER">Other</option>;
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/student" passHref>
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
-        <h1 className="text-2xl font-bold">New Request</h1>
-      </div>
-
+    <>
       {error && (
-        <div className="p-4 bg-error-bg text-error rounded-md border border-error">
+        <div className="p-4 bg-error-bg text-error rounded-md border border-error mb-4">
           {error}
         </div>
       )}
@@ -134,17 +138,17 @@ export default function CreateRequestPage() {
                 onChange={(e) => setRequestType(e.target.value)}
               >
                 <option value="">Select a type...</option>
-                <option value="MAINTENANCE">Hostel Complaint / Maintenance</option>
+                <option value="COMPLAINT">Hostel Complaint / Maintenance</option>
                 <option value="LEAVE">Leave / Gate Pass</option>
                 <option value="CERTIFICATE">Certificate Request</option>
-                <option value="GENERAL">General Request</option>
+                <option value="OTHER">General Request</option>
               </Select>
             </div>
 
             {requestType && (
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Select id="category" name="category" required>
+                <Select id="category" name="category" required key={requestType}>
                   <option value="">Select category...</option>
                   {renderCategoryOptions()}
                 </Select>
@@ -167,7 +171,7 @@ export default function CreateRequestPage() {
               </div>
             )}
 
-            {requestType === "MAINTENANCE" && (
+            {requestType === "COMPLAINT" && (
               <div className="space-y-2">
                 <label htmlFor="location" className="text-sm font-medium leading-none">Location *</label>
                 <Input 
@@ -207,6 +211,31 @@ export default function CreateRequestPage() {
           </CardFooter>
         </form>
       </Card>
+    </>
+  );
+}
+
+export default function CreateRequestPage() {
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex items-center gap-4">
+        <Link href="/student" passHref>
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        </Link>
+        <h1 className="text-2xl font-bold">New Request</h1>
+      </div>
+
+      <Suspense fallback={
+        <Card>
+          <CardContent className="p-8 flex justify-center">
+            <Skeleton className="h-8 w-32" />
+          </CardContent>
+        </Card>
+      }>
+        <RequestForm />
+      </Suspense>
     </div>
   );
 }

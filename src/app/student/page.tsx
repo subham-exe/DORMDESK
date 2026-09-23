@@ -66,12 +66,20 @@ export default function StudentDashboard() {
           <h1 className="text-2xl font-bold text-text-primary">Welcome Back</h1>
           <p className="text-text-secondary">Here&apos;s what&apos;s happening today.</p>
         </div>
-        <Link href="/student/requests/new" passHref>
-          <Button size="lg" className="w-full sm:w-auto shadow-md">
-            <Plus className="mr-2 h-5 w-5" />
-            Create Request
-          </Button>
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <Link href="/student/requests/new?type=COMPLAINT" passHref>
+            <Button size="lg" variant="outline" className="w-full sm:w-auto shadow-sm border-warning text-warning hover:bg-warning-bg">
+              <AlertTriangle className="mr-2 h-5 w-5" />
+              Report Complaint
+            </Button>
+          </Link>
+          <Link href="/student/requests/new" passHref>
+            <Button size="lg" className="w-full sm:w-auto shadow-md">
+              <Plus className="mr-2 h-5 w-5" />
+              Create Request
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Overview Cards */}
