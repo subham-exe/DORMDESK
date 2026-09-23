@@ -177,3 +177,16 @@
   - Engineered the dedicated `src/app/student/scholarship/page.tsx` detail route displaying application info, dynamically mapped lifecycle timelines (incorporating exception scenarios like `REJECTED`), and embedded action prompts (e.g. "Submit Documents" leading into Universal Form) based on `ELIGIBLE` status.
 - **Blockers**: None.
 - **Next Actionable Step**: Begin ZOY-09 (Notifications).
+
+## Iteration 18: ZOY-09 Notifications & Announcements
+- **Date**: 2026-09-23
+- **Completed**:
+  - Found that the backend currently lacks `Notification` or `Announcement` database tables in `schema.prisma`. 
+  - To prevent architecture violation (creating dummy tables), engineered `/api/notifications` which cleanly derives real-time status alerts by aggregating `AuditLog` events tied to the student's `Request` instances. 
+  - Built `NotificationDropdown` overlay with mark-as-read tracking (cached safely in client `localStorage` given backend limitations).
+  - Wired up `NotificationDropdown` natively into desktop and mobile top-nav (`src/app/student/layout.tsx`).
+  - Implemented `/api/announcements` mock API that serves an array of active system broadcasts.
+  - Crafted dismissible announcement banner inside `src/app/student/page.tsx` maintaining state across sessions via `localStorage`.
+  - Executed robust testing verifying parsing consistency and responsive UX. Passed `npm run lint` and `npm run build`.
+- **Blockers**: None.
+- **Next Actionable Step**: Begin ZOY-10 (Offline/PWA).

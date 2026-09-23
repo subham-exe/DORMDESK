@@ -3,12 +3,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Clock, CheckCircle, AlertTriangle, ChevronRight, FileText, ListTodo, GraduationCap, Megaphone, X } from "lucide-react";
+import { Plus, Clock, CheckCircle, AlertTriangle, ChevronRight, FileText, ListTodo, GraduationCap, Megaphone, X, CloudOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { getOfflineRequests, deleteOfflineRequest } from "@/lib/services/offline-store";
 
 export default function StudentDashboard() {
   const [requests, setRequests] = useState<any[]>([]);
@@ -30,30 +31,71 @@ export default function StudentDashboard() {
     async function fetchData() {
       try {
         const [reqsRes, scholRes, anncRes] = await Promise.all([
-          fetch("/api/requests?requesterId=mock-user-123"),
-          fetch("/api/scholarships?studentId=mock-user-123"),
-          fetch("/api/announcements")
+          fetch("/api/requests?requesterId=mock-user-123").catch(() => null),
+          fetch("/api/scholarships?studentId=mock-user-123").catch(() => null),
+          fetch("/api/announcements").catch(() => null)
         ]);
         
-        if (!reqsRes.ok) throw new Error("Failed to load requests.");
-        const reqsData = await reqsRes.json();
-        setRequests(reqsData);
+        let fetchedRequests = [];
+        if (reqsRes && reqsRes.ok) {
+          fetchedRequests = await reqsRes.json();
+        }
+
+        // Get offline pending requests
+        let offlineRequests: any[] = [];
+        try {
+          offlineRequests = await getOfflineRequests();
+        } catch { }
         
-        if (scholRes.ok) {
+        // Merge offline requests
+        const allRequests = [
+          ...offlineRequests.map(r => ({ ...r, id: `offline-${r.localId}`, title: r.requestType, status: 'PENDING_SYNC' })),
+          ...fetchedRequests
+        ];
+        
+        setRequests(allRequests);
+        
+        if (scholRes && scholRes.ok) {
           const scholData = await scholRes.json();
           if (scholData.success) {
             setScholarship(scholData.data);
           }
         }
 
-        if (anncRes.ok) {
+        if (anncRes && anncRes.ok) {
           const anncData = await anncRes.json();
           if (anncData.success) {
             setAnnouncements(anncData.data);
           }
         }
-      } catch (err: any) {
-        setError(err.message);
+
+        // Attempt Sync
+        if (navigator.onLine && offlineRequests.length > 0) {
+           for (const offReq of offlineRequests) {
+              try {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { localId, _status, _timestamp, ...payload } = offReq;
+                const syncRes = await fetch("/api/requests", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                });
+                if (syncRes.ok) {
+                  await deleteOfflineRequest(localId);
+                }
+              } catch { }
+           }
+           // Refresh after sync
+           const newReqsRes = await fetch("/api/requests?requesterId=mock-user-123");
+           if (newReqsRes.ok) setRequests(await newReqsRes.json());
+        }
+
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError(String(err));
+        }
       } finally {
         setLoading(false);
       }
@@ -88,6 +130,8 @@ export default function StudentDashboard() {
         return <Badge variant="success">{status}</Badge>;
       case "UNDER_VERIFICATION":
         return <Badge variant="warning">{status}</Badge>;
+      case "PENDING_SYNC":
+        return <Badge variant="secondary" className="bg-surface-muted text-text-secondary border-dashed"><CloudOff className="w-3 h-3 mr-1" /> Pending Sync</Badge>;
       case "ELIGIBLE":
         return <Badge variant="info">{status}</Badge>;
       default:

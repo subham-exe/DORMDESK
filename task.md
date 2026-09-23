@@ -103,3 +103,11 @@
   - [x] Integrated Scholarship card into Student Dashboard.
   - [x] Created `src/app/student/scholarship/page.tsx` dedicated detail view.
   - [x] Displayed lifecycle tracking based on status enum from schema.
+
+- [x] ZOY-09: Notifications
+  - [x] Analyzed schemas, confirmed no dedicated Notification or Announcement tables exist.
+  - [x] Built `/api/notifications` API deriving an activity feed dynamically from `AuditLog` records for the user's requests.
+  - [x] Created a `NotificationDropdown` component encapsulating Bell icon, badging, unread-count, and mark-as-read `localStorage` persistence.
+  - [x] Injected `NotificationDropdown` securely into mobile and desktop headers inside `src/app/student/layout.tsx`.
+  - [x] Implemented `/api/announcements` mock API.
+  - [x] Embedded a dismissible Announcement Banner into `src/app/student/page.tsx` capturing mock output.

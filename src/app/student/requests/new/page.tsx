@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { saveOfflineRequest } from "@/lib/services/offline-store";
 
 function RequestForm() {
   const router = useRouter();
@@ -56,6 +57,13 @@ function RequestForm() {
     };
 
     try {
+      if (!navigator.onLine) {
+        await saveOfflineRequest(data);
+        alert("You are offline. Request saved locally and will sync when online.");
+        router.push("/student");
+        return;
+      }
+
       const response = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,8 +77,12 @@ function RequestForm() {
 
       const newRequest = await response.json();
       router.push(`/student/requests/${newRequest.data.id}`);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError(String(err));
+      }
       setLoading(false);
     }
   };
