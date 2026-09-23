@@ -11,6 +11,7 @@ generator client {
 model User {
   id             String    @id @default(uuid())
   email          String    @unique
+  password       String?
   name           String
   role           String    // Student, Warden, Admin, Faculty, Staff
   department     String?

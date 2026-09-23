@@ -2,7 +2,12 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const bcrypt = require('bcryptjs');
+
 async function main() {
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
   // Clear existing data
   await prisma.auditLog.deleteMany();
   await prisma.request.deleteMany();
@@ -14,6 +19,7 @@ async function main() {
   const student = await prisma.user.create({
     data: {
       email: 'student@example.com',
+      password: hashedPassword,
       name: 'Test Student',
       role: 'Student',
       department: 'Computer Science',
@@ -29,6 +35,7 @@ async function main() {
   await prisma.user.create({
     data: {
       email: 'warden@example.com',
+      password: hashedPassword,
       name: 'Warden John',
       role: 'Warden',
       hostel: 'Hostel B',
@@ -38,6 +45,7 @@ async function main() {
   const admin = await prisma.user.create({
     data: {
       email: 'admin@example.com',
+      password: hashedPassword,
       name: 'System Admin',
       role: 'Admin',
     },
@@ -46,6 +54,7 @@ async function main() {
   const staff = await prisma.user.create({
     data: {
       email: 'maintenance@example.com',
+      password: hashedPassword,
       name: 'Maintenance Staff B',
       role: 'Staff',
       department: 'Maintenance',
