@@ -49,12 +49,12 @@ Recurring Issue Intelligence
 
 ### A. Explainable Workflow Transparency
 **Status:** PLANNED
-**Evidence:** The student portal shows basic static timelines, but no dynamic text explanation is generated.
+**Evidence:** src/lib/admin/api.ts implements clustering logic, and src/app/student/requests/[id]/page.tsx renders the Incident Intelligence UI when a request is clustered. However, the automatic frontend \'Me Too\' detection logic during submission is still missing.
 Students should not see only "Status: Pending". They should see exact reasons:
 > "Why is this pending? The assigned technician has not acknowledged the request. SLA: 38 minutes remaining."
 
 ### B. Incident Intelligence & "Me Too"
-**Status:** BACKEND PRIMITIVE ONLY / PLANNED
+**Status:** PARTIALLY IMPLEMENTED
 **Evidence:** `clusterIntoIncident` exists in `RequestEngine`, but no UI or automatic detection logic exists for submission.
 When multiple students report the same issue (e.g. 12 students report a water outage), DormDesk groups these into an **Incident**.
 When DormDesk detects an existing incident, a new student submitting a request should see:

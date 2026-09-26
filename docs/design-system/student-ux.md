@@ -6,7 +6,7 @@ The Student UX is mobile-first, lightweight, and focused on clarity. It answers:
 - **Bottom Tab Bar (Mobile) / Sidebar (Desktop):**
   - Home
   - Requests (History/Tracking)
-  - Notifications
+  - Notices
   - Profile
 
 ## Student Home (The Hub)
@@ -26,17 +26,15 @@ The Student UX is mobile-first, lightweight, and focused on clarity. It answers:
 
 ### 3. Highlights
 - Quick view of Timetable (Next class) or Attendance summary.
-- Important unread Notices.
+- Important unread Notices and dismissible Announcements.
 
 ## Request Creation (Forms)
-- **Step-by-Step:** Complex forms (like Scholarship) should be broken into logical steps to avoid overwhelming the user.
 - **Assistance:** Use clear labels, placeholder text, and helper text below inputs.
-- **Smart Defaults:** Pre-fill known data (Name, ID, Room Number).
 
 ## Request Details
 When a student taps an active request:
 - **Header:** Status and ID.
-- **Timeline:** A vertical timeline component showing the Universal Request Engine states (Created → Routed → Processing → Resolved).
+- **Timeline:** A vertical timeline component showing the Universal Request Engine states (Submitted → Assigned → Acknowledged → In Progress → Resolved → Verified → Closed).
 - **Communication:** If the admin/staff left a comment (e.g., "Parts ordered"), it appears in the timeline.
 - **Resolution Action:** If status is RESOLVED, prompt the student to VERIFY (Accept or Reopen).
 

@@ -93,7 +93,7 @@ shared.
                        |
                    SLA ENGINE
                        |
-              INCIDENT INTELLIGENCE (PLANNED)
+              INCIDENT INTELLIGENCE
                        |
             RESOLUTION + EVIDENCE
                        |
@@ -133,7 +133,7 @@ All database access goes through the server-side application and Prisma.
                                                   reliable for prototype
 
   Authentication          Application-managed     No paid auth provider
-                          auth                    
+                          auth
 
   PWA                     Web App Manifest +      Installable and
                           Service Worker          low-bandwidth capable
@@ -142,10 +142,10 @@ All database access goes through the server-side application and Prisma.
                                                   browser-side data
 
   QR                      Open-source browser QR  No paid scanner service
-                          library                 
+                          library
 
   Charts                  Open-source chart       Admin analytics
-                          library                 
+                          library
 
   Source control          Git + GitHub            Free collaboration
 
@@ -382,9 +382,7 @@ Every operational request should follow a common lifecycle.
 ``` text
 CREATE
   ↓
-CLASSIFY
-  ↓
-ROUTE
+PENDING (or APPROVED if Leave <= 2 days)
   ↓
 ASSIGN
   ↓
@@ -396,7 +394,7 @@ RESOLVE
   ↓
 VERIFY
   ↓
-CLOSE
+CLOSE (Auto-triggered upon VERIFY) (Auto-triggered upon VERIFY)
 ```
 
 Exceptions such as rejection, cancellation, reopening, escalation, and
@@ -1598,3 +1596,27 @@ The product remains the same.
 
 > **one app. one identity. one request engine. one source of truth. zero
 > paid dependencies. local-first demo.**
+
+## STABILIZATION ADDENDUM (Fix 11)
+
+### Request Lifecycle Updates
+- The
+esolvedAt timestamp is strictly set to
+ew Date() when a request enters a terminal state (RESOLVED, APPROVED, CANCELLED, REJECTED, CLOSED).
+- If a request transitions backwards from a terminal state to a Work-in-Progress (WIP) state (PROCESSING, ASSIGNED, ACKNOWLEDGED), the
+esolvedAt timestamp is automatically cleared (
+ull).
+- SLA calculation halts as long as the request is in any terminal or resolved state (RESOLVED, VERIFIED, CLOSED, REJECTED, APPROVED, CANCELLED).
+
+### Implemented RBAC Roles
+- **Admin:** Universal access (domain: Any, scope: Any).
+- **Warden:** Can manage requests and incidents in their hostel (domain: Request, Incident, User, scope: Hostel, Own).
+- **Faculty:** Can view/process department requests (domain: Request, User, scope: Department, Own).
+- **Staff:** Can manage requests and scholarships (domain: Request, Incident, Scholarship, scope: Department, Own, Any).
+- **Student:** Can only manage their own data (domain: Request, Scholarship, User, scope: Own).
+- **Rule:** Students are strictly forbidden from rejecting requests.
+
+### Audit & Notification Hooks
+- **Zero-Touch Auto-Approval:** Leave requests of <= 2 days bypass PENDING directly to APPROVED, logging an AUTO_APPROVED audit event.
+- **Auto-Close:** Transitioning a request to VERIFIED automatically chains a system transition to CLOSED, accompanied by the audit note 'System: Auto-closed after verification'.
+- **Status Change:** Status transitions trigger an audit event STATUS_CHANGED and an in-app notification STATUS_CHANGED_{newStatus} to the requester.

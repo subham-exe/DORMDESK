@@ -70,7 +70,7 @@ There is currently **zero real backend infrastructure** for scholarships.
 - **Current Mock:** Isolated mock `ScholarshipApplication` models exist in `AdminAPI`.
 - **Action Required:** 
   1. Create Prisma models for Scholarships.
-  2. Implement backend workflow validation (`PENDING_REVIEW` $\rightarrow$ `UNDER_VERIFICATION` $\rightarrow$ `APPROVED` $\rightarrow$ `DISBURSED`).
+  2. Implement backend workflow validation (`SUBMITTED` $\rightarrow$ `UNDER_VERIFICATION` $\rightarrow$ `APPROVED` $\rightarrow$ `DISBURSED`).
   3. Wire `AdminAPI.listScholarshipApplications` and `updateScholarshipStatus` to the new backend.
 
 ---

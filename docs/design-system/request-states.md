@@ -6,10 +6,8 @@ The Universal Request Engine dictates that all requests—regardless of type—f
 
 | State | Meaning | Badge Visual | Icon |
 |-------|---------|--------------|------|
-| **DRAFT** | Created but not submitted (offline queue) | Grey background, dark grey text | File/Edit |
-| **SUBMITTED** | Created, pending classification | Blue 50 bg, Blue text | Inbox / Send |
-| **CLASSIFIED**| Categorized, awaiting routing | Blue 50 bg, Blue text | Tag |
-| **ROUTED** | Sent to the correct department | Blue 50 bg, Blue text | Arrow Right |
+| **PENDING** | Created, awaiting assignment or auto-approval | Blue 50 bg, Blue text | Inbox |
+| **PENDING_SYNC** | Created offline, waiting to sync | Dashed border, Gray text | CloudOff |
 | **ASSIGNED** | A specific person is responsible | Yellow 50 bg, Yellow text | User Check |
 | **ACKNOWLEDGED** | Assignee has seen it and accepted it | Yellow 50 bg, Yellow text | Eye |
 | **PROCESSING** | Work is actively happening | Yellow 50 bg, Yellow text | Loader / Activity |

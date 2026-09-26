@@ -43,7 +43,7 @@ You own the administrative dashboard and staff tools.
 
 ## PHASE 9: Scholarship Administration Visibility
 - **Task ID:** BON-10
-- **Objective:** Build views for current-year status distribution (Pending vs. Disbursed) and filters for academic year/scope.
+- **Objective:** Build views for current-year status distribution (Pending vs. Disbursed) and text search by student name, student ID, and application number.
 
 ## PHASE 10: Integration
 - **Task ID:** BON-11

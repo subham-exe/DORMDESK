@@ -7,8 +7,8 @@ The Scholarship tracking feature requires a distinct lifecycle within the Univer
 2. **Applied:** Application started but incomplete. (Neutral/Info styling)
 3. **Submitted:** Sent for verification. (Info styling)
 4. **Under Verification:** Being reviewed by staff. (Warning/Yellow styling)
-5. **Approved:** Verification passed, waiting for funds. (Primary/Blue styling)
-6. **Sanctioned:** Funds allocated. (Primary/Blue styling)
+5. **Approved:** Verification passed, waiting for funds. (Success/Green styling)
+6. **Sanctioned:** Funds allocated. (Success/Green styling)
 7. **Disbursed:** Funds transferred to the student's account. (Success/Green styling)
 
 ## CRITICAL: Approved vs. Disbursed

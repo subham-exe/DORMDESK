@@ -21,7 +21,7 @@ DormDesk is a campus-wide operations platform, not just a hostel management app.
 - **Zero-Touch Approval:** Hardcoded leave policy automatically approves short leaves.
 
 **PROTOTYPE / PARTIAL:**
-- **Student Verification:** The verification state exists in the workflow model, and mock UI exists in the student portal, but the transition API is not yet wired.
+- **Student Verification:** The verification state exists in the workflow model, and the student portal allows verifying resolved requests (which triggers auto-close).
 - **SLA Tracking:** SLA targets are calculated and visualized, but automatic escalation policies are pending.
 
 **BACKEND PRIMITIVE / NOT FULLY IMPLEMENTED:**

@@ -18,12 +18,12 @@ Next.js (frontend + API routes, one codebase) · SQLite + Prisma. The primary ha
 
 **Goal:** one workflow works end to end. Ugly UI is fine; wrong data model is not.
 
-- [ ] Project skeleton on Next.js, repo set up, local network deployment tested (run on host laptop on day 1, not day 14)
-- [ ] Prisma schema for the **unified Request model**: type, requester, assignee, status, priority, SLA due date, escalation level, audit log — lock this before any workflow code is written
-- [ ] Auth + roles (student, warden, admin — minimum viable, hierarchy config can be simple/hard-coded for now)
-- [ ] Backend: Complaint workflow fully wired to the Request model (submit → route → status)
-- [ ] Frontend: student request form + "my requests" status view, calling the real API (no mocked data)
-- [ ] Clock service stub in place (SLA/escalation reads time from one function, not `Date.now()` scattered everywhere) — needed for Week 2's live SLA breach demo
+- [x] Project skeleton on Next.js, repo set up, local network deployment tested (run on host laptop on day 1, not day 14)
+- [x] Prisma schema for the **unified Request model**: type, requester, assignee, status, priority, SLA due date, escalation level, audit log — lock this before any workflow code is written
+- [x] Auth + roles (student, warden, admin — minimum viable, hierarchy config can be simple/hard-coded for now)
+- [x] Backend: Complaint workflow fully wired to the Request model (submit → route → status)
+- [x] Frontend: student request form + "my requests" status view, calling the real API (no mocked data)
+- [x] Clock service stub in place (SLA/escalation reads time from one function, not `Date.now()` scattered everywhere) — needed for Week 2's live SLA breach demo
 
 **End-of-week checkpoint:** a student can submit a complaint and see its real status. If this isn't true by Sep 25, Week 2 scope needs to shrink.
 
@@ -33,13 +33,13 @@ Next.js (frontend + API routes, one codebase) · SQLite + Prisma. The primary ha
 
 **Goal:** 3 workflows live, Operations Command Center real, first zero-touch rule working.
 
-- [ ] Add Leave/Gate-Pass and Certificate workflows **onto the same engine** — this is the test of Week 1's data model. If adding them requires new tables or duplicated logic, the foundation is wrong; fix it before moving on.
-- [ ] Admin dashboard: pending count, ageing buckets, resolution time, one recurring-issue flag, staff workload — this alone covers the 20%-weighted admin-visibility criterion
-- [ ] Zero-touch rule #1: leave ≤2 days auto-approves (Differentiator 2) — cheap, high payoff, do this before anything fancier
-- [ ] Certificate auto-issue with a QR verification page
-- [ ] Duplicate detection + Nudge button (Differentiator 3) — block resubmission of an open request, show "already pending since [time]"
-- [ ] Notice/notification board with read tracking (in-app only — skip SMS integration, simulator only per §3A)
-- [ ] Scholarship Status Tracking — student visibility into current-year scholarship state (ELIGIBLE → APPLIED → ... → DISBURSED) + seeded demo data.
+- [x] Add Leave/Gate-Pass and Certificate workflows **onto the same engine** — this is the test of Week 1's data model. If adding them requires new tables or duplicated logic, the foundation is wrong; fix it before moving on.
+- [x] Admin dashboard: pending count, ageing buckets, resolution time, one recurring-issue flag, staff workload — this alone covers the 20%-weighted admin-visibility criterion
+- [x] Zero-touch rule #1: leave ≤2 days auto-approves (Differentiator 2) — cheap, high payoff, do this before anything fancier
+- [x] Certificate auto-issue with a QR verification page
+- [x] Duplicate detection + Nudge button (Differentiator 3) — block resubmission of an open request, show "already pending since [time]"
+- [x] Notice/notification board with read tracking (in-app only — skip SMS integration, simulator only per §3A)
+- [x] Scholarship Status Tracking — student visibility into current-year scholarship state (ELIGIBLE → APPLIED → ... → DISBURSED) + seeded demo data.
 - [ ] **Stretch, only if backend has real slack:** config-driven new request type (Differentiator 1) — attempt this now, not in Week 3, so there's time to fix it if it breaks
 
 **End-of-week checkpoint:** all 3 workflows work, the dashboard shows real (not fake) ageing/workload numbers, and at least one request type never touches a human.

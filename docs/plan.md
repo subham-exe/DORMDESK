@@ -967,15 +967,15 @@ Prioritize working end-to-end workflows over feature count.
 - Login/authentication [IMPLEMENTED]
 - Role + permission system
 - Student dashboard
-- Staff dashboard [PLANNED]
-- Admin dashboard [PLANNED]
+- Staff dashboard [IMPLEMENTED]
+- Admin dashboard [IMPLEMENTED]
 - Universal request engine [IMPLEMENTED]
 - Complaint/incident workflow
-- Leave/gate-pass workflow [IMPLEMENTED (Partial)]
-- Notification system [PLANNED]
+- Leave/gate-pass workflow [IMPLEMENTED]
+- Notification system [IMPLEMENTED]
 - Audit trail
-- SLA + escalation (via simulated demo clock) [PLANNED]
-- Incident clustering/matching [BACKEND PRIMITIVE ONLY]
+- SLA + escalation (via simulated demo clock) [IMPLEMENTED]
+- Incident clustering/matching [IMPLEMENTED]
 - Hostel + day-scholar context
 
 ## P1 - Strong differentiators
