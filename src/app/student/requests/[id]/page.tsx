@@ -40,6 +40,8 @@ export default function RequestDetailsPage() {
   
   // For Reopen action
   const [showReopen, setShowReopen] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [reopenReason, setReopenReason] = useState("");
 
   const fetchData = async () => {
@@ -98,6 +100,7 @@ export default function RequestDetailsPage() {
 
   const handleAction = async (action: string, payload: any = {}) => {
     setActionLoading(true);
+    setActionError(null);
     try {
       let newStatus = payload.newStatus;
       const notes = payload.reason;
@@ -125,9 +128,11 @@ export default function RequestDetailsPage() {
       
       // Refresh data
       setShowReopen(false);
+      setShowCancelConfirm(false);
+      setActionError(null);
       await fetchData();
     } catch (err: any) {
-      alert(err.message);
+      setActionError(err.message);
     } finally {
       setActionLoading(false);
     }
@@ -270,7 +275,7 @@ export default function RequestDetailsPage() {
     }
   };
 
-  const canCancel = ["PENDING", "ASSIGNED"].includes(request.status);
+  const canCancel = ["PENDING", "ASSIGNED", "ACKNOWLEDGED", "PROCESSING"].includes(request.status);
   const isResolved = request.status === "RESOLVED";
   const isGatePassValid = request.requestType === "LEAVE" && (request.status === "APPROVED" || request.status === "CLOSED");
   const isCertificateValid = request.requestType === "CERTIFICATE" && (request.status === "APPROVED" || request.status === "CLOSED");
@@ -386,7 +391,7 @@ export default function RequestDetailsPage() {
               <div className="flex flex-col gap-3 min-w-[150px]">
                 <Button 
                   className="w-full bg-success hover:bg-success/90 text-white"
-                  onClick={() => alert("Downloading certificate...")}
+                  onClick={() => setActionError("Certificate generation is not yet available in this environment.")}
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Download PDF
@@ -643,19 +648,42 @@ export default function RequestDetailsPage() {
             <Card className="border-error bg-error-bg/30">
               <CardContent className="p-4">
                 <p className="text-xs text-text-secondary mb-3">You can cancel this request because it has not been assigned or processed yet.</p>
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  className="w-full"
-                  disabled={actionLoading}
-                  onClick={() => {
-                    if (confirm('Are you sure you want to cancel this request?')) {
-                      handleAction('TRANSITION', { newStatus: 'CANCELLED' });
-                    }
-                  }}
-                >
-                  Cancel Request
-                </Button>
+                {actionError && <div className="text-error text-sm mb-3 bg-error-bg p-2 rounded">{actionError}</div>}
+                {!showCancelConfirm ? (
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="w-full"
+                    disabled={actionLoading}
+                    onClick={() => setShowCancelConfirm(true)}
+                  >
+                    Cancel Request
+                  </Button>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm font-medium text-error">Are you sure you want to cancel?</p>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="flex-1"
+                        disabled={actionLoading}
+                        onClick={() => handleAction('TRANSITION', { newStatus: 'CANCELLED' })}
+                      >
+                        Yes, Cancel
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        disabled={actionLoading}
+                        onClick={() => setShowCancelConfirm(false)}
+                      >
+                        No, Keep
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

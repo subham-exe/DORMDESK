@@ -4,11 +4,11 @@ import { AuditService } from './audit';
 import { NotificationService } from './notification';
 
 const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
-  PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED', 'APPROVED', 'CANCELLED'],
+  PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED', 'APPROVED', 'CANCELLED', 'RESOLVED'],
   ASSIGNED: ['ACKNOWLEDGED', 'REJECTED', 'CANCELLED'],
-  ACKNOWLEDGED: ['PROCESSING', 'RESOLVED'],
-  PROCESSING: ['RESOLVED', 'ASSIGNED'], // Can be reassigned
-  RESOLVED: ['VERIFIED', 'PROCESSING'], // Verification fail -> back to processing
+  ACKNOWLEDGED: ['PROCESSING', 'RESOLVED', 'CANCELLED', 'REJECTED'],
+  PROCESSING: ['RESOLVED', 'ASSIGNED', 'CANCELLED', 'REJECTED'],
+  RESOLVED: ['VERIFIED', 'PROCESSING'],
   VERIFIED: ['CLOSED'],
   APPROVED: ['CLOSED'],
   CLOSED: [],
@@ -102,7 +102,7 @@ export class RequestEngine {
     return updated;
   }
 
-  static async transitionStatus(payload: TransitionRequestPayload) {
+  static async transitionStatus(payload: TransitionRequestPayload): Promise<unknown> {
     const request = await prisma.request.findUnique({ where: { id: payload.requestId } });
     if (!request) throw new Error('Request not found');
 
@@ -111,21 +111,42 @@ export class RequestEngine {
       throw new Error(`Invalid transition from ${request.status} to ${payload.newStatus}`);
     }
 
+    if (payload.newStatus === 'REJECTED') {
+      const actor = await prisma.user.findUnique({ where: { id: payload.actorId } });
+      if (actor?.role === 'Student') {
+        throw new Error('Students cannot reject requests');
+      }
+    }
+
+    const isTerminal = ['RESOLVED', 'APPROVED', 'CANCELLED', 'REJECTED', 'CLOSED'].includes(payload.newStatus);
+    const isWIP = ['PROCESSING', 'ASSIGNED', 'ACKNOWLEDGED'].includes(payload.newStatus);
+
     const updated = await prisma.request.update({
       where: { id: payload.requestId },
       data: {
         status: payload.newStatus,
-        resolvedAt: payload.newStatus === 'RESOLVED' ? new Date() : (payload.newStatus === 'PROCESSING' || payload.newStatus === 'ASSIGNED' ? null : undefined), updatedAt: new Date(),
+        resolvedAt: isTerminal ? new Date() : (isWIP ? null : undefined),
+        updatedAt: new Date(),
       },
     });
 
     await logAudit(updated.id, payload.actorId, 'STATUS_CHANGED', { newStatus: payload.newStatus, notes: payload.notes });
     await triggerNotification(updated.id, `STATUS_CHANGED_${payload.newStatus}`);
 
+    // Auto-transition VERIFIED to CLOSED
+    if (payload.newStatus === 'VERIFIED') {
+      return await RequestEngine.transitionStatus({
+        requestId: payload.requestId,
+        newStatus: 'CLOSED',
+        actorId: payload.actorId,
+        notes: 'System: Auto-closed after verification'
+      });
+    }
+
     return updated;
   }
 
-  static async clusterIntoIncident(requestIds: string[], title: string, description: string, category: string, location: string, department: string) {
+  static async clusterIntoIncident(requestIds: string[], title: string, description: string, category: string, location: string, department: string, actorId: string) {
     const incident = await prisma.incident.create({
       data: {
         title,
@@ -137,11 +158,43 @@ export class RequestEngine {
       },
     });
 
-    await prisma.request.updateMany({
-      where: { id: { in: requestIds } },
-      data: { incidentId: incident.id, updatedAt: new Date() },
-    });
+    for (const id of requestIds) {
+      const request = await prisma.request.findUnique({ where: { id } });
+      if (!request) continue;
+      
+      // Basic state validation: don't cluster terminal requests
+      if (['RESOLVED', 'VERIFIED', 'CLOSED', 'REJECTED', 'APPROVED', 'CANCELLED'].includes(request.status)) {
+        continue;
+      }
+
+      await prisma.request.update({
+        where: { id },
+        data: { incidentId: incident.id, updatedAt: new Date() },
+      });
+
+      await logAudit(id, actorId, 'ATTACHED_TO_INCIDENT', { incidentId: incident.id });
+      await triggerNotification(id, 'ATTACHED_TO_INCIDENT');
+    }
 
     return incident;
+  }
+
+  static async attachToIncident(incidentId: string, requestIds: string[], actorId: string) {
+    for (const id of requestIds) {
+      const request = await prisma.request.findUnique({ where: { id } });
+      if (!request) continue;
+
+      if (['RESOLVED', 'VERIFIED', 'CLOSED', 'REJECTED', 'APPROVED', 'CANCELLED'].includes(request.status)) {
+        continue;
+      }
+
+      await prisma.request.update({
+        where: { id },
+        data: { incidentId, updatedAt: new Date() },
+      });
+
+      await logAudit(id, actorId, 'ATTACHED_TO_INCIDENT', { incidentId });
+      await triggerNotification(id, 'ATTACHED_TO_INCIDENT');
+    }
   }
 }

@@ -59,8 +59,8 @@ function RequestForm() {
     try {
       if (!navigator.onLine) {
         await saveOfflineRequest(data);
-        alert("You are offline. Request saved locally and will sync when online.");
-        router.push("/student");
+        setError("You are offline. Request saved locally and will sync when online. Redirecting...");
+        setTimeout(() => router.push("/student"), 2500);
         return;
       }
 
@@ -157,7 +157,7 @@ function RequestForm() {
               </Select>
             </div>
 
-            {requestType && (
+            {requestType && requestType !== "OTHER" && (
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
                 <Select id="category" name="category" required key={requestType}>
@@ -165,6 +165,10 @@ function RequestForm() {
                   {renderCategoryOptions()}
                 </Select>
               </div>
+            )}
+            
+            {requestType === "OTHER" && (
+              <input type="hidden" name="category" value="OTHER" />
             )}
 
             {requestType === "LEAVE" && (

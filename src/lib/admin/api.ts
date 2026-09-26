@@ -1,6 +1,7 @@
 import { RequestStatus, RequestPriority, RequestType } from "../types/request";
 import { prisma } from "../db/prisma";
 import { RequestEngine } from "../services/request-engine";
+import { requireAuth } from "../auth/session";
 
 export interface AdminRequest {
   id: string;
@@ -60,7 +61,7 @@ export interface ScholarshipStats {
   disbursed: number;
 }
 
-export type ScholarshipStatus = "PENDING_REVIEW" | "UNDER_VERIFICATION" | "APPROVED" | "REJECTED" | "DISBURSED";
+export type ScholarshipStatus = "SUBMITTED" | "UNDER_VERIFICATION" | "APPROVED" | "REJECTED" | "DISBURSED";
 
 export interface ScholarshipApplication {
   id: string;
@@ -163,14 +164,8 @@ function mapToAdminRequest(req: any): AdminRequest {
 }
 
 // Helper for hackathon basic RBAC logic
-export async function verifyAdminAuthority(actorId?: string) {
-  if (!actorId) {
-    // If not provided by client, fallback to fetching any admin for the demo
-    const defaultAdmin = await prisma.user.findFirst({ where: { role: { in: ['Admin', 'Warden'] } } });
-    if (!defaultAdmin) throw new Error("No admin user found in database");
-    return defaultAdmin;
-  }
-  const user = await prisma.user.findUnique({ where: { id: actorId } });
+export async function verifyAdminAuthority() {
+  const user = await requireAuth();
   if (!user || !['Admin', 'Warden', 'Staff', 'Faculty'].includes(user.role)) {
     throw new Error("Unauthorized: Actor is not an admin or staff");
   }
@@ -310,18 +305,15 @@ export const AdminAPI = {
   },
 
   async groupRequestsIntoIncident(incidentId: string | null, title: string, requestIds: string[]): Promise<string | null> {
+    const actor = await verifyAdminAuthority();
     const targetIncidentId: string | null = incidentId;
     
     // In a real app, you might find existing incident ID if they are already grouped
     if (!targetIncidentId) {
-      const inc = await RequestEngine.clusterIntoIncident(requestIds, title, "Grouped Incident", "General", "Multiple", "General");
+      const inc = await RequestEngine.clusterIntoIncident(requestIds, title, "Grouped Incident", "General", "Multiple", "General", actor.id);
       return inc.id;
     } else {
-      // Just update existing
-      await prisma.request.updateMany({
-        where: { id: { in: requestIds } },
-        data: { incidentId: targetIncidentId }
-      });
+      await RequestEngine.attachToIncident(targetIncidentId, requestIds, actor.id);
       return targetIncidentId;
     }
   },

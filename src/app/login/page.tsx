@@ -6,11 +6,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
-export default function AdminLoginPage() {
+export default function StudentLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [staffId, setStaffId] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
 
@@ -23,7 +24,7 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: staffId, password: password })
+        body: JSON.stringify({ email, password })
       });
 
       if (!res.ok) {
@@ -33,7 +34,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      router.push("/admin");
+      router.push("/student");
     } catch (err) {
       console.error(err);
       setError("An error occurred during login.");
@@ -43,10 +44,10 @@ export default function AdminLoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-muted p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md shadow-lg border-primary/20">
         <CardHeader className="space-y-2 text-center pb-6">
-          <CardTitle className="text-2xl">DormDesk Admin</CardTitle>
-          <p className="text-sm text-text-secondary">Operations Command Center</p>
+          <CardTitle className="text-3xl text-primary font-bold">DormDesk</CardTitle>
+          <p className="text-sm text-text-secondary">Student Portal Login</p>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
@@ -56,18 +57,21 @@ export default function AdminLoginPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="staffId">Staff ID / Email</Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input
-                id="staffId"
-                placeholder="e.g. admin@dormdesk.edu"
+                id="email"
+                type="email"
+                placeholder="student@dormdesk.edu"
                 required
                 disabled={loading}
-                value={staffId}
-                onChange={(e) => setStaffId(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+              </div>
               <Input
                 id="password"
                 type="password"
@@ -79,10 +83,13 @@ export default function AdminLoginPage() {
               />
             </div>
           </CardContent>
-          <CardFooter>
-            <Button className="w-full" type="submit" disabled={loading}>
+          <CardFooter className="flex-col gap-4">
+            <Button className="w-full" type="submit" disabled={loading} size="lg">
               {loading ? "Authenticating..." : "Sign In"}
             </Button>
+            <div className="text-sm text-center text-text-secondary">
+              Staff or Admin? <Link href="/admin/login" className="text-info hover:underline">Log in here</Link>
+            </div>
           </CardFooter>
         </form>
       </Card>

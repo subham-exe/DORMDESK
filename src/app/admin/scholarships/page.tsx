@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 function getStatusBadge(status: ScholarshipStatus) {
   switch (status) {
-    case "PENDING_REVIEW":
+    case "SUBMITTED":
       return <Badge variant="warning">Pending Review</Badge>;
     case "UNDER_VERIFICATION":
       return <Badge variant="info">Under Verification</Badge>;
@@ -27,11 +27,21 @@ function getStatusBadge(status: ScholarshipStatus) {
   }
 }
 
-export default async function AdminScholarshipsPage() {
-  const [stats, applications] = await Promise.all([
+export default async function AdminScholarshipsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const resolvedParams = await searchParams;
+  const query = resolvedParams.q?.toLowerCase() || "";
+
+  const [stats, allApplications] = await Promise.all([
     AdminAPI.getScholarshipStats(new Date().getFullYear().toString()),
     AdminAPI.listScholarshipApplications()
   ]);
+
+  const applications = allApplications.filter(app => {
+    if (!query) return true;
+    return app.studentName.toLowerCase().includes(query) || 
+           app.studentId.toLowerCase().includes(query) || 
+           app.applicationNumber.toLowerCase().includes(query);
+  });
 
   return (
     <div className="space-y-6 pb-10">
@@ -79,16 +89,16 @@ export default async function AdminScholarshipsPage() {
         <CardHeader className="border-b border-border bg-surface-muted/50 pb-4">
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
             <CardTitle className="text-lg">Applications</CardTitle>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <form action="/admin/scholarships" method="GET" className="flex items-center gap-2 w-full sm:w-auto">
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-text-secondary" />
-                <Input placeholder="Search student or ID..." className="pl-9 h-9" />
+                <Input name="q" defaultValue={resolvedParams.q || ""} placeholder="Search student or ID..." className="pl-9 h-9" />
               </div>
-              <Button variant="outline" size="sm" className="h-9">
+              <Button type="submit" variant="outline" size="sm" className="h-9">
                 <Filter className="w-4 h-4 mr-2" />
                 Filter
               </Button>
-            </div>
+            </form>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -96,7 +106,7 @@ export default async function AdminScholarshipsPage() {
             <div className="p-8">
               <EmptyState 
                 title="No Applications Found" 
-                description="There are currently no scholarship applications in the system." 
+                description={query ? "No applications match your search." : "There are currently no scholarship applications in the system."}
               />
             </div>
           ) : (

@@ -8,9 +8,11 @@ import { ScholarshipApplication, ScholarshipStatus } from "@/lib/admin/api";
 export function ScholarshipActionsClient({ application }: { application: ScholarshipApplication }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleUpdate = async (newStatus: ScholarshipStatus) => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/scholarships/${application.id}/status`, {
         method: "POST",
@@ -20,10 +22,11 @@ export function ScholarshipActionsClient({ application }: { application: Scholar
       if (res.ok) {
         router.refresh();
       } else {
-        alert("Failed to update status");
+        const errorData = await res.json().catch(() => ({}));
+        setError(errorData.error || "Failed to update status");
       }
     } catch {
-      alert("Error updating status");
+      setError("Error updating status");
     } finally {
       setLoading(false);
     }
@@ -31,7 +34,7 @@ export function ScholarshipActionsClient({ application }: { application: Scholar
 
   const getAvailableActions = () => {
     switch (application.status) {
-      case "PENDING_REVIEW":
+      case "SUBMITTED":
         return (
           <Button variant="primary" onClick={() => handleUpdate("UNDER_VERIFICATION")} disabled={loading}>
             Start Verification
@@ -43,7 +46,7 @@ export function ScholarshipActionsClient({ application }: { application: Scholar
             <Button variant="primary" onClick={() => handleUpdate("APPROVED")} disabled={loading}>
               Approve
             </Button>
-            <Button variant="outline" onClick={() => handleUpdate("REJECTED")} disabled={loading} className="text-error">
+            <Button variant="outline" onClick={() => handleUpdate("REJECTED")} disabled={loading} className="text-error border-error hover:bg-error-bg">
               Reject
             </Button>
           </>
@@ -60,8 +63,11 @@ export function ScholarshipActionsClient({ application }: { application: Scholar
   };
 
   return (
-    <div className="flex gap-2">
-      {getAvailableActions()}
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2">
+        {getAvailableActions()}
+      </div>
+      {error && <div className="text-sm text-error">{error}</div>}
     </div>
   );
 }

@@ -25,12 +25,12 @@ export function AdminMobileNav() {
             href={item.href}
             aria-label={item.label}
             aria-current={isActive ? "page" : undefined}
-            className={`flex flex-col items-center justify-center w-full h-full gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
+            className={`flex flex-col items-center justify-center w-full h-full min-h-[44px] gap-1 px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
               isActive ? "text-info" : "text-text-secondary"
             }`}
           >
-            <item.icon className="w-5 h-5" />
-            <span className="text-[10px] font-medium truncate w-full text-center px-1">{item.label}</span>
+            <item.icon className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="text-[11px] sm:text-xs font-medium truncate w-full text-center">{item.label}</span>
           </Link>
         );
       })}

@@ -13,7 +13,7 @@ export class SLAService {
    */
   static evaluate(request: Request, now: Date): SLAEvaluationResult | null {
     // If request is in a terminal/resolved state, SLA no longer applies
-    if (['RESOLVED', 'VERIFIED', 'CLOSED', 'REJECTED'].includes(request.status)) {
+    if (['RESOLVED', 'VERIFIED', 'CLOSED', 'REJECTED', 'APPROVED', 'CANCELLED'].includes(request.status)) {
       return null;
     }
     

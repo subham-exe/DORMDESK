@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { AdminAPI } from "@/lib/admin/api";
+import { AdminAPI, verifyAdminAuthority } from "@/lib/admin/api";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await verifyAdminAuthority();
     const { id } = await params;
     const body = await req.json();
     const { notes } = body;
@@ -16,6 +17,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
     if (err instanceof Error) {
+      if (err.message.includes('UNAUTHORIZED') || err.message.includes('Unauthorized') || err.message === 'FORBIDDEN') {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
       return NextResponse.json({ error: err.message }, { status: 500 });
     }
     return NextResponse.json({ error: "Unknown error" }, { status: 500 });

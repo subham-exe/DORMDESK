@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 function getStatusBadge(status: ScholarshipStatus) {
   switch (status) {
-    case "PENDING_REVIEW":
+    case "SUBMITTED":
       return <Badge variant="warning">Pending Review</Badge>;
     case "UNDER_VERIFICATION":
       return <Badge variant="info">Under Verification</Badge>;

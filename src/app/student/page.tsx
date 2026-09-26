@@ -286,7 +286,9 @@ export default function StudentDashboard() {
               <GraduationCap className="w-8 h-8 mx-auto text-text-secondary mb-2" />
               <p className="font-medium">No Active Scholarships</p>
               <p className="text-sm text-text-secondary mb-4">You have not applied for or been awarded any scholarships yet.</p>
-              <Button variant="outline" size="sm" onClick={() => alert("Redirecting to application portal...")}>Apply Now</Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/student/scholarship">Apply Now</Link>
+              </Button>
             </CardContent>
           </Card>
         )}

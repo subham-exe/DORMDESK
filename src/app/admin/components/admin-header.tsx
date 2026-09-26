@@ -11,7 +11,6 @@ export function AdminHeader() {
   if (pathname.startsWith("/admin/incidents")) title = "Incidents";
   if (pathname.startsWith("/admin/analytics")) title = "Analytics";
   if (pathname.startsWith("/admin/scholarships")) title = "Scholarships";
-  if (pathname.startsWith("/admin/settings")) title = "Settings";
 
   return (
     <header className="md:hidden bg-surface border-b border-border p-4 sticky top-0 z-10 flex justify-between items-center">
