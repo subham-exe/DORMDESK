@@ -278,6 +278,29 @@ async function main() {
   await prisma.messFeedback.create({ data: { menuId: m1.id, studentId: users.student2.id, rating: 4 } });
   await prisma.messFeedback.create({ data: { menuId: m2.id, studentId: users.student1.id, rating: 3, comment: 'Paneer was a bit tough' } });
 
+  
+  console.log('Seeding SMS Outbox...');
+  await prisma.smsOutbox.deleteMany();
+  await prisma.smsOutbox.create({
+    data: {
+      recipientId: users.student1.id,
+      phoneNumber: '+91-555-SIMULATE',
+      message: 'Your hostel request #REQ-1 has been marked URGENT.',
+      type: 'REQUEST_UPDATE',
+      status: 'SIMULATED_SENT'
+    }
+  });
+  await prisma.smsOutbox.create({
+    data: {
+      recipientId: users.student2.id,
+      phoneNumber: '+91-555-DEMO123',
+      message: 'Maintenance will visit your room tomorrow.',
+      type: 'GENERAL',
+      status: 'SIMULATED_FAILED',
+      failureReason: 'Invalid demo number'
+    }
+  });
+
   console.log('Demo database seeded successfully!');
 }
 

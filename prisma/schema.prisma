@@ -21,6 +21,7 @@ model User {
   hostel         String?
   block          String?
   room           String?
+    phone          String?
 
   // Relationships
   requestsCreated Request[] @relation("RequestCreator")
@@ -29,6 +30,7 @@ model User {
   scholarship     Scholarship?
   notifications   Notification[]
   announcementsCreated Announcement[] @relation("AnnouncementCreator")
+    smsReceived          SmsOutbox[]
   announcementReceipts AnnouncementReceipt[]
   messFeedbacks MessFeedback[]
 }
@@ -179,4 +181,19 @@ model MessFeedback {
   updatedAt DateTime @updatedAt
 
   @@unique([menuId, studentId])
+}
+
+
+model SmsOutbox {
+  id             String    @id @default(uuid())
+  recipientId    String?
+  recipient      User?     @relation(fields: [recipientId], references: [id])
+  phoneNumber    String
+  message        String
+  status         String    // QUEUED, SIMULATED_SENT, SIMULATED_FAILED
+  type           String    // e.g. "REQUEST_UPDATE", "ANNOUNCEMENT", "GENERAL"
+  referenceId    String?   
+  createdAt      DateTime  @default(now())
+  sentAt         DateTime?
+  failureReason  String?
 }
