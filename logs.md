@@ -265,3 +265,55 @@ Resolve critical structural flaws and prepare the core system for the demo by ha
 
 ### Decision / Status
 PASS
+
+## Prompt A Closure Audit
+
+### Baseline
+- pre-A commit: `5dcacd6`
+- implementation commit: `be9e4e6`
+- documentation follow-up commit: `a7f26b4`
+- final after-A tag target: `a7f26b4`
+
+### Faults Verified
+- **OfflineProvider role attribute**: Yes, was malformed.
+- **JWT fallback secret**: Yes, fallback was exposed in production.
+- **Registration endpoint**: Yes, lacked role restrictions and basic validations.
+- **SQLite configuration**: Yes, lacked WAL mode and query logging parameters.
+- **Admin SLA check**: Yes, was missing entirely requiring an external CRON.
+- **Demo Seed**: Yes, was limited to 9 users and ~9 requests without incidents or breaches.
+
+### Fix Verification
+- **OfflineProvider**: Corrected `role="status"` and `className`. Verified no regressions.
+- **JWT Handling**: `JWT_SECRET` requirement strictly enforced in production. 
+- **Registration**: Student-role enforcement, length, and email format validation.
+- **SQLite**: `$queryRawUnsafe` safely initiates WAL without Prisma result exceptions.
+- **Admin SLA check**: Route `/api/admin/sla-check` added and restricted to Admin roles.
+- **Demo Seed**: Expanded drastically with deterministic execution.
+
+### Seed Verification
+- Users: 29
+- Requests: 35
+- Incidents: 2
+All metrics verified successfully on reset and re-seed.
+
+### Validation
+- `npm test`: PASS (24/24 tests)
+- TypeScript: PASS (0 errors)
+- lint: PASS (0 errors)
+- build: PASS
+- runtime checks: PASS (DB seed check passed)
+
+### Documentation
+- Updated `docs/PRD.md` and `docs/BRAIN.md` to reflect manual SLA trigger capability and planned automated CRON.
+- Preserved existing `logs.md` as canonical. 
+
+### Cleanup
+- Verified `prompt_a_logs.md` and other temporary artifacts do not exist.
+- Found that `1074 insertions` largely derived from `DORMDESK_AUDIT.md` and `DormDesk_Build_Prompts.md` being committed.
+
+### Remaining Limitations
+- SLA relies on manual UI trigger in Admin panel until CRON scheduling is built.
+- Incident grouping relies on seeded structure; automatic Nudge / Me Too UI is pending.
+
+### Final Verdict
+PASS
