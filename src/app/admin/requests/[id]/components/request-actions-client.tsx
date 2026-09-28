@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, MessageSquare } from "lucide-react";
 
 const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   PENDING: ['ASSIGNED', 'RESOLVED', 'CANCELLED', 'REJECTED', 'APPROVED'],
@@ -40,9 +40,36 @@ export function RequestActionsClient({ request, staffList }: { request: AdminReq
   const [statusNotes, setStatusNotes] = useState("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [statusError, setStatusError] = useState("");
+  const [smsSending, setSmsSending] = useState(false);
 
   const availableNextStatuses = VALID_TRANSITIONS[request.status as RequestStatus] || [];
   
+  
+  const handleSimulateSms = async () => {
+    const msg = prompt("Enter SMS message to send to student:");
+    if (!msg) return;
+    setSmsSending(true);
+    try {
+      const res = await fetch("/api/warden/sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          phoneNumber: "+91-0000000000", 
+          message: msg, 
+          type: "REQUEST_UPDATE", 
+          referenceId: request.id,
+          recipientId: request.requesterId
+        })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      toast({ title: "Success", description: "Simulated SMS queued.", variant: "success" });
+    } catch (e: unknown) {
+      toast({ title: "Error", description: (e as Error).message || "Failed to send SMS", variant: "error" });
+    } finally {
+      setSmsSending(false);
+    }
+  };
+
   const handleAssign = async () => {
     if (!selectedStaff) return;
     setIsAssigning(true);
@@ -143,7 +170,20 @@ export function RequestActionsClient({ request, staffList }: { request: AdminReq
         <div className="bg-surface border border-border p-4 rounded-md space-y-3">
           <h4 className="font-semibold text-sm">Update Status</h4>
           <div className="flex flex-wrap gap-2">
-            {availableNextStatuses.map(status => (
+            
+            {request.status !== 'CLOSED' && (
+              <Button
+                variant="outline"
+                onClick={handleSimulateSms}
+                disabled={smsSending}
+                className="flex-1 sm:flex-none"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                {smsSending ? 'Sending...' : 'SMS Student'}
+              </Button>
+            )}
+
+              {availableNextStatuses.map(status => (
               <Button 
                 key={status} 
                 variant="outline" 
