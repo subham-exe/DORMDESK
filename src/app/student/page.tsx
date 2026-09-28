@@ -3,10 +3,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Clock, CheckCircle, AlertTriangle, ChevronRight, FileText, ListTodo, GraduationCap, Megaphone, X, CloudOff } from "lucide-react";
+import { Plus, Clock, CheckCircle, AlertTriangle, ChevronRight, FileText, ListTodo, GraduationCap, Megaphone, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";

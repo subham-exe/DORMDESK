@@ -3,7 +3,7 @@ import { RequestEngine } from '@/lib/services/request-engine';
 import { prisma } from '@/lib/db/prisma';
 import { requireAuth } from '@/lib/auth/session';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const user = await requireAuth();
 

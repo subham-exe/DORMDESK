@@ -338,7 +338,7 @@ export const AdminAPI = {
           notes: resolutionNotes,
           actorId: actor.id
         });
-      } catch (err) {
+      } catch {
         console.warn(`Skipping auto-resolve for request ${req.id} due to state constraints.`);
       }
     }

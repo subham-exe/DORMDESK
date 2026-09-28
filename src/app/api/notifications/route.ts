@@ -17,7 +17,7 @@ export async function GET() {
             link = `/student/requests/${parsed.requestId}`;
           }
         }
-      } catch (e) {
+      } catch {
         // ignore JSON parse error
       }
       

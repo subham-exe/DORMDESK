@@ -1,7 +1,7 @@
 "use client";
 
 import { ErrorState } from "@/components/ui/error-state";
-import { Button } from "@/components/ui/button";
+
 
 export default function RequestError({ error, reset }: { error: Error & { digest?: string }, reset: () => void }) {
   return (

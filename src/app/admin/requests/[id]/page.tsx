@@ -10,20 +10,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 
 export const dynamic = "force-dynamic";
 
-const getStatusBadgeVariant = (status: string): BadgeVariant => {
-  switch (status) {
-    case "PENDING": return "info";
-    case "ASSIGNED": return "warning";
-    case "ACKNOWLEDGED": return "warning";
-    case "PROCESSING": return "warning";
-    case "RESOLVED": return "success";
-    case "VERIFIED": return "success";
-    case "CLOSED": return "default";
-    case "REJECTED": return "error";
-    case "APPROVED": return "success";
-    default: return "secondary";
-  }
-};
+
 
 const getPriorityBadgeVariant = (priority: string): BadgeVariant => {
   switch (priority) {

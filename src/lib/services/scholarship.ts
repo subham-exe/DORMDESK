@@ -91,8 +91,7 @@ export class ScholarshipService {
     id: string,
     from: ScholarshipState,
     to: ScholarshipState,
-    actorId: string,
-    _actorRole: string
+    actorId: string
   ) {
     // 1. Verify valid transition path
     const allowedNext = STATE_TRANSITIONS[from];

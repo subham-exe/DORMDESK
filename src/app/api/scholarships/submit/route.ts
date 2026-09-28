@@ -18,11 +18,11 @@ export async function POST() {
     await requirePermission('Scholarship', 'Update', scholarship);
 
     if (scholarship.status === 'ELIGIBLE') {
-      await ScholarshipService.transitionState(scholarship.id, 'ELIGIBLE', 'APPLIED', user.id, user.role);
-      const updated = await ScholarshipService.transitionState(scholarship.id, 'APPLIED', 'SUBMITTED', user.id, user.role);
+      await ScholarshipService.transitionState(scholarship.id, 'ELIGIBLE', 'APPLIED', user.id);
+      const updated = await ScholarshipService.transitionState(scholarship.id, 'APPLIED', 'SUBMITTED', user.id);
       return NextResponse.json(updated);
     } else if (scholarship.status === 'APPLIED') {
-      const updated = await ScholarshipService.transitionState(scholarship.id, 'APPLIED', 'SUBMITTED', user.id, user.role);
+      const updated = await ScholarshipService.transitionState(scholarship.id, 'APPLIED', 'SUBMITTED', user.id);
       return NextResponse.json(updated);
     } else {
       return NextResponse.json({ error: 'Cannot submit from current state' }, { status: 400 });

@@ -35,8 +35,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       id,
       from as ScholarshipState,
       to as ScholarshipState,
-      user.id,
-      user.role
+      user.id
     );
     
     return NextResponse.json(updated);
