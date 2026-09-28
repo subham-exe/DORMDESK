@@ -17,8 +17,8 @@ Campus life is currently plagued by fragmentation:
 
 ## 3. Target Users
 - **Students:** Need a simple, low-bandwidth way to request help, track status, and view critical information with explainable transparency.
-- **Staff / Faculty: [NOT IMPLEMENTED]** Need clear assignment queues, reduced paperwork, and incident intelligence to group duplicate requests.
-- **Administrative Authorities: [NOT IMPLEMENTED]** Need an Operations Command Center providing high-level visibility into SLA breaches, workload, and recurring issues.
+- **Staff / Faculty:** Need clear assignment queues, reduced paperwork, and incident intelligence to group duplicate requests.
+- **Administrative Authorities:** Need an Operations Command Center providing high-level visibility into SLA breaches, staff workload, operational resolution metrics (average/median time), CSV data export, and recurring issues.
 
 ## 4. Product Vision & Core Architecture
 DormDesk is built on a **Universal Request Engine**. It is not a fragmented collection of modules.

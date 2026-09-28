@@ -87,6 +87,23 @@ export interface RecurringIssue {
   relatedRequestIds: string[];
 }
 
+
+export interface ResolutionAnalytics {
+  resolvedCount: number;
+  averageHours: number | null;
+  medianHours: number | null;
+}
+
+export interface StaffWorkload {
+  userId: string;
+  name: string;
+  role: string;
+  assignedCount: number;
+  activeCount: number;
+  resolvedCount: number;
+  averageResolutionHours: number | null;
+}
+
 export interface AnalyticsSummary {
   totalRequests: number;
   resolvedRequests: number;
@@ -94,6 +111,7 @@ export interface AnalyticsSummary {
   byStatus: Array<{ status: string; count: number }>;
   byPriority: Array<{ priority: string; count: number }>;
   bySlaStatus: Array<{ slaStatus: string; count: number }>;
+  resolution: ResolutionAnalytics;
 }
 
 export interface AdminRequestEvent {
@@ -457,15 +475,12 @@ export const AdminAPI = {
 
   // Analytics
   async getAnalytics(): Promise<AnalyticsSummary> {
-    const reqs = await this.listRequests();
-    const summary: AnalyticsSummary = {
-      totalRequests: reqs.length,
-      resolvedRequests: reqs.filter(r => ["RESOLVED", "VERIFIED", "CLOSED", "APPROVED"].includes(r.status)).length,
-      byCategory: [],
-      byStatus: [],
-      byPriority: [],
-      bySlaStatus: []
-    };
+    const reqs = await prisma.request.findMany({
+      select: { category: true, status: true, priority: true, createdAt: true, resolvedAt: true, dueAt: true, updatedAt: true }
+    });
+
+    let totalResolved = 0;
+    const resolutionDurations: number[] = [];
 
     const catMap: Record<string, number> = {};
     const statMap: Record<string, number> = {};
@@ -476,18 +491,101 @@ export const AdminAPI = {
       catMap[r.category] = (catMap[r.category] || 0) + 1;
       statMap[r.status] = (statMap[r.status] || 0) + 1;
       prioMap[r.priority] = (prioMap[r.priority] || 0) + 1;
-      slaMap[r.slaStatus] = (slaMap[r.slaStatus] || 0) + 1;
+      
+      const isResolved = ["RESOLVED", "VERIFIED", "CLOSED", "APPROVED"].includes(r.status);
+      if (isResolved && r.resolvedAt) {
+        totalResolved++;
+        const durationHours = (r.resolvedAt.getTime() - r.createdAt.getTime()) / (1000 * 60 * 60);
+        if (durationHours >= 0) {
+          resolutionDurations.push(durationHours);
+        }
+      }
+
+      let slaStatus = "ON_TRACK";
+      if (!isResolved && r.dueAt && r.dueAt.getTime() < Date.now()) slaStatus = "BREACHED";
+      else if (!isResolved && r.dueAt && (r.dueAt.getTime() - Date.now()) < 24 * 3600 * 1000) slaStatus = "WARNING";
+      slaMap[slaStatus] = (slaMap[slaStatus] || 0) + 1;
     }
 
-    summary.byCategory = Object.entries(catMap).map(([category, count]) => ({ category, count })).sort((a, b) => b.count - a.count);
-    summary.byStatus = Object.entries(statMap).map(([status, count]) => ({ status, count })).sort((a, b) => b.count - a.count);
-    summary.byPriority = Object.entries(prioMap).map(([priority, count]) => ({ priority, count })).sort((a, b) => b.count - a.count);
-    summary.bySlaStatus = Object.entries(slaMap).map(([slaStatus, count]) => ({ slaStatus, count })).sort((a, b) => b.count - a.count);
+    resolutionDurations.sort((a, b) => a - b);
+    const resolvedCount = resolutionDurations.length;
+    let averageHours = null;
+    let medianHours = null;
+
+    if (resolvedCount > 0) {
+      const sum = resolutionDurations.reduce((a, b) => a + b, 0);
+      averageHours = sum / resolvedCount;
+      const mid = Math.floor(resolvedCount / 2);
+      medianHours = resolvedCount % 2 !== 0 ? resolutionDurations[mid] : (resolutionDurations[mid - 1] + resolutionDurations[mid]) / 2;
+    }
+
+    const summary: AnalyticsSummary = {
+      totalRequests: reqs.length,
+      resolvedRequests: totalResolved,
+      byCategory: Object.entries(catMap).map(([category, count]) => ({ category, count })).sort((a, b) => b.count - a.count),
+      byStatus: Object.entries(statMap).map(([status, count]) => ({ status, count })).sort((a, b) => b.count - a.count),
+      byPriority: Object.entries(prioMap).map(([priority, count]) => ({ priority, count })).sort((a, b) => b.count - a.count),
+      bySlaStatus: Object.entries(slaMap).map(([slaStatus, count]) => ({ slaStatus, count })).sort((a, b) => b.count - a.count),
+      resolution: {
+        resolvedCount,
+        averageHours: averageHours !== null ? parseFloat(averageHours.toFixed(2)) : null,
+        medianHours: medianHours !== null ? parseFloat(medianHours.toFixed(2)) : null
+      }
+    };
 
     return summary;
   },
 
-  async getRecurringIssues(): Promise<RecurringIssue[]> {
+  async getStaffWorkload(): Promise<StaffWorkload[]> {
+    const staff = await prisma.user.findMany({
+      where: { role: { in: ['Warden', 'Faculty', 'Admin', 'Staff'] } },
+      include: {
+        requestsAssigned: {
+          select: { status: true, createdAt: true, resolvedAt: true }
+        }
+      }
+    });
+
+    return staff.map(user => {
+      let activeCount = 0;
+      let resolvedCount = 0;
+      let sumDuration = 0;
+      let validResolvedForAvg = 0;
+
+      for (const req of user.requestsAssigned) {
+        const isResolved = ["RESOLVED", "VERIFIED", "CLOSED", "APPROVED"].includes(req.status);
+        if (isResolved) {
+          resolvedCount++;
+          if (req.resolvedAt) {
+            const hours = (req.resolvedAt.getTime() - req.createdAt.getTime()) / (1000 * 60 * 60);
+            if (hours >= 0) {
+              sumDuration += hours;
+              validResolvedForAvg++;
+            }
+          }
+        } else if (req.status !== "REJECTED" && req.status !== "CANCELLED") {
+          activeCount++;
+        }
+      }
+
+      let averageResolutionHours = null;
+      if (validResolvedForAvg > 0) {
+        averageResolutionHours = parseFloat((sumDuration / validResolvedForAvg).toFixed(2));
+      }
+
+      return {
+        userId: user.id,
+        name: user.name,
+        role: user.role,
+        assignedCount: user.requestsAssigned.length,
+        activeCount,
+        resolvedCount,
+        averageResolutionHours
+      };
+    }).sort((a, b) => b.assignedCount - a.assignedCount);
+  },
+
+async getRecurringIssues(): Promise<RecurringIssue[]> {
     const reqs = await this.listRequests();
     const groups: Record<string, AdminRequest[]> = {};
     

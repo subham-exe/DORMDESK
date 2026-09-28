@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Calendar, Repeat, Activity, Tag, Flag } from "lucide-react";
+import { Calendar, Repeat, Activity, Tag, Flag, Clock, Users, Download } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from "@/components/ui/table";
 import { AdminAPI } from "@/lib/admin/api";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -11,20 +11,61 @@ import { RequestStatus } from "@/lib/types/request";
 export const dynamic = "force-dynamic";
 
 export default async function AdminAnalyticsPage() {
-  const [analytics, recurringIssues] = await Promise.all([
+  const [analytics, recurringIssues, staffWorkload] = await Promise.all([
     AdminAPI.getAnalytics(),
-    AdminAPI.getRecurringIssues()
+    AdminAPI.getRecurringIssues(),
+    AdminAPI.getStaffWorkload()
   ]);
 
   return (
     <div className="space-y-8 pb-10">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Analytics & Recurring Issues</h2>
-        <p className="text-text-secondary mt-1">Historical patterns, workload views, and repeated operational issues.</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Analytics & Insights</h2>
+          <p className="text-text-secondary mt-1">Resolution metrics, staff workload, and operational data.</p>
+        </div>
+        <Link 
+          href="/api/admin/requests/export"
+          target="_blank"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-colors bg-primary text-primary-foreground rounded-md shadow hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          <Download className="w-4 h-4" />
+          Export Requests CSV
+        </Link>
       </div>
       
       {/* Overview Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-text-secondary">Resolved Requests</CardTitle>
+            <Activity className="w-4 h-4 text-success" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-success">{analytics.resolution.resolvedCount}</div>
+            <p className="text-xs text-text-secondary mt-1">Total closed or verified</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-text-secondary">Avg Resolution Time</CardTitle>
+            <Clock className="w-4 h-4 text-text-secondary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.resolution.averageHours !== null ? `${analytics.resolution.averageHours}h` : 'N/A'}</div>
+            <p className="text-xs text-text-secondary mt-1">Mean completion duration</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-text-secondary">Median Resolution Time</CardTitle>
+            <Clock className="w-4 h-4 text-text-secondary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.resolution.medianHours !== null ? `${analytics.resolution.medianHours}h` : 'N/A'}</div>
+            <p className="text-xs text-text-secondary mt-1">50th percentile duration</p>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-text-secondary">Total Requests</CardTitle>
@@ -35,33 +76,50 @@ export default async function AdminAnalyticsPage() {
             <p className="text-xs text-text-secondary mt-1">Available history</p>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8">
+        {/* Staff Workload Table */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-text-secondary">Resolved Requests</CardTitle>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2"><Users className="w-5 h-5" /> Staff Workload Overview</CardTitle>
+            <p className="text-sm text-text-secondary">Operational breakdown by assigned personnel.</p>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">{analytics.resolvedRequests}</div>
-            <p className="text-xs text-text-secondary mt-1">Closed or verified</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-text-secondary">Recurring Patterns</CardTitle>
-            <Repeat className="w-4 h-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">{recurringIssues.length}</div>
-            <p className="text-xs text-text-secondary mt-1">Repeated ≥2 times</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-text-secondary">Categories</CardTitle>
-            <Tag className="w-4 h-4 text-text-secondary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.byCategory.length}</div>
-            <p className="text-xs text-text-secondary mt-1">Unique active categories</p>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Staff Member</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead className="text-right">Assigned</TableHead>
+                    <TableHead className="text-right">Active</TableHead>
+                    <TableHead className="text-right">Resolved</TableHead>
+                    <TableHead className="text-right">Avg Resolution</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {staffWorkload.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-text-secondary py-6">No staff data available.</TableCell>
+                    </TableRow>
+                  ) : (
+                    staffWorkload.map(staff => (
+                      <TableRow key={staff.userId}>
+                        <TableCell className="font-medium">{staff.name}</TableCell>
+                        <TableCell><Badge variant="outline">{staff.role}</Badge></TableCell>
+                        <TableCell className="text-right">{staff.assignedCount}</TableCell>
+                        <TableCell className="text-right font-medium text-warning">{staff.activeCount}</TableCell>
+                        <TableCell className="text-right font-medium text-success">{staff.resolvedCount}</TableCell>
+                        <TableCell className="text-right text-text-secondary">
+                          {staff.averageResolutionHours !== null ? `${staff.averageResolutionHours}h` : '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -198,10 +256,8 @@ export default async function AdminAnalyticsPage() {
               </div>
             </CardContent>
           </Card>
-
         </div>
       </div>
     </div>
   );
 }
-

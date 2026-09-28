@@ -444,3 +444,67 @@ Aggregation stats on millions of records will eventually demand clustered query 
 
 ## Final Verdict
 PASS
+
+
+# Prompt C — Admin Insight
+
+## Objective
+Implement Admin Command Center real operational analytics including resolution-time analytics, staff workload aggregation, and CSV export, utilizing existing Prisma architecture.
+
+## Faults Found
+- The existing `AdminAPI.getAnalytics()` fetched all active records but lacked temporal resolution aggregations (average/median duration).
+- Staff workload was missing completely from the API capabilities.
+- CSV export for reporting was absent.
+- The Admin UI Command Center only displayed mock SLA statuses and basic counts, missing crucial operational workload data.
+
+## Evidence
+- Analyzed `src/lib/admin/api.ts` and `src/app/admin/analytics/page.tsx` revealing that although `createdAt` and `resolvedAt` were physically mapped to the `Request` entity, no queries retrieved or operated on `resolvedAt` durations.
+- No `export` directory existed inside `src/app/api/admin/requests/`.
+
+## Changes Implemented
+- Updated `AdminAPI.getAnalytics()` to compute `resolution` (averageHours, medianHours, and resolvedCount) server-side inside `src/lib/admin/api.ts`.
+- Created `AdminAPI.getStaffWorkload()` to aggregate assigned requests, active count, resolved count, and individual average resolution time.
+- Built `GET /api/admin/requests/export` returning a properly escaped, authenticated, UTF-8 CSV containing all request lifecycle timestamps and details.
+- Overhauled `src/app/admin/analytics/page.tsx` adding the Staff Workload Overview table and Resolution Overview cards.
+- Fixed a bug where `Staff` role was implicitly excluded from Staff Workload queries (added `'Staff'` to role inclusion filters).
+
+## Resolution-Time Definition
+- The duration from `createdAt` to `resolvedAt`, quantified in decimal Hours.
+- Negative durations are mathematically rejected. Unresolved requests (null resolvedAt or active statuses) are ignored in the statistical mean/median pool.
+
+## Staff Workload Definition
+- Represents an aggregation grouped by `assignedAuthorityId`.
+- Includes the `User` properties and filters across 'Warden', 'Faculty', 'Admin', and 'Staff'.
+- Separates metrics into `assignedCount`, `activeCount` (excluding Cancelled/Rejected/Resolved), and `resolvedCount`.
+
+## CSV Export Contract
+- Headers: Request ID, Ticket Number, Type, Category, Priority, Status, Assigned Staff, Created At, Resolved At, Resolution Duration (Hours), Location.
+- Strict double-quote `""` escaping for all strings, ensuring safe comma handling.
+- Excludes sensitive fields (passwords, JWTs, PII).
+
+## Security Verification
+- CSV Export endpoint (`GET /api/admin/requests/export`) restricts access strictly to `['Admin', 'Warden', 'Faculty']` using `requireAuth()` validation.
+
+## Seed/Data Verification
+- Re-ran Prisma seeded mock database and manually verified metric behaviors.
+- DB seeded natively handles multiple resolution variations, producing 23 resolved records.
+- Verified Zero-workload capabilities accurately rendering 0 assignments for mock "Dr. Amit Verma" and "Dr. S. K. Reddy".
+
+## Test Results
+- Added 3 Analytics tests covering zero-result gracefully and mathematically validating median/average computations.
+- Added 2 Route tests covering CSV escaping rules and 403 authorization denials.
+- 38/38 Tests passing overall natively.
+
+## TypeScript / Lint / Build
+- TypeScript: 0 errors
+- ESLint: 0 errors, 0 warnings (Fixed implicit `any` typings in test files).
+- Build: Next.js successfully emitted `build`.
+
+## Runtime Verification
+- API/runtime verified via rigorous Vitest simulations against mocked instances and seed metrics. Browser UI not independently verified but explicitly structured around standard React rendering and layout norms without destructive mutations.
+
+## Documentation Updated
+- Synchronized `docs/PRD.md` to validate the Administration features are strictly active.
+
+## Remaining Limitations
+- Large dataset performance relies on fetching `resolvedAt` and `createdAt` timestamps into application memory for Median computation (SQLite Prisma lacks native Median indexing). While sufficient for the Hackathon scope, production migration to PostgreSQL should implement native median math blocks.
