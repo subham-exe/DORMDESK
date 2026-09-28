@@ -5,11 +5,11 @@ import { prisma } from '@/lib/db/prisma';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, password, name, role, department, year, branch, isResident, hostel, block, room } = body;
+    const { email, password, name, department, year, branch, isResident, hostel, block, room } = body;
 
-    if (!email || !password || !name || !role) {
+    if (!email || !password || !name) {
       return NextResponse.json(
-        { error: 'Email, password, name, and role are required' },
+        { error: 'Email, password, and name are required' },
         { status: 400 }
       );
     }
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
         email,
         password: hashedPassword,
         name,
-        role,
+        role: 'Student',
         department,
         year: year ? parseInt(year.toString()) : null,
         branch,

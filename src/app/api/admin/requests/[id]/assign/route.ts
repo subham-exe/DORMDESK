@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { AdminAPI } from "@/lib/admin/api";
-import { requireAuth } from "@/lib/auth/session";
+import { AdminAPI, verifyAdminAuthority } from "@/lib/admin/api";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireAuth();
+    await verifyAdminAuthority();
     const { id } = await params;
     const body = await req.json();
     const { assigneeId, department } = body;

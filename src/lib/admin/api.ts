@@ -331,12 +331,16 @@ export const AdminAPI = {
     });
 
     for (const req of requests) {
-      await RequestEngine.transitionStatus({
-        requestId: req.id,
-        newStatus: 'RESOLVED',
-        notes: resolutionNotes,
-        actorId: actor.id
-      });
+      try {
+        await RequestEngine.transitionStatus({
+          requestId: req.id,
+          newStatus: 'RESOLVED',
+          notes: resolutionNotes,
+          actorId: actor.id
+        });
+      } catch (err) {
+        console.warn(`Skipping auto-resolve for request ${req.id} due to state constraints.`);
+      }
     }
 
     return true;

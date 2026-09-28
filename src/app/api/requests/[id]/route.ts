@@ -6,7 +6,7 @@ import { requireAuth } from '@/lib/auth/session';
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   try {
-    await requireAuth();
+    const user = await requireAuth();
     const request = await prisma.request.findUnique({
       where: { id: resolvedParams.id },
       include: {
@@ -17,6 +17,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     if (!request) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+
+    if (user.role === 'Student' && request.requesterId !== user.id) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+    }
 
     const auditLogs = await prisma.auditLog.findMany({
       where: { entity: 'Request', entityId: resolvedParams.id },
@@ -38,6 +42,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const body = await req.json();
     const { action, assigneeId, department, newStatus, notes } = body;
     const actorId = user.id;
+
+    const existingReq = await prisma.request.findUnique({ where: { id: resolvedParams.id } });
+    if (!existingReq) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+
+    if (user.role === 'Student') {
+      if (existingReq.requesterId !== user.id) {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+      }
+      if (action === 'ASSIGN') {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+      }
+    }
 
     let request;
     if (action === 'ASSIGN') {
