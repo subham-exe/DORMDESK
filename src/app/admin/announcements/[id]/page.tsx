@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,10 +6,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LoadingState } from "@/components/ui/loading-state";
 
+interface Receipt {
+  id: string;
+  studentName: string;
+  studentEmail: string;
+  hostel: string | null;
+  room: string | null;
+  deliveredAt: string;
+  readAt: string | null;
+  acknowledgedAt: string | null;
+}
+
+interface DetailData {
+  title: string;
+  body: string;
+  priority: string;
+  requiresAck: boolean;
+  targeting: { branch?: string; year?: number; hostel?: string; block?: string };
+  stats: {
+    deliveredCount: number;
+    readCount: number;
+    readPercentage: number;
+    acknowledgedCount: number;
+    ackPercentage: number;
+  };
+  receipts: Receipt[];
+}
+
 export default function AdminAnnouncementDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filterUnread, setFilterUnread] = useState(false);
 
@@ -26,7 +52,7 @@ export default function AdminAnnouncementDetailPage() {
   if (loading) return <LoadingState text="Loading details..." />;
   if (!data) return <div>Announcement not found</div>;
 
-  const filteredReceipts = filterUnread ? data.receipts.filter((r: any) => !r.readAt) : data.receipts;
+  const filteredReceipts = filterUnread ? data.receipts.filter((r) => !r.readAt) : data.receipts;
 
   return (
     <div className="space-y-6">
@@ -90,7 +116,7 @@ export default function AdminAnnouncementDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredReceipts.map((r: any) => (
+                {filteredReceipts.map((r) => (
                   <tr key={r.id} className="border-b">
                     <td className="px-4 py-3 font-medium">{r.studentName} <br/><span className="text-xs text-text-muted">{r.studentEmail}</span></td>
                     <td className="px-4 py-3">{r.hostel} {r.room}</td>

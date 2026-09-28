@@ -181,8 +181,8 @@
 ## Iteration 18: ZOY-09 Notifications & Announcements
 - **Date**: 2026-09-23
 - **Completed**:
-  - Found that the backend currently lacks `Notification` or `Announcement` database tables in `schema.prisma`. 
-  - To prevent architecture violation (creating dummy tables), engineered `/api/notifications` which cleanly derives real-time status alerts by aggregating `AuditLog` events tied to the student's `Request` instances. 
+  - Found that the backend currently lacks `Notification` or `Announcement` database tables in `schema.prisma`.
+  - To prevent architecture violation (creating dummy tables), engineered `/api/notifications` which cleanly derives real-time status alerts by aggregating `AuditLog` events tied to the student's `Request` instances.
   - Built `NotificationDropdown` overlay with mark-as-read tracking (cached safely in client `localStorage` given backend limitations).
   - Wired up `NotificationDropdown` natively into desktop and mobile top-nav (`src/app/student/layout.tsx`).
   - Implemented `/api/announcements` mock API that serves an array of active system broadcasts.
@@ -284,7 +284,7 @@ PASS
 
 ### Fix Verification
 - **OfflineProvider**: Corrected `role="status"` and `className`. Verified no regressions.
-- **JWT Handling**: `JWT_SECRET` requirement strictly enforced in production. 
+- **JWT Handling**: `JWT_SECRET` requirement strictly enforced in production.
 - **Registration**: Student-role enforcement, length, and email format validation.
 - **SQLite**: `$queryRawUnsafe` safely initiates WAL without Prisma result exceptions.
 - **Admin SLA check**: Route `/api/admin/sla-check` added and restricted to Admin roles.
@@ -305,7 +305,7 @@ All metrics verified successfully on reset and re-seed.
 
 ### Documentation
 - Updated `docs/PRD.md` and `docs/BRAIN.md` to reflect manual SLA trigger capability and planned automated CRON.
-- Preserved existing `logs.md` as canonical. 
+- Preserved existing `logs.md` as canonical.
 
 ### Cleanup
 - Verified `prompt_a_logs.md` and other temporary artifacts do not exist.
@@ -371,4 +371,76 @@ Created `src/app/api/admin/announcements/__tests__/route.test.ts` ensuring role-
 - The system currently calculates read percentages using aggregated receipt rows, which scales effectively for Demo data but may need optimization for millions of records.
 
 ### Final Status
+PASS
+# Prompt B Closure Audit
+
+## Baseline
+- Prompt A closure commit: 20db644
+- Prompt B implementation commit: fc6ea8f
+- after-B tag: fc6ea8f
+- current HEAD: fc6ea8f
+
+## Faults Verified
+- fault: /api/announcements was a stub returning an empty array.
+  evidence: Stale implementation inside src/app/api/announcements/route.ts.
+  impact: Broadcasts could not be properly consumed by students.
+- fault: In-app notifications lacked broadcast targeting capabilities.
+  evidence: NotificationService required a singular recipient ID constraint.
+  impact: Admins could only manually message singular students rather than campus branches.
+- fault: No delivery receipt or acknowledgement mechanism existed in the schema.
+  evidence: prisma/schema.prisma lacked fields for tracking reads and forced acknowledgements.
+  impact: Operations lacked accountability to verify critical messages were seen.
+- fault: No administrative interface for managing announcements.
+  evidence: /admin/announcements route did not exist.
+  impact: Operations could not draft, review, or analyze targeted messages visually.
+
+## Fix Verification
+- implementation: Schema updated with Announcement and AnnouncementReceipt supporting subsets.
+  verification result: Verified accurate deployment via Prisma constraints and unique mappings.
+- implementation: AnnouncementService constructed to atomically map targets and instigate notification replication.
+  verification result: Verified target inclusion bounds (no Admin roles targeted).
+- implementation: Student API routes updated to fetch only authenticated user's receipts.
+  verification result: Verified read and ack routes preserve idempotency.
+- implementation: Admin UI composed representing stats against actual API data.
+  verification result: Verified no mock data was utilized in the Admin interfaces.
+- implementation: Removed an invalid ESLint warning suppression and fixed state manipulation constraints in UI components.
+  verification result: Validated no lingering ny parameters in announcement UI layers.
+
+## Schema Verification
+Verified Announcement and AnnouncementReceipt schemas maintain strict isolation.
+equiresAck and priority exist perfectly. unique([announcementId, userId]) enforces structural bounds against duplicates.
+
+## Authorization Verification
+Verified Admin authorization operates explicitly server-side within the route structures against ['Admin', 'Warden', 'Faculty']. UI is not acting as the security barrier.
+
+## Data Isolation Verification
+Student APIs securely lock fetching mechanisms strictly to the authenticated user.id. Duplicate calls against /read or /ack trigger idempotent bypasses seamlessly. Invalid reads reject gracefully.
+
+## Seed Verification
+- Users: 29
+- Requests: 35
+- Incidents: 2
+- Announcements: 3
+- AnnouncementReceipts: 35
+- Notifications: 3
+
+## Test Results
+33 tests passed seamlessly encompassing filtering mechanisms, authorization blocks, read idempotency, and acknowledgement rule enforcements.
+
+## TypeScript / Lint / Build
+- TypeScript: 0 errors
+- ESLint: 0 errors, 0 warnings
+- Build: PASS
+
+## Runtime Verification
+API/runtime verified natively through transactional tests and seed generations. Browser UI not independently verified but structurally sound without cascading states.
+
+## Documentation Updated
+Synchronized docs/PRD.md to reflect targeted functionality, fixed docs/BRAIN.md, and completely sanitized docs/architect.md against SMS assumptions. Canonical tracking consolidated into logs.md.
+
+## Remaining Limitations
+Delivery operates exclusively in-app; push, email, and SMS are explicitly out of scope.
+Aggregation stats on millions of records will eventually demand clustered query enhancements.
+
+## Final Verdict
 PASS

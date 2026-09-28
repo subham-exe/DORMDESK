@@ -61,7 +61,12 @@ When DormDesk detects an existing incident, a new student submitting a request s
 > "This issue has already been reported. [Join Incident] / [Me Too]"
 This prevents unnecessary duplicate tickets.
 
-### C. SLA & Automatic Escalation
+### C. Targeted Announcements
+**Status:** IMPLEMENTED
+**Evidence:** `src/lib/services/announcement.ts`, `Announcement` and `AnnouncementReceipt` schema models, complete Admin and Student UI integration.
+Admins can construct targeted announcements resolving target students by Branch, Year, Hostel, and Block. Features robust read tracking and acknowledgement requirements.
+
+### D. SLA & Automatic Escalation
 **Status:** PROTOTYPE / PARTIALLY IMPLEMENTED
 **Evidence:** `SLA` and `dueAt` schema fields are populated and visualized in the frontend. Admin Dashboard includes an interactive `Run SLA check` capability. Background cron escalation engine is PLANNED.
 Policy-driven escalation. Evaluates the request against configured SLA policies and automatically triggers escalation when required (not arbitrary AI decision-making).

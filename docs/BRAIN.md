@@ -73,7 +73,7 @@ Dashboard focused on operational health and friction reduction.
 - **Intelligence:** Recurring issue detection (e.g., flagging repeated Wi-Fi failures).
 
 ## 11. Notifications
-One centralized notification service. Targeted, event-driven announcements rather than global broadcasts. Tracks sent/delivered/read statuses. SMS/WhatsApp integrations are simulated, not paid external dependencies.
+One centralized notification service. Targeted, event-driven announcements rather than global broadcasts. Tracks sent/delivered/read/acknowledged statuses purely in-app. External delivery channels (SMS/WhatsApp) are explicitly out of scope.
 
 ## 12. Accessibility / Reality Layer
 - **PWA / Browser-First:** No app store installation required.

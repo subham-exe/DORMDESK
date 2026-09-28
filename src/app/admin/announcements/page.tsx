@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,7 +12,7 @@ interface Announcement {
   creator: string;
   createdAt: string;
   requiresAck: boolean;
-  targeting: any;
+  targeting: { branch?: string; year?: number; hostel?: string; block?: string };
   deliveredCount: number;
   readCount: number;
   acknowledgedCount: number;
@@ -56,7 +55,7 @@ export default function AdminAnnouncementsPage() {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAnnouncements();
   }, []);
 

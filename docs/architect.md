@@ -694,8 +694,7 @@ Optional:
 PWA/browser notification
 ```
 
-SMS and WhatsApp should be simulated or represented as adapters, not
-required external dependencies.
+External delivery channels (SMS/WhatsApp) are explicitly out of scope.
 
 ------------------------------------------------------------------------
 
