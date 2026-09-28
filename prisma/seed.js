@@ -11,6 +11,8 @@ async function main() {
 
   console.log('Clearing database...');
   await prisma.auditLog.deleteMany();
+  await prisma.announcementReceipt.deleteMany();
+  await prisma.announcement.deleteMany();
   await prisma.escalation.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.request.deleteMany();
@@ -158,6 +160,101 @@ async function main() {
       { studentId: users.student3.id, academicYear: '2025-2026', status: 'REJECTED' }
     ]
   });
+
+  console.log('Seeding Announcements...');
+  
+  // Announcement 1: Targeted group (Hostel A), some read, some unread, some acked
+  const ann1 = await prisma.announcement.create({
+    data: {
+      title: 'Hostel A Water Supply Interruption',
+      body: 'Water supply will be interrupted tomorrow from 10 AM to 2 PM due to tank cleaning.',
+      createdById: users.warden.id,
+      targetHostel: 'Hostel A',
+      requiresAck: true,
+      priority: 'HIGH'
+    }
+  });
+
+  const hostelAStudents = allStudents.filter(s => s.hostel === 'Hostel A');
+  for (let i = 0; i < hostelAStudents.length; i++) {
+    const student = hostelAStudents[i];
+    let readAt = null;
+    let ackAt = null;
+    if (i % 3 === 0) {
+      readAt = new Date();
+      ackAt = new Date();
+    } else if (i % 3 === 1) {
+      readAt = new Date();
+    }
+    
+    await prisma.announcementReceipt.create({
+      data: {
+        announcementId: ann1.id,
+        userId: student.id,
+        deliveredAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        readAt,
+        acknowledgedAt: ackAt
+      }
+    });
+  }
+
+  // Announcement 2: Requires ack, all students (mixed states)
+  const ann2 = await prisma.announcement.create({
+    data: {
+      title: 'Mandatory Anti-Ragging Undertaking',
+      body: 'All students must submit their anti-ragging undertaking by Friday. Acknowledge this notice to confirm receipt.',
+      createdById: users.principal.id,
+      requiresAck: true,
+      priority: 'CRITICAL'
+    }
+  });
+
+  for (let i = 0; i < allStudents.length; i++) {
+    const student = allStudents[i];
+    let readAt = null;
+    let ackAt = null;
+    if (i < 10) {
+      readAt = new Date(Date.now() - 48 * 60 * 60 * 1000);
+      ackAt = new Date(Date.now() - 47 * 60 * 60 * 1000);
+    } else if (i < 20) {
+      readAt = new Date(Date.now() - 10 * 60 * 60 * 1000);
+    }
+
+    await prisma.announcementReceipt.create({
+      data: {
+        announcementId: ann2.id,
+        userId: student.id,
+        deliveredAt: new Date(Date.now() - 72 * 60 * 60 * 1000),
+        readAt,
+        acknowledgedAt: ackAt
+      }
+    });
+  }
+
+  // Announcement 3: Different targeting filter (Year 2)
+  const ann3 = await prisma.announcement.create({
+    data: {
+      title: 'Year 2 Industrial Visit Schedule',
+      body: 'The industrial visit for 2nd year students is scheduled for next month. Details will be shared via email.',
+      createdById: users.hod.id,
+      targetYear: 2,
+      requiresAck: false,
+      priority: 'MEDIUM'
+    }
+  });
+
+  const year2Students = allStudents.filter(s => s.year === 2);
+  for (let i = 0; i < year2Students.length; i++) {
+    const student = year2Students[i];
+    await prisma.announcementReceipt.create({
+      data: {
+        announcementId: ann3.id,
+        userId: student.id,
+        deliveredAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        readAt: i % 2 === 0 ? new Date() : null,
+      }
+    });
+  }
 
   console.log('Demo database seeded successfully!');
 }

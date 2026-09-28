@@ -317,3 +317,58 @@ All metrics verified successfully on reset and re-seed.
 
 ### Final Verdict
 PASS
+
+## Prompt B — Targeted Announcements
+
+### Objective
+Design and implement a Targeted Announcements system for Admins to broadcast messages to subsets of students based on branch, year, hostel, and block. Include robust tracking for delivery, read receipts, and acknowledgements.
+
+### Initial Faults
+- **fault**: `/api/announcements` was a stub returning an empty array.
+  **evidence**: Implementation inside `src/app/api/announcements/route.ts`.
+  **impact**: Announcements could not be retrieved by students.
+- **fault**: In-app notifications lacked broadcast targeting capabilities.
+  **evidence**: `NotificationService` required a singular `recipientId`.
+  **impact**: Admins could only message individual students, making widespread communication impossible.
+- **fault**: No delivery receipt or acknowledgement mechanism existed in the schema.
+  **evidence**: `prisma/schema.prisma` lacked any fields for tracking broadcast reads.
+  **impact**: Operations lacked accountability to verify critical messages were seen.
+- **fault**: No administrative interface for managing announcements.
+  **evidence**: `/admin/announcements` route did not exist.
+  **impact**: Admins could not draft or measure announcements without manual database inserts.
+
+### Architecture Decision
+To adhere to the existing notification architecture and avoid duplicate disparate systems, the Targeted Announcement system acts as a higher-level orchestrator.
+An `Announcement` represents the broadcast definition.
+The `AnnouncementService` resolves target students server-side, creating `AnnouncementReceipt` junction records alongside generating traditional individual `Notification` records using a Prisma transaction. This ensures compatibility with the existing in-app bell notification system while preserving robust metadata tracking for broadcasts.
+
+### Implementation
+- **schema**: Appended `Announcement` and `AnnouncementReceipt` models to `prisma/schema.prisma` with `@@unique([announcementId, userId])` to prevent duplicate receipts.
+- **service**: Built `AnnouncementService` with a transactional `create` method supporting targeted audience resolution, individual receipt instantiation, and immutable `AuditLog` generation. Added idempotency checks for `markRead` and `markAcknowledged`.
+- **admin APIs**: Established `GET /api/admin/announcements`, `POST /api/admin/announcements`, `GET /api/admin/announcements/preview`, and `GET /api/admin/announcements/[id]` with role-based restrictions (`Admin`, `Warden`, `Faculty`).
+- **student APIs**: Replaced the stub `GET /api/announcements` to return only the authenticated session's targeted receipts. Added POST endpoints for `/read` and `/ack`.
+- **admin UI**: Built `/admin/announcements` for drafting and list views. Built `/admin/announcements/[id]` for deep-dive tracking of delivery statistics by student.
+- **student UI**: Overhauled `src/app/student/notices/page.tsx` to seamlessly handle both announcements and personal notifications visually.
+- **seed**: Extensively expanded `prisma/seed.js` to clear announcement tables and populate 3 diverse demo announcements exhibiting mixed read/acknowledgement states.
+
+### Tests
+Created `src/lib/services/__tests__/announcement.test.ts` testing audience filtering by year/branch, read idempotency, and strict rejection of acknowledgements when `requiresAck` is false.
+Created `src/app/api/admin/announcements/__tests__/route.test.ts` ensuring role-based access control blocks `Student` identities.
+
+### Runtime Verification
+- `npm test`: PASS (33 passed)
+- TypeScript: PASS
+- ESLint: PASS
+- Build: PASS
+- Prisma Reset/Seed: Successfully instantiated the expanded announcement logic locally.
+
+### Documentation Updated
+- `logs.md`: Written professional summary.
+- Note: Did not claim external push/SMS channels per PRD guidelines; strictly in-app delivery.
+
+### Remaining Limitations
+- Push notifications, SMS, or email delivery remain out-of-scope for this phase, delivering strictly in-app.
+- The system currently calculates read percentages using aggregated receipt rows, which scales effectively for Demo data but may need optimization for millions of records.
+
+### Final Status
+PASS

@@ -28,6 +28,8 @@ model User {
   auditLogs       AuditLog[]
   scholarship     Scholarship?
   notifications   Notification[]
+  announcementsCreated Announcement[] @relation("AnnouncementCreator")
+  announcementReceipts AnnouncementReceipt[]
 }
 
 model Request {
@@ -116,3 +118,35 @@ model Escalation {
   @@unique([requestId, level])
   @@index([requestId, createdAt])
 }
+
+model Announcement {
+  id             String    @id @default(uuid())
+  title          String
+  body           String
+  createdById    String
+  creator        User      @relation("AnnouncementCreator", fields: [createdById], references: [id])
+  targetBranch   String?
+  targetYear     Int?
+  targetHostel   String?
+  targetBlock    String?
+  requiresAck    Boolean   @default(false)
+  priority       String    @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+  createdAt      DateTime  @default(now())
+
+  receipts       AnnouncementReceipt[]
+}
+
+model AnnouncementReceipt {
+  id             String    @id @default(uuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id])
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  deliveredAt    DateTime  @default(now())
+  readAt         DateTime?
+  acknowledgedAt DateTime?
+
+  @@unique([announcementId, userId])
+  @@index([userId])
+}
+
