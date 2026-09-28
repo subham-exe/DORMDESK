@@ -62,8 +62,8 @@ When DormDesk detects an existing incident, a new student submitting a request s
 This prevents unnecessary duplicate tickets.
 
 ### C. SLA & Automatic Escalation
-**Status:** PROTOTYPE / PLANNED
-**Evidence:** `SLA` and `dueAt` schema fields are populated and visualized in the frontend, but there is no background escalation engine.
+**Status:** PROTOTYPE / PARTIALLY IMPLEMENTED
+**Evidence:** `SLA` and `dueAt` schema fields are populated and visualized in the frontend. Admin Dashboard includes an interactive `Run SLA check` capability. Background cron escalation engine is PLANNED.
 Policy-driven escalation. Evaluates the request against configured SLA policies and automatically triggers escalation when required (not arbitrary AI decision-making).
 
 ### D. Zero-Touch Approval

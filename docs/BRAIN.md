@@ -22,7 +22,7 @@ DormDesk is a campus-wide operations platform, not just a hostel management app.
 
 **PROTOTYPE / PARTIAL:**
 - **Student Verification:** The verification state exists in the workflow model, and the student portal allows verifying resolved requests (which triggers auto-close).
-- **SLA Tracking:** SLA targets are calculated and visualized, but automatic escalation policies are pending.
+- **SLA Tracking:** SLA targets are calculated and visualized. The system includes an interactive Admin "Run SLA check" capability, though an automated background cron is still planned.
 
 **BACKEND PRIMITIVE / NOT FULLY IMPLEMENTED:**
 - **Incident Clustering:** The `clusterIntoIncident` primitive exists in the service, but automatic detection and UI triggers are not yet implemented.
