@@ -215,3 +215,53 @@
   - Verified routing stability across `/student`, `/student/requests/new?type=*`, and Offline persistence boundaries natively. Build passed perfectly.
 - **Blockers**: None.
 - **Next Actionable Step**: Project Handoff. All tasks assigned to Zoya complete!
+
+## Prompt A — Quick Fixes + Demo Seed
+
+### Date
+2026-09-28
+
+### Objective
+Resolve critical structural flaws and prepare the core system for the demo by hardening authorization, fixing accessibility attributes, securing the JWT mechanism, optimizing SQLite runtime configuration, and vastly expanding the deterministic seed to demonstrate platform scale.
+
+### Initial Faults
+- **OfflineProvider role attribute**: `role` contained CSS classes alongside "status" in `src/components/OfflineProvider.tsx`, breaking accessibility.
+- **JWT fallback secret**: `src/lib/auth/session.ts` used a fallback secret in production, risking security.
+- **Registration endpoint**: `POST /api/auth/register` did not restrict role assignments or robustly validate input, risking unauthorized admin account creation.
+- **SQLite configuration**: Missing SQLite specific pragmas (`WAL` mode, `foreign_keys=ON`), risking data integrity and performance. Query logging was unconfigurable.
+- **Admin SLA check**: No ability to test SLA functionality interactively from the Admin Dashboard without an external cron.
+- **Demo Seed**: Original seed contained only 9 users and ~9 requests, which was insufficient to demonstrate Incident Intelligence and recurring issue detection.
+
+### Fixes Implemented
+- **OfflineProvider**: Corrected the `role="status"` attribute and moved CSS classes to `className` in `src/components/OfflineProvider.tsx`. Behavior is now cleanly accessible.
+- **JWT Handling**: Added strict throwing behavior in `src/lib/auth/session.ts` if `JWT_SECRET` is missing in production, whilst allowing the fallback in local demo environments.
+- **Registration Hardening**: Overhauled `src/app/api/auth/register/route.ts` to explicitly block non-Student role creation, added regex email validation, enforced an 8-character password minimum, and verified input presence.
+- **SQLite Startup**: Updated `src/lib/db/prisma.ts` to execute PRAGMAs using `$queryRawUnsafe` ensuring WAL and foreign keys are active once per process. Implemented `DEBUG_SQL` environment variable for selective query logging.
+- **Admin SLA Check**: Created a dedicated `AdminSLACheckButton` in `src/app/admin/components/admin-sla-check-button.tsx` and an endpoint `/api/admin/sla-check` that executes `SLAScheduler.tick()`. Ensured it requires `Admin` role authentication.
+
+### Seed/Data Changes
+- Expanded from 9 to 29 total users (20 additional students).
+- Spread students across 3 Hostels (A, B, C), 4 Branches (CSE, EE, ME, Civil), and 4 Years.
+- Seeded ~40 diverse requests spanning Complaints (Plumbing, Electrical, IT, Maintenance), Leaves, and Gate Passes.
+- Created 2 distinct incidents (one OPEN, one RESOLVED) and linked multiple requests to them.
+- Injected explicitly breached (4+) and at-risk (3+) SLA complaints.
+- Created recurring issue patterns (e.g., 5 closed electrical complaints in Hostel C) for intelligence features to consume.
+
+### Validation
+- **Tests**: Created unit tests in `src/app/api/auth/__tests__/register.test.ts` for registration edge cases. Tests pass (`npm test`).
+- **TypeScript**: `npx tsc --noEmit` verified zero errors.
+- **Lint**: `npm run lint` verified zero errors (fixed multiple `@typescript-eslint/no-explicit-any` issues).
+- **Build**: `npm run build` completed successfully.
+- **Runtime/API**: `npx prisma db push --force-reset ; npx prisma db seed` executed cleanly and deterministically.
+
+### Documentation Updated
+- Updated `docs/PRD.md` to reflect that the manual server-side SLA tick check is available under the SLA & Escalation feature.
+- Updated `docs/BRAIN.md` to reflect the newly robust SLA manual trigger.
+- Note: Architecture docs generally accurately represent these requirements as core primitives already.
+
+### Remaining Limitations
+- Automatic cron triggering for SLA evaluation is still pending. The current implementation relies on the manual Admin trigger.
+- Automated Incident clustering algorithms are still missing, though data is correctly seeded to support them.
+
+### Decision / Status
+PASS

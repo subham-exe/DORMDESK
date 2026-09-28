@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AdminAPI } from "@/lib/admin/api";
+import { AdminSLACheckButton } from "./components/admin-sla-check-button";
 
 export const dynamic = "force-dynamic";
 
@@ -226,6 +227,10 @@ export default async function AdminDashboardPage() {
                     Total Over 48h Age
                   </div>
                   <span className="font-medium">{kpis.ageingBuckets.over48h}</span>
+                </div>
+                
+                <div className="pt-3 border-t border-border">
+                  <AdminSLACheckButton />
                 </div>
               </CardContent>
             </Card>

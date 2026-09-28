@@ -4,21 +4,28 @@ import { Domain, Permission } from './policies';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/prisma';
 
-const secretKey = process.env.JWT_SECRET || 'super-secret-key-for-local-dev-only';
-const encodedKey = new TextEncoder().encode(secretKey);
+const getSecretKey = () => {
+  const jwtSecretEnv = process.env.JWT_SECRET;
+  if (process.env.NODE_ENV === 'production' && !jwtSecretEnv) {
+    throw new Error('FATAL: JWT_SECRET environment variable is required in production.');
+  }
+  return jwtSecretEnv || 'super-secret-key-for-local-dev-only';
+};
+
+const getEncodedKey = () => new TextEncoder().encode(getSecretKey());
 
 export async function encrypt(payload: JWTPayload) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(encodedKey);
+    .sign(getEncodedKey());
 }
 
 export async function decrypt(session: string | undefined = '') {
   if (!session) return null;
   try {
-    const { payload } = await jwtVerify(session, encodedKey, {
+    const { payload } = await jwtVerify(session, getEncodedKey(), {
       algorithms: ['HS256'],
     });
     return payload;

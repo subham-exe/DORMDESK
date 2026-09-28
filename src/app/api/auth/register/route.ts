@@ -5,13 +5,25 @@ import { prisma } from '@/lib/db/prisma';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, password, name, department, year, branch, isResident, hostel, block, room } = body;
+    const { email, password, name, department, year, branch, isResident, hostel, block, room, role } = body;
 
     if (!email || !password || !name) {
       return NextResponse.json(
         { error: 'Email, password, and name are required' },
         { status: 400 }
       );
+    }
+    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+    if (typeof password !== 'string' || password.length < 8) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
+    }
+    if (typeof name !== 'string' || name.length > 50 || name.length < 2) {
+      return NextResponse.json({ error: 'Name must be between 2 and 50 characters' }, { status: 400 });
+    }
+    if (role && role !== 'Student') {
+      return NextResponse.json({ error: 'Cannot register with a privileged role' }, { status: 403 });
     }
 
     const existingUser = await prisma.user.findUnique({
