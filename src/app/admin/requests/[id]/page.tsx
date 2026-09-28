@@ -1,3 +1,4 @@
+import { Breadcrumbs } from "@/components/ui/breadcrumb";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock, MapPin, User, FileText, Calendar, AlertCircle } from "lucide-react";
@@ -5,6 +6,7 @@ import { AdminAPI } from "@/lib/admin/api";
 import { RequestActionsClient } from "./components/request-actions-client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge, BadgeVariant } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -44,11 +46,12 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-8">
+      <Breadcrumbs items={[{ label: "Command Center", href: "/admin" }, { label: "Requests", href: "/admin/requests" }, { label: request?.ticketNumber || "Request Details" }]} />
       {/* Back Navigation */}
       <div>
         <Link 
           href="/admin/requests" 
-          className="inline-flex items-center text-sm font-medium text-text-secondary hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+          className="md:hidden inline-flex items-center text-sm font-medium text-text-secondary hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           Back to Requests
@@ -60,7 +63,7 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
         <div>
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-2xl font-bold tracking-tight text-text-primary">{request.ticketNumber}</h1>
-            <Badge variant={getStatusBadgeVariant(request.status)}>{request.status}</Badge>
+            <StatusBadge status={request.status as import("@/lib/types/request").RequestStatus} />
             <Badge variant={getPriorityBadgeVariant(request.priority)}>{request.priority}</Badge>
           </div>
           <p className="text-text-secondary text-sm font-medium">{request.requestType} - {request.category}</p>

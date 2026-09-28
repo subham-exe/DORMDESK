@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ListTodo, Bell, User } from "lucide-react";
+import { Home, ListTodo, Bell, User, GraduationCap } from "lucide-react";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
@@ -12,6 +12,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     { label: "Home", href: "/student", icon: Home },
     { label: "Requests", href: "/student/requests", icon: ListTodo },
     { label: "Notices", href: "/student/notices", icon: Bell },
+    { label: "Scholarships", href: "/student/scholarship", icon: GraduationCap },
     { label: "Profile", href: "/student/profile", icon: User },
   ];
 
@@ -45,7 +46,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pb-16 md:pb-0 flex flex-col">
+      <main id="main" className="flex-1 overflow-y-auto pb-16 md:pb-0 flex flex-col">
         {/* Desktop Header */}
         <header className="hidden md:flex justify-end items-center p-4 border-b border-border bg-surface sticky top-0 z-10">
           <div className="flex items-center gap-4">
@@ -95,3 +96,5 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     </div>
   );
 }
+
+

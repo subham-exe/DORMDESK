@@ -3,10 +3,13 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 import { Search, AlertCircle, Clock, Link as LinkIcon, FilterX } from "lucide-react";
 import { AdminRequest } from "@/lib/admin/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge, BadgeVariant } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { RequestStatus } from "@/lib/types/request";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -16,6 +19,7 @@ import { Modal } from "@/components/ui/modal";
 
 export function RequestQueueClient({ initialRequests }: { initialRequests: AdminRequest[] }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [priorityFilter, setPriorityFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
@@ -71,6 +75,7 @@ export function RequestQueueClient({ initialRequests }: { initialRequests: Admin
       setIsGroupModalOpen(false);
       setSelectedIds([]);
       setIncidentTitle("");
+      toast({ title: "Incident Created", description: "Selected requests were grouped into a new incident.", variant: "success" });
       router.refresh();
       // Optional: router.push(`/admin/incidents/${data.incidentId}`)
     } catch (err: unknown) {
@@ -81,20 +86,7 @@ export function RequestQueueClient({ initialRequests }: { initialRequests: Admin
     }
   };
 
-  const getStatusBadgeVariant = (status: string): BadgeVariant => {
-    switch (status) {
-      case "PENDING": return "info";
-      case "ASSIGNED": return "warning";
-      case "ACKNOWLEDGED": return "warning";
-      case "PROCESSING": return "warning";
-      case "RESOLVED": return "success";
-      case "VERIFIED": return "success";
-      case "CLOSED": return "default";
-      case "REJECTED": return "error";
-      case "APPROVED": return "success";
-      default: return "secondary";
-    }
-  };
+
 
   const getPriorityBadgeVariant = (priority: string): BadgeVariant => {
     switch (priority) {
@@ -266,8 +258,7 @@ export function RequestQueueClient({ initialRequests }: { initialRequests: Admin
                   {filteredRequests.map((req) => (
                     <TableRow key={req.id} className="cursor-pointer hover:bg-surface-muted transition-colors relative group">
                       <TableCell className="relative z-20">
-                        <input 
-                          type="checkbox" 
+                        <input aria-label="Select request" type="checkbox" 
                           className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
                           checked={selectedIds.includes(req.id)}
                           onChange={(e) => handleSelect(req.id, e.target.checked)}
@@ -292,10 +283,10 @@ export function RequestQueueClient({ initialRequests }: { initialRequests: Admin
                         <div className="text-xs text-text-secondary">{req.location || "N/A"}</div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusBadgeVariant(req.status)}>{req.status}</Badge>
+                        <StatusBadge status={req.status as import("@/lib/types/request").RequestStatus} />
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getPriorityBadgeVariant(req.priority)}>{req.priority}</Badge>
+                        <Badge variant={getPriorityBadgeVariant(req.priority)}>{req.priority.charAt(0) + req.priority.slice(1).toLowerCase()}</Badge>
                       </TableCell>
                       <TableCell>
                         {getSlaIndicator(req)}
@@ -323,21 +314,19 @@ export function RequestQueueClient({ initialRequests }: { initialRequests: Admin
             )}
             {filteredRequests.map((req) => (
               <Card key={req.id} className="relative transition-colors hover:border-primary/50">
-                <Link href={`/admin/requests/${req.id}`} className="absolute inset-0 z-10" aria-label={`View request ${req.ticketNumber}`}></Link>
+                <Link href={`/admin/requests/${req.id}`} className="absolute inset-0 z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary focus-visible:outline-none rounded-lg" aria-label={`View request ${req.ticketNumber}`}></Link>
                 <CardContent className="p-4 flex flex-col gap-3">
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex items-center gap-2">
                       <div className="relative z-20 h-5 flex items-center">
-                        <input 
-                          type="checkbox" 
+                        <input aria-label="Select request" type="checkbox" 
                           className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
                           checked={selectedIds.includes(req.id)}
                           onChange={(e) => handleSelect(req.id, e.target.checked)}
                           onClick={(e) => e.stopPropagation()}
                         />
                       </div>
-                      <div className="font-semibold text-sm flex flex-col items-start gap-1">
-                        {req.ticketNumber}
+                      <div className="font-semibold text-sm flex flex-col items-start gap-1">`n                        {req.ticketNumber}`n                        <StatusBadge status={req.status as RequestStatus} />
                         {req.incidentId && (
                           <Badge variant="info" className="text-[10px] py-0 leading-tight">INCIDENT</Badge>
                         )}
@@ -346,7 +335,7 @@ export function RequestQueueClient({ initialRequests }: { initialRequests: Admin
                   </div>
                   
                   <div className="flex justify-between items-center mt-1 border-t border-border pt-3">
-                    <Badge variant={getPriorityBadgeVariant(req.priority)}>{req.priority}</Badge>
+                    <Badge variant={getPriorityBadgeVariant(req.priority)}>{req.priority.charAt(0) + req.priority.slice(1).toLowerCase()}</Badge>
                     {getSlaIndicator(req)}
                   </div>
                 </CardContent>
@@ -377,8 +366,8 @@ export function RequestQueueClient({ initialRequests }: { initialRequests: Admin
             You are about to group <strong>{selectedIds.length}</strong> requests into a new incident.
           </p>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-text-primary">Incident Title</label>
-            <Input 
+            <label htmlFor="incidentTitle" className="text-sm font-medium text-text-primary">Incident Title</label>
+            <Input id="incidentTitle" 
               placeholder="e.g. Block A Wi-Fi Outage" 
               value={incidentTitle}
               onChange={(e) => setIncidentTitle(e.target.value)}
@@ -392,3 +381,11 @@ export function RequestQueueClient({ initialRequests }: { initialRequests: Admin
     </div>
   );
 }
+
+
+
+
+
+
+
+

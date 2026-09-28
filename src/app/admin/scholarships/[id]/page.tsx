@@ -1,3 +1,4 @@
+import { Breadcrumbs } from "@/components/ui/breadcrumb";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, User, Calendar, FileText, IndianRupee } from "lucide-react";
@@ -35,9 +36,10 @@ export default async function AdminScholarshipDetailPage({ params }: { params: P
 
   return (
     <div className="space-y-6 pb-10">
+      <Breadcrumbs items={[{ label: "Command Center", href: "/admin" }, { label: "Scholarships", href: "/admin/scholarships" }, { label: application?.applicationNumber || "Application Details" }]} />
       {/* Navigation */}
       <div>
-        <Link href="/admin/scholarships" className="inline-flex items-center text-sm text-text-secondary hover:text-text-primary mb-4 transition-colors">
+        <Link href="/admin/scholarships" className="md:hidden inline-flex items-center text-sm text-text-secondary hover:text-text-primary mb-4 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-1" />
           Back to Scholarships
         </Link>

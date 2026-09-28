@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AlertCircle, Clock, ChevronRight } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AdminAPI } from "@/lib/admin/api";
 
@@ -107,7 +108,7 @@ export default async function AdminDashboardPage() {
                         <p className="text-sm text-text-secondary line-clamp-1">{req.description}</p>
                         
                         <div className="flex items-center gap-3 pt-1">
-                          <span className="text-xs font-medium text-text-secondary">{req.status}</span>
+                          <StatusBadge status={req.status} />
                           <span className="text-text-secondary text-xs">•</span>
                           {req.assignedAuthorityName ? (
                             <span className="text-xs text-text-secondary">Assigned: {req.assignedAuthorityName}</span>

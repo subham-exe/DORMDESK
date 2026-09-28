@@ -3,14 +3,17 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Search, ChevronRight, AlertCircle, Clock } from "lucide-react";
+import { Plus, Search, ChevronRight, AlertCircle, Clock, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
 import { StatusIndicator } from "@/components/ui/status-indicator";
+import { getOfflineRequests } from "@/lib/services/offline-store";
 
 export default function RequestListPage() {
   const [requests, setRequests] = useState<any[]>([]);
@@ -21,10 +24,31 @@ export default function RequestListPage() {
   useEffect(() => {
     async function fetchRequests() {
       try {
-        const response = await fetch("/api/requests");
-        if (!response.ok) throw new Error("Failed to load requests.");
-        const data = await response.json();
-        setRequests(data);
+        let fetchedRequests: any[] = [];
+        let networkError = false;
+        try {
+          const response = await fetch('/api/requests');
+          if (!response.ok) throw new Error("Failed to load requests.");
+          fetchedRequests = await response.json();
+        } catch (e) {
+          networkError = true;
+        }
+
+        let offlineRequests: any[] = [];
+        try {
+          offlineRequests = await getOfflineRequests();
+        } catch {}
+
+        const allRequests = [
+          ...offlineRequests.map(r => ({ ...r, id: "offline-" + r.localId, ticketNumber: "PENDING-SYNC", status: "PENDING_SYNC", createdAt: new Date().toISOString() })),
+          ...fetchedRequests
+        ];
+
+        setRequests(allRequests);
+
+        if (networkError && allRequests.length === 0) {
+          setError("Failed to load requests. You are offline and have no saved requests.");
+        }
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -40,30 +64,7 @@ export default function RequestListPage() {
     req.category.toLowerCase().includes(searchTerm.toLowerCase())
   ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "DRAFT":
-      case "SUBMITTED":
-      case "CLASSIFIED":
-      case "ROUTED":
-        return <Badge variant="info">{status}</Badge>;
-      case "ASSIGNED":
-      case "ACKNOWLEDGED":
-      case "PROCESSING":
-        return <Badge variant="warning">{status}</Badge>;
-      case "RESOLVED":
-      case "VERIFIED":
-      case "CLOSED":
-        return <Badge variant="success">{status}</Badge>;
-      case "ESCALATED":
-      case "REJECTED":
-        return <Badge variant="error">{status}</Badge>;
-      case "CANCELLED":
-        return <Badge variant="default">CANCELLED</Badge>;
-      default:
-        return <Badge variant="default">{status}</Badge>;
-    }
-  };
+
 
   const getSlaIndicator = (req: any) => {
     if (!req.dueAt || ["RESOLVED", "VERIFIED", "CLOSED", "REJECTED", "CANCELLED"].includes(req.status)) return null;
@@ -122,9 +123,7 @@ export default function RequestListPage() {
       </div>
 
       {error ? (
-        <div className="p-4 bg-error-bg text-error rounded-md">
-          {error}
-        </div>
+        <ErrorState title="Failed to load requests" description={error} />
       ) : loading ? (
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map(i => (
@@ -148,7 +147,7 @@ export default function RequestListPage() {
                     <div className="flex-1 min-w-0 pr-4">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         <span className="text-xs font-mono font-medium text-text-secondary">{request.ticketNumber}</span>
-                        {getStatusBadge(request.status)}
+                        <StatusBadge status={request.status} />
                         {request.incidentId && (
                           <Badge variant="info" className="border-none text-[10px]">INCIDENT</Badge>
                         )}
@@ -173,3 +172,6 @@ export default function RequestListPage() {
     </div>
   );
 }
+
+
+

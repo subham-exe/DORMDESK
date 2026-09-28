@@ -1,5 +1,5 @@
 "use client";
-
+import { Breadcrumbs } from "@/components/ui/breadcrumb";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, GraduationCap, Calendar, Clock, CheckCircle, FileText, Check, X } from "lucide-react";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
 
 const LIFECYCLE = [
   { status: "ELIGIBLE", label: "Eligible" },
@@ -109,6 +110,7 @@ export default function ScholarshipDetailsPage() {
   if (loading) {
     return (
       <div className="space-y-6 max-w-3xl mx-auto">
+      <Breadcrumbs items={[{ label: "Dashboard", href: "/student" }, { label: "Scholarship" }]} />
         <div className="flex gap-4 items-center">
           <Skeleton className="h-10 w-10 rounded-full" />
           <Skeleton className="h-8 w-48" />
@@ -118,26 +120,16 @@ export default function ScholarshipDetailsPage() {
     );
   }
 
-  if (error || !scholarship) {
-    return (
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/student" passHref>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold">Scholarship Details</h1>
-        </div>
-        
-        <EmptyState
-          icon={<GraduationCap className="h-8 w-8" />}
-          title="No Scholarship Found"
-          description="We could not locate any active scholarship records for your account."
-          action={<Link href="/student" passHref><Button>Back to Dashboard</Button></Link>}
-        />
-      </div>
-    );
+  if (error) {
+    return <ErrorState title="Failed to load scholarship" description={error} />;
+  }
+  
+  if (!scholarship) {
+    return <EmptyState 
+                title="No active application" 
+                description={"You have not applied for a scholarship." }
+                icon={<GraduationCap className="h-6 w-6" />}
+              />;
   }
 
   const timelineSteps = getTimelineSteps();
@@ -146,8 +138,8 @@ export default function ScholarshipDetailsPage() {
     <div className="space-y-6 max-w-3xl mx-auto pb-8">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/student" passHref>
-          <Button variant="ghost" size="icon" className="rounded-full">
+        <Link href="/student" passHref className="md:hidden">
+          <Button variant="ghost" size="icon" className="rounded-full" aria-label="Go back">
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>
@@ -259,7 +251,7 @@ export default function ScholarshipDetailsPage() {
                 You are eligible to apply for this scholarship. Please submit your application documents to proceed.
               </p>
             </div>
-            <Link href="/student/requests/new?type=OTHER&category=SCHOLARSHIP" passHref>
+            <Link href="/student/requests/new?type=OTHER&category=SCHOLARSHIP" passHref className="md:hidden">
               <Button size="sm">Submit Documents</Button>
             </Link>
           </CardContent>
@@ -268,3 +260,4 @@ export default function ScholarshipDetailsPage() {
     </div>
   );
 }
+

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { LoadingState } from "@/components/ui/loading-state";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +21,7 @@ interface Notice {
 export default function NoticesPage() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     fetch('/api/notifications')
@@ -29,20 +32,20 @@ export default function NoticesPage() {
         }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => { setError(true); setLoading(false); });
   }, []);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Notices</h1>
-        <p className="text-gray-500">Important updates and announcements.</p>
+        <p className="text-text-secondary">Important updates and announcements.</p>
       </div>
 
       {loading ? (
-        <div className="flex justify-center p-8">
-          <div className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-        </div>
+        <LoadingState text="Loading notices..." />
+      ) : error ? (
+        <ErrorState title="Failed to load notices" description="We couldn't load your notices right now." />
       ) : notices.length === 0 ? (
         <EmptyState
           icon={<Bell className="h-6 w-6" />}
@@ -79,3 +82,4 @@ export default function NoticesPage() {
     </div>
   );
 }
+

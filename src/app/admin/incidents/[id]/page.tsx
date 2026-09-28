@@ -1,3 +1,4 @@
+import { Breadcrumbs } from "@/components/ui/breadcrumb";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Calendar } from "lucide-react";
@@ -27,7 +28,7 @@ export default async function AdminIncidentDetailPage({ params }: { params: Prom
         <div>
           <Link 
             href="/admin/incidents" 
-            className="inline-flex items-center text-sm text-text-secondary hover:text-text-primary mb-3"
+            className="md:hidden inline-flex items-center text-sm text-text-secondary hover:text-text-primary mb-3"
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
             Back to Incidents
@@ -37,7 +38,7 @@ export default async function AdminIncidentDetailPage({ params }: { params: Prom
               {incident.title}
             </h1>
             <Badge variant={incident.status === "OPEN" ? "warning" : "success"}>
-              {incident.status}
+              {incident.status === "OPEN" ? "In Progress" : "Resolved"}
             </Badge>
           </div>
           <div className="flex items-center gap-3 text-sm text-text-secondary mt-2">
@@ -97,6 +98,7 @@ export default async function AdminIncidentDetailPage({ params }: { params: Prom
 
         {/* Right Column - Actions & Metadata */}
         <div className="space-y-6">
+      <Breadcrumbs items={[{ label: "Command Center", href: "/admin" }, { label: "Incidents", href: "/admin/incidents" }, { label: incident?.incidentNumber || "Incident Details" }]} />
           <IncidentActionsClient incident={incident} />
 
           <Card className="border-2 border-border bg-surface-muted">
@@ -126,3 +128,4 @@ export default async function AdminIncidentDetailPage({ params }: { params: Prom
     </div>
   );
 }
+

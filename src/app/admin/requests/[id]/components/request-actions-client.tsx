@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 import { AdminRequestDetail } from "@/lib/admin/api";
 import { RequestStatus } from "@/lib/types/request";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AlertCircle } from "lucide-react";
 
 const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   PENDING: ['ASSIGNED', 'REJECTED', 'CLOSED', 'APPROVED', 'CANCELLED'],
@@ -25,6 +27,7 @@ const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
 
 export function RequestActionsClient({ request, staffList }: { request: AdminRequestDetail, staffList: {id: string, name: string, department: string}[] }) {
   const router = useRouter();
+  const { toast } = useToast();
   
   // Assignment State
   const [isAssigning, setIsAssigning] = useState(false);
@@ -60,6 +63,7 @@ export function RequestActionsClient({ request, staffList }: { request: AdminReq
       if (!res.ok) throw new Error("Failed to assign request");
 
       setSelectedStaff("");
+      toast({ title: "Request Assigned", description: "The request has been assigned successfully.", variant: "success" });
       router.refresh();
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -92,6 +96,7 @@ export function RequestActionsClient({ request, staffList }: { request: AdminReq
       setIsStatusModalOpen(false);
       setTargetStatus("");
       setStatusNotes("");
+      toast({ title: "Status Updated", description: "The request status has been updated.", variant: "success" });
       router.refresh();
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -130,7 +135,7 @@ export function RequestActionsClient({ request, staffList }: { request: AdminReq
             {isAssigning ? "Assigning..." : "Assign"}
           </Button>
         </div>
-        {assignError && <p className="text-sm text-error">{assignError}</p>}
+        {assignError && <div role="alert" className="flex items-start gap-2 p-3 mt-3 text-sm bg-error-bg text-error rounded-md border border-error/20"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{assignError}</span></div>}
       </div>
 
       {/* Status Control */}
@@ -188,10 +193,11 @@ export function RequestActionsClient({ request, staffList }: { request: AdminReq
             />
           </div>
 
-          {statusError && <p className="text-sm text-error bg-error-bg p-2 rounded">{statusError}</p>}
+          {statusError && <div role="alert" className="flex items-start gap-2 p-3 mt-3 text-sm bg-error-bg text-error rounded-md border border-error/20"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{statusError}</span></div>}
         </div>
       </Modal>
 
     </div>
   );
 }
+

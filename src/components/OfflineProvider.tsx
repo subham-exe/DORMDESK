@@ -47,7 +47,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
     <>
       {/* Offline Banner */}
       {isOffline && (
-        <div className="fixed top-0 left-0 w-full bg-error text-white px-4 py-2 text-sm font-medium flex items-center justify-center z-[100] shadow-md transition-all duration-300 transform translate-y-0">
+        <div className="fixed top-0 left-0 w-full bg-slate-700 text-white" aria-live="polite" role="status px-4 py-2 text-sm font-medium flex items-center justify-center z-[100] shadow-md transition-all duration-300 transform translate-y-0">
           <WifiOff className="w-4 h-4 mr-2" />
           You&apos;re offline. Some features may be unavailable.
         </div>
@@ -55,7 +55,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       
       {/* Back Online Banner */}
       {showBackOnline && !isOffline && (
-        <div className="fixed top-0 left-0 w-full bg-success text-white px-4 py-2 text-sm font-medium flex items-center justify-center z-[100] shadow-md transition-all duration-300 transform translate-y-0">
+        <div className="fixed top-0 left-0 w-full bg-success text-white" aria-live="polite" role="status px-4 py-2 text-sm font-medium flex items-center justify-center z-[100] shadow-md transition-all duration-300 transform translate-y-0">
           You&apos;re back online
         </div>
       )}
@@ -67,3 +67,4 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
     </>
   );
 }
+

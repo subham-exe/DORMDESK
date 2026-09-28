@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 import { ScholarshipApplication, ScholarshipStatus } from "@/lib/admin/api";
 
 export function ScholarshipActionsClient({ application }: { application: ScholarshipApplication }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,6 +23,7 @@ export function ScholarshipActionsClient({ application }: { application: Scholar
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
+        toast({ title: "Status Updated", description: "Scholarship application is now " + newStatus, variant: "success" });
         router.refresh();
       } else {
         const errorData = await res.json().catch(() => ({}));
@@ -53,6 +57,12 @@ export function ScholarshipActionsClient({ application }: { application: Scholar
         );
       case "APPROVED":
         return (
+          <Button variant="primary" onClick={() => handleUpdate("SANCTIONED")} disabled={loading}>
+            Sanction
+          </Button>
+        );
+      case "SANCTIONED":
+        return (
           <Button variant="primary" onClick={() => handleUpdate("DISBURSED")} disabled={loading}>
             Mark Disbursed
           </Button>
@@ -67,7 +77,8 @@ export function ScholarshipActionsClient({ application }: { application: Scholar
       <div className="flex gap-2">
         {getAvailableActions()}
       </div>
-      {error && <div className="text-sm text-error">{error}</div>}
+      {error && <div role="alert" className="flex items-start gap-2 p-3 mt-3 text-sm bg-error-bg text-error rounded-md border border-error/20"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{error}</span></div>}
     </div>
   );
 }
+

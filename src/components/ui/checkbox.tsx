@@ -10,16 +10,15 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     const borderClass = error ? "border-error focus-visible:ring-error" : "border-border";
     
     return (
-      <div className="relative inline-flex items-center">
+      <div className="relative inline-flex items-center justify-center h-11 w-11 -ml-3">
         <input
           type="checkbox"
-          className={`${baseClass} ${borderClass} ${className}`}
+          className={`peer ${baseClass} ${borderClass} ${className}`}
           ref={ref}
           {...props}
         />
-        {/* Custom checkmark using SVG overlay for checked state via sibling selector would typically go here, but for simplicity we rely on standard styling or a wrapper. Native appearance-none requires custom check icon. */}
         <svg
-          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-inverse opacity-0 peer-checked:opacity-100 hidden"
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-inverse opacity-0 peer-checked:opacity-100"
           fill="none"
           stroke="currentColor"
           strokeWidth="3"

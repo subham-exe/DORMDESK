@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, Eye, Filter } from "lucide-react";
+import { Search, Eye, Filter, GraduationCap } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -92,7 +92,8 @@ export default async function AdminScholarshipsPage({ searchParams }: { searchPa
             <form action="/admin/scholarships" method="GET" className="flex items-center gap-2 w-full sm:w-auto">
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-text-secondary" />
-                <Input name="q" defaultValue={resolvedParams.q || ""} placeholder="Search student or ID..." className="pl-9 h-9" />
+                <label htmlFor="q" className="sr-only">Search</label>
+                <Input id="q" name="q" defaultValue={resolvedParams.q || ""} placeholder="Search student or ID..." className="pl-9 h-9" />
               </div>
               <Button type="submit" variant="outline" size="sm" className="h-9">
                 <Filter className="w-4 h-4 mr-2" />
@@ -107,6 +108,7 @@ export default async function AdminScholarshipsPage({ searchParams }: { searchPa
               <EmptyState 
                 title="No Applications Found" 
                 description={query ? "No applications match your search." : "There are currently no scholarship applications in the system."}
+                icon={<GraduationCap className="h-6 w-6" />}
               />
             </div>
           ) : (

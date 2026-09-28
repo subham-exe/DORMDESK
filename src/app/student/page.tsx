@@ -7,8 +7,10 @@ import { Plus, Clock, CheckCircle, AlertTriangle, ChevronRight, FileText, ListTo
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
 import { getOfflineRequests, deleteOfflineRequest } from "@/lib/services/offline-store";
 
 export default function StudentDashboard() {
@@ -38,16 +40,16 @@ export default function StudentDashboard() {
           fetch("/api/announcements").catch(() => null)
         ]);
         
-        let fetchedRequests = [];
+        let fetchedRequests: any[] = [];
+        let networkError = false;
         if (reqsRes) {
           if (reqsRes.ok) {
             fetchedRequests = await reqsRes.json();
           } else {
-            const errData = await reqsRes.json().catch(() => ({}));
-            throw new Error(errData.error || `Failed to fetch requests: ${reqsRes.status}`);
+            networkError = true;
           }
         } else {
-          throw new Error("Network error fetching requests");
+          networkError = true;
         }
 
         // Get offline pending requests
@@ -64,6 +66,10 @@ export default function StudentDashboard() {
         
         setRequests(allRequests);
         
+        if (networkError && allRequests.length === 0) {
+          throw new Error("Network error and no offline requests available.");
+        }
+
         if (scholRes && scholRes.ok) {
           const scholData = await scholRes.json();
           if (scholData.success) {
@@ -116,37 +122,7 @@ export default function StudentDashboard() {
   const verificationRequired = requests.filter(r => r.status === "RESOLVED");
   const recentRequests = [...requests].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "DRAFT":
-      case "SUBMITTED":
-      case "CLASSIFIED":
-      case "ROUTED":
-        return <Badge variant="info">{status}</Badge>;
-      case "ASSIGNED":
-      case "ACKNOWLEDGED":
-      case "PROCESSING":
-        return <Badge variant="warning">{status}</Badge>;
-      case "RESOLVED":
-      case "VERIFIED":
-      case "CLOSED":
-        return <Badge variant="success">{status}</Badge>;
-      case "ESCALATED":
-      case "REJECTED":
-        return <Badge variant="error">{status}</Badge>;
-      case "DISBURSED":
-      case "SANCTIONED":
-        return <Badge variant="success">{status}</Badge>;
-      case "UNDER_VERIFICATION":
-        return <Badge variant="warning">{status}</Badge>;
-      case "PENDING_SYNC":
-        return <Badge variant="secondary" className="bg-surface-muted text-text-secondary border-dashed"><CloudOff className="w-3 h-3 mr-1" /> Pending Sync</Badge>;
-      case "ELIGIBLE":
-        return <Badge variant="info">{status}</Badge>;
-      default:
-        return <Badge variant="default">{status}</Badge>;
-    }
-  };
+
 
   const dismissAnnouncement = (id: string) => {
     setDismissedAnnouncements(prev => {
@@ -264,7 +240,7 @@ export default function StudentDashboard() {
                 <GraduationCap className="w-5 h-5 text-info" />
                 <h3 className="font-semibold text-info">Merit Scholarship {scholarship.academicYear}</h3>
               </div>
-              {getStatusBadge(scholarship.status)}
+              <StatusBadge status={scholarship.status} overrideLabel={scholarship.status === "SUBMITTED" ? "Pending Review" : undefined} />
             </div>
             <CardContent className="p-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
               <div>
@@ -304,7 +280,7 @@ export default function StudentDashboard() {
         </div>
 
         {error ? (
-          <div className="p-4 bg-error-bg text-error rounded-lg">{error}</div>
+          <ErrorState title="Failed to load requests" description={error} />
         ) : loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
@@ -327,7 +303,7 @@ export default function StudentDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-mono text-text-secondary">{request.ticketNumber}</span>
-                        {getStatusBadge(request.status)}
+                        <StatusBadge status={request.status} />
                       </div>
                       <h3 className="font-medium text-text-primary truncate">{request.title || request.requestType}</h3>
                       <p className="text-xs text-text-secondary mt-1 truncate">{request.category}</p>
@@ -345,3 +321,5 @@ export default function StudentDashboard() {
     </div>
   );
 }
+
+

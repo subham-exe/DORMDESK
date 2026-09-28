@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, react-hooks/exhaustive-deps, @typescript-eslint/no-unused-vars, react-hooks/set-state-in-effect */
 "use client";
-
+import { Breadcrumbs } from "@/components/ui/breadcrumb";
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, react-hooks/exhaustive-deps, @typescript-eslint/no-unused-vars, react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -11,8 +11,11 @@ import {
   QrCode, Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { getOfflineRequest } from "@/lib/services/offline-store";
@@ -31,6 +34,7 @@ const EXCEPTIONS = ["REJECTED", "CANCELLED", "ESCALATED"];
 export default function RequestDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
+  const { toast } = useToast();
   
   const [request, setRequest] = useState<any>(null);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -130,6 +134,7 @@ export default function RequestDetailsPage() {
       setShowReopen(false);
       setShowCancelConfirm(false);
       setActionError(null);
+      toast({ title: "Request Updated", description: "Your request has been successfully updated.", variant: "success" });
       await fetchData();
     } catch (err: any) {
       setActionError(err.message);
@@ -223,6 +228,7 @@ export default function RequestDetailsPage() {
   if (loading) {
     return (
       <div className="space-y-6 max-w-3xl mx-auto">
+      <Breadcrumbs items={[{ label: "Dashboard", href: "/student" }, { label: "Requests", href: "/student/requests" }, { label: request?.ticketNumber || "Request Details" }]} />
         <div className="flex gap-4 items-center">
           <Skeleton className="h-10 w-10 rounded-full" />
           <Skeleton className="h-8 w-48" />
@@ -246,34 +252,7 @@ export default function RequestDetailsPage() {
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "DRAFT":
-      case "SUBMITTED":
-      case "CLASSIFIED":
-      case "ASSIGNED":
-      case "PENDING":
-        return <Badge variant="info">{status}</Badge>;
-      case "ASSIGNED":
-      case "ACKNOWLEDGED":
-      case "PROCESSING":
-        return <Badge variant="warning">{status}</Badge>;
-      case "RESOLVED":
-      case "VERIFIED":
-      case "CLOSED":
-      case "APPROVED":
-        return <Badge variant="success">{status}</Badge>;
-      case "ESCALATED":
-      case "REJECTED":
-        return <Badge variant="error">{status}</Badge>;
-      case "CANCELLED":
-        return <Badge variant="default">CANCELLED</Badge>;
-      case "PENDING_SYNC":
-        return <Badge variant="secondary" className="bg-surface-muted text-text-secondary border-dashed">Pending Sync</Badge>;
-      default:
-        return <Badge variant="default">{status}</Badge>;
-    }
-  };
+
 
   const canCancel = ["PENDING", "ASSIGNED", "ACKNOWLEDGED", "PROCESSING"].includes(request.status);
   const isResolved = request.status === "RESOLVED";
@@ -290,17 +269,18 @@ export default function RequestDetailsPage() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-8">
+      <Breadcrumbs items={[{ label: "Dashboard", href: "/student" }, { label: "Requests", href: "/student/requests" }, { label: request?.ticketNumber || "Request Details" }]} />
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/student/requests" passHref>
-          <Button variant="ghost" size="icon" className="rounded-full">
+        <Link href="/student/requests" passHref className="md:hidden">
+          <Button variant="ghost" size="icon" className="rounded-full" aria-label="Back to requests">
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold">{request.ticketNumber}</h1>
-            {getStatusBadge(request.status)}
+            <StatusBadge status={request.status} />
           </div>
         </div>
       </div>
@@ -313,7 +293,7 @@ export default function RequestDetailsPage() {
               <QrCode className="w-6 h-6 text-info" />
               <h2 className="font-bold text-info text-lg">Digital Gate Pass</h2>
             </div>
-            {getStatusBadge(request.status)}
+            <StatusBadge status={request.status} />
           </div>
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row gap-8 items-center sm:items-start justify-between">
@@ -370,7 +350,7 @@ export default function RequestDetailsPage() {
               <FileText className="w-6 h-6 text-success" />
               <h2 className="font-bold text-success text-lg">Digital Certificate</h2>
             </div>
-            {getStatusBadge(request.status)}
+            <StatusBadge status={request.status} />
           </div>
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start justify-between">
@@ -525,7 +505,7 @@ export default function RequestDetailsPage() {
                 <div className="bg-surface-muted p-3 rounded-md border border-border">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs font-mono text-text-secondary">{request.incident.ticketNumber}</span>
-                    <Badge variant="outline" className="text-xs">{request.incident.status}</Badge>
+                    <Badge variant={request.incident.status === "OPEN" ? "warning" : "success"} className="text-xs">{request.incident.status === "OPEN" ? "In Progress" : "Resolved"}</Badge>
                   </div>
                   <h4 className="font-medium text-text-primary text-sm">{request.incident.title}</h4>
                 </div>
@@ -609,7 +589,7 @@ export default function RequestDetailsPage() {
             <CardContent className="pt-4 space-y-4">
               <div>
                 <p className="text-sm font-medium text-text-secondary mb-1">Current State</p>
-                {getStatusBadge(request.status)}
+                <StatusBadge status={request.status} />
               </div>
               
               {request.assignedAuthority && (
@@ -648,7 +628,7 @@ export default function RequestDetailsPage() {
             <Card className="border-error bg-error-bg/30">
               <CardContent className="p-4">
                 <p className="text-xs text-text-secondary mb-3">You can cancel this request because it has not been assigned or processed yet.</p>
-                {actionError && <div className="text-error text-sm mb-3 bg-error-bg p-2 rounded">{actionError}</div>}
+                {actionError && <div role="alert" className="flex items-start gap-2 p-3 mb-3 text-sm bg-error-bg text-error rounded-md border border-error/20"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{actionError}</span></div>}
                 {!showCancelConfirm ? (
                   <Button 
                     variant="destructive" 
@@ -692,3 +672,4 @@ export default function RequestDetailsPage() {
     </div>
   );
 }
+

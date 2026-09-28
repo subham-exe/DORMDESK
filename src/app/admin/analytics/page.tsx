@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { AdminAPI } from "@/lib/admin/api";
 import { EmptyState } from "@/components/ui/empty-state";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { RequestStatus } from "@/lib/types/request";
 
 export const dynamic = "force-dynamic";
 
@@ -150,7 +152,7 @@ export default async function AdminAnalyticsPage() {
               <div className="space-y-3">
                 {analytics.byStatus.map(s => (
                   <div key={s.status} className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{s.status}</span>
+                    <StatusBadge status={s.status as RequestStatus} />
                     <Badge variant="outline">{s.count}</Badge>
                   </div>
                 ))}
@@ -202,3 +204,4 @@ export default async function AdminAnalyticsPage() {
     </div>
   );
 }
+

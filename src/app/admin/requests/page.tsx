@@ -1,3 +1,4 @@
+import { Inbox } from "lucide-react";
 import { AdminAPI } from "@/lib/admin/api";
 import { RequestQueueClient } from "./components/request-queue-client";
 

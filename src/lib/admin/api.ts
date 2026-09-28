@@ -61,7 +61,7 @@ export interface ScholarshipStats {
   disbursed: number;
 }
 
-export type ScholarshipStatus = "SUBMITTED" | "UNDER_VERIFICATION" | "APPROVED" | "REJECTED" | "DISBURSED";
+export type ScholarshipStatus = "SUBMITTED" | "UNDER_VERIFICATION" | "APPROVED" | "REJECTED" | "SANCTIONED" | "DISBURSED";
 
 export interface ScholarshipApplication {
   id: string;
@@ -532,3 +532,4 @@ export const AdminAPI = {
     }));
   }
 };
+

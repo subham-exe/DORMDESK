@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
+import { ErrorState } from "@/components/ui/error-state";
 
 export default function AdminError({
   error,
