@@ -129,3 +129,7 @@ The hackathon demo must deliver one complete vertical slice:
 - No unnecessary AI dependency (no decorative chatbots).
 - No blockchain, huge payment systems, or elaborate attendance features.
 - No copying every FretBox feature.
+
+### E. Mess Menu & Feedback
+- **Students:** Can view daily/weekly meal schedules deterministically and submit rated feedback per meal slot.
+- **Wardens/Admins:** Can manage meal slot schedules and monitor average rating aggregations to ensure operational quality. (Billing, Inventory, and Vendor APIs remain strictly out of scope).

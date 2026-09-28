@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ListTodo, Bell, User, GraduationCap } from "lucide-react";
+import { Home, ListTodo, Bell, User, GraduationCap, Utensils } from "lucide-react";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
@@ -13,6 +13,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     { label: "Requests", href: "/student/requests", icon: ListTodo },
     { label: "Notices", href: "/student/notices", icon: Bell },
     { label: "Scholarships", href: "/student/scholarship", icon: GraduationCap },
+    { label: "Mess Menu", href: "/student/mess", icon: Utensils },
     { label: "Profile", href: "/student/profile", icon: User },
   ];
 

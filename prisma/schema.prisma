@@ -30,6 +30,7 @@ model User {
   notifications   Notification[]
   announcementsCreated Announcement[] @relation("AnnouncementCreator")
   announcementReceipts AnnouncementReceipt[]
+  messFeedbacks MessFeedback[]
 }
 
 model Request {
@@ -150,3 +151,32 @@ model AnnouncementReceipt {
   @@index([userId])
 }
 
+
+
+model MessMenu {
+  id        String   @id @default(uuid())
+  date      DateTime
+  mealType  String   // BREAKFAST, LUNCH, SNACKS, DINNER
+  items     String
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  feedbacks MessFeedback[]
+
+  @@unique([date, mealType])
+}
+
+model MessFeedback {
+  id        String   @id @default(uuid())
+  menuId    String
+  menu      MessMenu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id])
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([menuId, studentId])
+}

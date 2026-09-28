@@ -18,6 +18,8 @@ async function main() {
   await prisma.request.deleteMany();
   await prisma.incident.deleteMany();
   await prisma.scholarship.deleteMany();
+  await prisma.messFeedback.deleteMany();
+  await prisma.messMenu.deleteMany();
   await prisma.user.deleteMany();
 
   console.log('Seeding Demo Users (Core 9)...');
@@ -255,6 +257,26 @@ async function main() {
       }
     });
   }
+
+  
+  console.log('Seeding Mess Menu...');
+  const m1 = await prisma.messMenu.create({
+    data: { date: new Date(now), mealType: 'BREAKFAST', items: 'Idli, Sambar, Chutney, Tea', notes: 'South Indian Special' }
+  });
+  const m2 = await prisma.messMenu.create({
+    data: { date: new Date(now), mealType: 'LUNCH', items: 'Rice, Roti, Dal Fry, Paneer Butter Masala, Salad' }
+  });
+  await prisma.messMenu.create({
+    data: { date: new Date(now), mealType: 'DINNER', items: 'Veg Biryani, Raita, Gulab Jamun' }
+  });
+  await prisma.messMenu.create({
+    data: { date: new Date(now + 24 * 3600 * 1000), mealType: 'BREAKFAST', items: 'Aloo Paratha, Curd, Pickle, Coffee' }
+  });
+
+  console.log('Seeding Mess Feedback...');
+  await prisma.messFeedback.create({ data: { menuId: m1.id, studentId: users.student1.id, rating: 5, comment: 'Very good' } });
+  await prisma.messFeedback.create({ data: { menuId: m1.id, studentId: users.student2.id, rating: 4 } });
+  await prisma.messFeedback.create({ data: { menuId: m2.id, studentId: users.student1.id, rating: 3, comment: 'Paneer was a bit tough' } });
 
   console.log('Demo database seeded successfully!');
 }

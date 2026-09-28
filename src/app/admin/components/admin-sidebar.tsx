@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ListTodo, AlertTriangle, BarChart, GraduationCap, Megaphone } from "lucide-react";
+import { LayoutDashboard, Utensils, ListTodo, AlertTriangle, BarChart, GraduationCap, Megaphone } from "lucide-react";
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -14,6 +14,7 @@ export function AdminSidebar() {
     { label: "Announcements", href: "/admin/announcements", icon: Megaphone },
     { label: "Analytics", href: "/admin/analytics", icon: BarChart },
     { label: "Scholarships", href: "/admin/scholarships", icon: GraduationCap },
+    { label: "Mess Menu", href: "/admin/mess", icon: Utensils },
   ];
 
   return (
