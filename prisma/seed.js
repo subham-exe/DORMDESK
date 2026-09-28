@@ -107,9 +107,9 @@ async function main() {
   await createReq('PLM', 'COMPLAINT', 'Plumbing', users.student1.id, 'Washroom tap is dry', 'Hostel A, North Block Washroom', 'HIGH', 'ASSIGNED', { assignedDepartment: 'Plumbing', assignedAuthorityId: users.staff2.id, incidentId: incident1.id, SLA: 4, dueAt: new Date(now + 2 * ONE_HOUR) });
   await createReq('PLM', 'COMPLAINT', 'Plumbing', users.student2.id, 'No water for morning shower', 'Hostel A, North Block 2nd Floor', 'HIGH', 'ACKNOWLEDGED', { assignedDepartment: 'Plumbing', assignedAuthorityId: users.staff2.id, incidentId: incident1.id, SLA: 4, dueAt: new Date(now - 1 * ONE_HOUR) });
   await createReq('ACA', 'CERTIFICATE', 'Bonafide', users.student3.id, 'Need bonafide certificate for bank loan', 'Admin Block', 'LOW', 'PROCESSING', { assignedDepartment: 'Computer Science', assignedAuthorityId: users.professor.id });
-  const reqRes = await createReq('MNT', 'COMPLAINT', 'Carpentry', users.student1.id, 'Broken chair in room', 'Hostel A, Room 101', 'LOW', 'RESOLVED', { assignedDepartment: 'Maintenance', assignedAuthorityId: users.staff1.id, resolvedAt: new Date(now - 24 * ONE_HOUR) });
-  await createReq('IT', 'COMPLAINT', 'Wi-Fi', users.student2.id, 'Wi-Fi speed is too slow', 'Hostel B, Room 205', 'MEDIUM', 'VERIFIED', { assignedDepartment: 'IT', resolvedAt: new Date(now - 48 * ONE_HOUR) });
-  await createReq('IT', 'COMPLAINT', 'Wi-Fi', users.student2.id, 'Cannot connect to campus wifi', 'Hostel B, Room 205', 'MEDIUM', 'CLOSED', { assignedDepartment: 'IT', resolvedAt: new Date(now - 72 * ONE_HOUR) });
+  const reqRes = await createReq('MNT', 'COMPLAINT', 'Carpentry', users.student1.id, 'Broken chair in room', 'Hostel A, Room 101', 'LOW', 'RESOLVED', { assignedDepartment: 'Maintenance', assignedAuthorityId: users.staff1.id, createdAt: new Date(now - 300 * 3600000), resolvedAt: new Date(now - 24 * ONE_HOUR) });
+  await createReq('IT', 'COMPLAINT', 'Wi-Fi', users.student2.id, 'Wi-Fi speed is too slow', 'Hostel B, Room 205', 'MEDIUM', 'VERIFIED', { assignedDepartment: 'IT', createdAt: new Date(now - 300 * 3600000), resolvedAt: new Date(now - 48 * ONE_HOUR) });
+  await createReq('IT', 'COMPLAINT', 'Wi-Fi', users.student2.id, 'Cannot connect to campus wifi', 'Hostel B, Room 205', 'MEDIUM', 'CLOSED', { assignedDepartment: 'IT', createdAt: new Date(now - 300 * 3600000), resolvedAt: new Date(now - 72 * ONE_HOUR) });
   await createReq('LV', 'LEAVE', 'Medical', users.student1.id, 'Going home for weekend (2 days)', 'Home', 'MEDIUM', 'APPROVED');
   await createReq('LV', 'LEAVE', 'Personal', users.student3.id, 'Want to go for a movie', 'City Mall', 'LOW', 'REJECTED', { assignedAuthorityId: users.warden.id });
   await createReq('ELE', 'COMPLAINT', 'Electrical', users.student2.id, 'Tubelight flickering', 'Hostel B, Room 205', 'LOW', 'CANCELLED');
@@ -132,15 +132,15 @@ async function main() {
 
   // Recurring Electrical/Plumbing (closed/verified to form patterns)
   for(let i=9; i<15; i++) {
-    await createReq('PLM', 'COMPLAINT', 'Plumbing', allStudents[i].id, 'Blockage in sink', 'Hostel A', 'MEDIUM', 'CLOSED', { resolvedAt: new Date(now - (i*10) * ONE_HOUR) });
+    await createReq('PLM', 'COMPLAINT', 'Plumbing', allStudents[i].id, 'Blockage in sink', 'Hostel A', 'MEDIUM', 'CLOSED', { createdAt: new Date(now - 300 * 3600000), resolvedAt: new Date(now - (i*10) * ONE_HOUR) });
   }
   for(let i=15; i<20; i++) {
-    await createReq('ELE', 'COMPLAINT', 'Electrical', allStudents[i].id, 'AC not working', 'Hostel C', 'MEDIUM', 'RESOLVED', { resolvedAt: new Date(now - (i*5) * ONE_HOUR) });
+    await createReq('ELE', 'COMPLAINT', 'Electrical', allStudents[i].id, 'AC not working', 'Hostel C', 'MEDIUM', 'RESOLVED', { createdAt: new Date(now - 300 * 3600000), resolvedAt: new Date(now - (i*5) * ONE_HOUR) });
   }
   
   // Incident 2 requests (resolved)
   for(let i=0; i<5; i++) {
-    await createReq('ELE', 'COMPLAINT', 'Electrical', allStudents[20-i].id, 'Total power outage', 'Hostel B, South Block', 'HIGH', 'CLOSED', { assignedDepartment: 'Electrical', incidentId: incident1_closed.id, resolvedAt: new Date(now - 100 * ONE_HOUR) });
+    await createReq('ELE', 'COMPLAINT', 'Electrical', allStudents[20-i].id, 'Total power outage', 'Hostel B, South Block', 'HIGH', 'CLOSED', { assignedDepartment: 'Electrical', incidentId: incident1_closed.id, createdAt: new Date(now - 300 * 3600000), resolvedAt: new Date(now - 100 * ONE_HOUR) });
   }
 
   console.log('Seeding Notifications...');
