@@ -19,9 +19,9 @@ export default function AdminMessPage() {
 
   
 
-  const fetchMenus = async () => {
+  const fetchMenus = async (showLoader = false) => {
     try {
-      setLoading(true);
+      if (showLoader) setLoading(true);
       const res = await fetch("/api/admin/mess");
       if (!res.ok) throw new Error("Failed to load mess menu");
       const data = await res.json();
@@ -34,8 +34,16 @@ export default function AdminMessPage() {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
-    fetchMenus();
+    let mounted = true;
+    fetch("/api/admin/mess").then(res => {
+      if(!res.ok) throw new Error("Failed");
+      return res.json();
+    }).then(data => {
+      if(mounted) { setMenus(data); setLoading(false); }
+    }).catch(e => {
+      if(mounted) { setError(e.message); setLoading(false); }
+    });
+    return () => { mounted = false; };
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {

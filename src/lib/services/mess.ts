@@ -69,9 +69,12 @@ export class MessService {
       throw new Error("Notes too long");
     }
 
+    
+    const normalizedDate = new Date(data.date);
+    normalizedDate.setUTCHours(0,0,0,0);
     const menu = await prisma.messMenu.create({
       data: {
-        date: data.date,
+        date: normalizedDate,
         mealType: data.mealType,
         items: data.items,
         notes: data.notes,

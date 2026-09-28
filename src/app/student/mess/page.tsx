@@ -15,9 +15,9 @@ export default function StudentMessPage() {
 
   
 
-  const fetchMenus = async () => {
+  const fetchMenus = async (showLoader = false) => {
     try {
-      setLoading(true);
+      if (showLoader) setLoading(true);
       const res = await fetch("/api/mess");
       if (!res.ok) throw new Error("Failed to load mess menu");
       const data = await res.json();
@@ -35,8 +35,23 @@ export default function StudentMessPage() {
   };
 
   useEffect(() => {
-    fetchMenus();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    let mounted = true;
+    fetch("/api/mess").then(res => {
+      if(!res.ok) throw new Error("Failed");
+      return res.json();
+    }).then(data => {
+      if(mounted) {
+        setMenus(data);
+        if(data.length > 0) {
+          const dates = Array.from(new Set(data.map((m: {date: string}) => new Date(m.date).toLocaleDateString())));
+          setActiveDate(dates[0] as string);
+        }
+        setLoading(false);
+      }
+    }).catch(e => {
+      if(mounted) { setError(e.message); setLoading(false); }
+    });
+    return () => { mounted = false; };
   }, []);
 
   const submitFeedback = async (menuId: string, rating: number, comment: string) => {

@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(menu);
   } catch (error: unknown) {
-    if ((error as any).code === 'P2002') {
+    if ((error as { code?: string }).code === 'P2002') {
       return NextResponse.json({ error: 'Menu already exists for this date and meal slot' }, { status: 400 });
     }
     return NextResponse.json({ error: (error as Error).message }, { status: 400 });
