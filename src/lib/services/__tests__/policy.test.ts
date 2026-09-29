@@ -94,7 +94,7 @@ describe('PolicyService', () => {
       );
       expect(result.autoApproveAllowed).toBe(false);
       expect(result.approvalRequired).toBe(true);
-      expect(result.explanation).toContain('Not auto-approved because leave duration is greater than 2 days');
+      expect(result.explanation).toContain('Not auto-approved because leave duration is invalid or greater than 2 days');
     });
   });
 

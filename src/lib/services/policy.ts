@@ -19,6 +19,10 @@ export class PolicyService {
   ): Promise<PolicyEvaluationResult> {
     const policies = await prisma.policy.findMany({
       where: { isActive: true },
+      orderBy: [
+        { updatedAt: 'desc' }, // Explicit tie-breaking: most recently updated wins
+        { id: 'asc' }          // Absolute deterministic fallback
+      ]
     });
 
     let selectedPolicy = null;
@@ -63,11 +67,12 @@ export class PolicyService {
         const condition = JSON.parse(selectedPolicy.autoApproveCondition);
         if (condition.type === 'LEAVE_DAYS_LESS_THAN_OR_EQUAL' && payload.requestType === 'LEAVE') {
           const metadata = context.request.metadata ? JSON.parse(context.request.metadata) : {};
-          if (metadata.leaveDays && metadata.leaveDays <= condition.days) {
+          const leaveDays = metadata.leaveDays;
+          if (typeof leaveDays === 'number' && leaveDays > 0 && leaveDays <= condition.days) {
             autoApproveAllowed = true;
-            autoApproveExplanation = `Auto-approved because leave duration is ${metadata.leaveDays} days or less (<= ${condition.days}).`;
+            autoApproveExplanation = `Auto-approved because leave duration is ${leaveDays} days or less (<= ${condition.days}).`;
           } else {
-             autoApproveExplanation = `Not auto-approved because leave duration is greater than ${condition.days} days.`;
+             autoApproveExplanation = `Not auto-approved because leave duration is invalid or greater than ${condition.days} days.`;
           }
         }
       } catch (e) {

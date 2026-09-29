@@ -3,7 +3,6 @@ import { prisma } from '../../db/prisma';
 import { CommandCenterService } from '../command-center';
 
 describe('CommandCenterService', () => {
-  let adminId: string;
   let studentId: string;
 
   beforeEach(async () => {
@@ -21,7 +20,6 @@ describe('CommandCenterService', () => {
         }
       });
     }
-    adminId = admin.id;
 
     let student = await prisma.user.findFirst({ where: { role: 'Student' } });
     if (!student) {

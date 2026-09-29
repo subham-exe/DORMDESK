@@ -47,7 +47,7 @@ interface StaffItem {
 }
 
 export default async function AdminDashboardPage() {
-  const admin = await verifyAdminAuthority();
+  await verifyAdminAuthority();
   const dashboard = await CommandCenterService.getDashboard();
   const { needsAttention, incidents, workload, staffWorkload } = dashboard;
 
