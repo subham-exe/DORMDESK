@@ -7,10 +7,9 @@ describe('IncidentIntelligenceService', () => {
   let studentId: string;
 
   beforeEach(async () => {
-    // Reset
     await prisma.request.deleteMany();
     await prisma.incident.deleteMany();
-    
+
     let admin = await prisma.user.findFirst({ where: { role: 'Admin' } });
     if (!admin) {
       admin = await prisma.user.create({
@@ -32,7 +31,6 @@ describe('IncidentIntelligenceService', () => {
           password: 'hash',
           name: 'Student Test',
           role: 'Student',
-          
         }
       });
     }
@@ -40,7 +38,6 @@ describe('IncidentIntelligenceService', () => {
   });
 
   it('should auto-cluster requests with same category and location', async () => {
-    // Create 3 identical requests
     for (let i = 0; i < 3; i++) {
       await prisma.request.create({
         data: {
@@ -64,7 +61,7 @@ describe('IncidentIntelligenceService', () => {
     expect(incidents[0].category).toBe('Plumbing');
     expect(incidents[0].location).toBe('Hostel A');
     expect(incidents[0].requests.length).toBe(3);
-    
+
     expect(incidents[0].groupingReason).toContain("Grouped 3 requests sharing category 'Plumbing' and location 'Hostel A'");
   });
 
@@ -130,12 +127,76 @@ describe('IncidentIntelligenceService', () => {
     });
 
     const score = await IncidentIntelligenceService.calculateImpact(inc.id);
-    
+
     // Formula: (requestCount * 2) + (userCount * 5) + priorityScore
     // requestCount = 2 -> 4
-    // userCount = 1 -> 5
+    // userCount = 1 (same student) -> 5
     // priority = CRITICAL(10) + MEDIUM(2) = 12
     // total = 4 + 5 + 12 = 21
     expect(score).toBe(21);
+  });
+
+  it('should be idempotent: calling autoCluster twice produces same result', async () => {
+    for (let i = 0; i < 3; i++) {
+      await prisma.request.create({
+        data: {
+          ticketNumber: `INC-IDEM-${i}`,
+          requestType: 'COMPLAINT',
+          category: 'Electrical',
+          location: 'Hostel C',
+          description: `Power issue ${i}`,
+          priority: 'HIGH',
+          status: 'PENDING',
+          requesterId: studentId
+        }
+      });
+    }
+
+    // First call creates the incident
+    const first = await IncidentIntelligenceService.autoClusterIncidents(adminId);
+    expect(first).toBe(1);
+
+    // Second call should not create a duplicate
+    const second = await IncidentIntelligenceService.autoClusterIncidents(adminId);
+    expect(second).toBe(0);
+
+    const incidents = await prisma.incident.findMany({ include: { requests: true } });
+    expect(incidents.length).toBe(1);
+    expect(incidents[0].requests.length).toBe(3);
+  });
+
+  it('should return 0 for empty incident', async () => {
+    const inc = await prisma.incident.create({
+      data: {
+        title: 'Empty',
+        description: 'Empty',
+        category: 'Test',
+        location: 'Test',
+        assignedDepartment: 'General'
+      }
+    });
+
+    const score = await IncidentIntelligenceService.calculateImpact(inc.id);
+    expect(score).toBe(0);
+  });
+
+  it('should not cluster non-COMPLAINT request types', async () => {
+    for (let i = 0; i < 3; i++) {
+      await prisma.request.create({
+        data: {
+          ticketNumber: `INC-LEAVE-${i}`,
+          requestType: 'LEAVE',
+          category: 'Personal',
+          location: 'Hostel A',
+          description: `Leave ${i}`,
+          priority: 'LOW',
+          status: 'PENDING',
+          requesterId: studentId
+        }
+      });
+    }
+
+    const clusters = await IncidentIntelligenceService.autoClusterIncidents(adminId);
+    expect(clusters).toBe(0);
   });
 });

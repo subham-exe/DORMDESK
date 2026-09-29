@@ -17,8 +17,10 @@ async function main() {
   }
 
   // 1. SLA Breached Request
-  await prisma.request.create({
-    data: {
+  await prisma.request.upsert({
+    where: { ticketNumber: 'COM-BREACH-1' },
+    update: {},
+    create: {
       ticketNumber: `COM-BREACH-1`,
       requestType: 'COMPLAINT',
       category: 'Electrical',
@@ -33,8 +35,10 @@ async function main() {
   });
 
   // 2. SLA Warning Request
-  await prisma.request.create({
-    data: {
+  await prisma.request.upsert({
+    where: { ticketNumber: 'COM-WARN-1' },
+    update: {},
+    create: {
       ticketNumber: `COM-WARN-1`,
       requestType: 'COMPLAINT',
       category: 'Plumbing',
@@ -50,8 +54,10 @@ async function main() {
   });
 
   // 3. Stale Pending Request (No progress > 24h)
-  await prisma.request.create({
-    data: {
+  await prisma.request.upsert({
+    where: { ticketNumber: 'COM-STALE-1' },
+    update: {},
+    create: {
       ticketNumber: `COM-STALE-1`,
       requestType: 'OTHER',
       category: 'General',
@@ -67,8 +73,10 @@ async function main() {
   // 4. Incident Cluster (High Impact)
   // Create 5 identical requests
   for (let i = 0; i < 5; i++) {
-    await prisma.request.create({
-      data: {
+    await prisma.request.upsert({
+      where: { ticketNumber: `COM-INC-${i}` },
+      update: {},
+      create: {
         ticketNumber: `COM-INC-${i}`,
         requestType: 'COMPLAINT',
         category: 'Water Supply',

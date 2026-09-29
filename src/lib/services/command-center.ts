@@ -1,16 +1,27 @@
 import { prisma } from '../db/prisma';
 import { SLAService } from './sla';
-import { IncidentIntelligenceService } from './incident-intelligence';
+
+interface AttentionItem {
+  id: string;
+  identifier: string;
+  description: string;
+  location: string;
+  status: string;
+  ageMs: number;
+  assignedStaff: string | null;
+  reasons: string[];
+  priority: string;
+  type: 'REQUEST' | 'INCIDENT';
+}
 
 export class CommandCenterService {
   /**
-   * Main command center aggregation
+   * Main command center aggregation.
+   * This is a READ-ONLY operation. It does NOT mutate the database.
+   * Incident auto-clustering should be triggered via a separate explicit admin action.
    */
-  static async getDashboard(adminId: string) {
+  static async getDashboard(_adminId: string) {
     const now = new Date();
-    
-    // Auto-cluster incidents before generating dashboard
-    await IncidentIntelligenceService.autoClusterIncidents(adminId);
 
     // Fetch active requests
     const activeRequests = await prisma.request.findMany({
@@ -23,8 +34,7 @@ export class CommandCenterService {
       }
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const needsAttention: any[] = [];
+    const attentionMap = new Map<string, AttentionItem>();
     const workload = {
       PENDING: 0,
       ASSIGNED: 0,
@@ -37,24 +47,40 @@ export class CommandCenterService {
 
     const staffMap: Record<string, { id: string, name: string, active: number, overdue: number, recentlyResolved: number }> = {};
 
+    const addAttention = (id: string, reason: string, base: Omit<AttentionItem, 'id' | 'reasons'>) => {
+      const existing = attentionMap.get(id);
+      if (existing) {
+        if (!existing.reasons.includes(reason)) {
+          existing.reasons.push(reason);
+        }
+        // Escalate priority if the new reason has higher priority
+        const prio = (p: string) => ({ 'CRITICAL': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1 }[p] || 0);
+        if (prio(base.priority) > prio(existing.priority)) {
+          existing.priority = base.priority;
+        }
+      } else {
+        attentionMap.set(id, { id, reasons: [reason], ...base });
+      }
+    };
+
     // Process requests
     for (const req of activeRequests) {
       workload[req.status as keyof typeof workload] = (workload[req.status as keyof typeof workload] || 0) + 1;
-      
+
+      const baseItem = {
+        identifier: req.ticketNumber,
+        description: req.description,
+        location: req.location || req.category,
+        status: req.status,
+        ageMs: now.getTime() - req.createdAt.getTime(),
+        assignedStaff: req.assignedAuthority?.name || null,
+        priority: req.priority,
+        type: 'REQUEST' as const,
+      };
+
       if (!req.assignedAuthorityId) {
         workload.UNASSIGNED++;
-        needsAttention.push({
-          id: req.id,
-          identifier: req.ticketNumber,
-          description: req.description,
-          location: req.location || req.category,
-          status: req.status,
-          ageMs: now.getTime() - req.createdAt.getTime(),
-          assignedStaff: null,
-          reason: 'Unassigned request',
-          priority: req.priority,
-          type: 'REQUEST'
-        });
+        addAttention(req.id, 'Unassigned request', baseItem);
       } else {
         const sid = req.assignedAuthorityId;
         if (!staffMap[sid]) {
@@ -68,55 +94,26 @@ export class CommandCenterService {
       if (sla) {
         if (sla.isBreached) {
           workload.BREACHED++;
-          needsAttention.push({
-            id: req.id,
-            identifier: req.ticketNumber,
-            description: req.description,
-            location: req.location || req.category,
-            status: req.status,
-            ageMs: now.getTime() - req.createdAt.getTime(),
-            assignedStaff: req.assignedAuthority?.name || null,
-            reason: 'SLA Breached',
-            priority: req.priority,
-            type: 'REQUEST'
-          });
+          addAttention(req.id, 'SLA Breached', baseItem);
           if (req.assignedAuthorityId && staffMap[req.assignedAuthorityId]) {
-             staffMap[req.assignedAuthorityId].overdue++;
+            staffMap[req.assignedAuthorityId].overdue++;
           }
-        } else if (sla.remainingMs > 0 && sla.remainingMs <= 4 * 3600000) { // < 4 hours
-          needsAttention.push({
-            id: req.id,
-            identifier: req.ticketNumber,
-            description: req.description,
-            location: req.location || req.category,
-            status: req.status,
-            ageMs: now.getTime() - req.createdAt.getTime(),
-            assignedStaff: req.assignedAuthority?.name || null,
-            reason: 'SLA Warning (Due soon)',
-            priority: req.priority,
-            type: 'REQUEST'
-          });
+        } else if (sla.remainingMs > 0 && sla.remainingMs <= 4 * 3600000) {
+          addAttention(req.id, 'SLA Warning (Due soon)', baseItem);
         }
       }
 
       // Stale Check
-      // Rule: Pending for > 24 hours OR Processing for > 72 hours
+      // Rule: PENDING with no progress for > 24h (measured from createdAt since no status change has occurred)
+      // Rule: PROCESSING with no update for > 72h (measured from updatedAt)
       const isPendingStale = req.status === 'PENDING' && (now.getTime() - req.createdAt.getTime() > 24 * 3600000);
       const isProcessingStale = req.status === 'PROCESSING' && (now.getTime() - req.updatedAt.getTime() > 72 * 3600000);
-      
-      if (isPendingStale || isProcessingStale) {
-        needsAttention.push({
-          id: req.id,
-          identifier: req.ticketNumber,
-          description: req.description,
-          location: req.location || req.category,
-          status: req.status,
-          ageMs: now.getTime() - req.createdAt.getTime(),
-          assignedStaff: req.assignedAuthority?.name || null,
-          reason: `Stale: No progress for ${isPendingStale ? '24' : '72'} hours`,
-          priority: req.priority,
-          type: 'REQUEST'
-        });
+
+      if (isPendingStale) {
+        addAttention(req.id, 'Stale: No progress for 24 hours', baseItem);
+      }
+      if (isProcessingStale) {
+        addAttention(req.id, 'Stale: No update for 72 hours', baseItem);
       }
     }
 
@@ -131,7 +128,7 @@ export class CommandCenterService {
     const incidents = [];
     for (const inc of activeIncidents) {
       const userIds = new Set(inc.requests.map(r => r.requesterId));
-      
+
       incidents.push({
         id: inc.id,
         identifier: `INC-${inc.id.substring(0, 5).toUpperCase()}`,
@@ -147,24 +144,22 @@ export class CommandCenterService {
       });
 
       if ((inc.impactScore || 0) >= 30) {
-        needsAttention.push({
-          id: inc.id,
+        addAttention(inc.id, 'High-Impact Incident', {
           identifier: `INC-${inc.id.substring(0, 5).toUpperCase()}`,
           description: inc.title,
           location: inc.location || inc.category,
           status: inc.status,
           ageMs: now.getTime() - inc.createdAt.getTime(),
           assignedStaff: null,
-          reason: 'High-Impact Incident',
           priority: 'CRITICAL',
-          type: 'INCIDENT'
+          type: 'INCIDENT',
         });
       }
     }
 
     // Recently resolved requests by staff (last 7 days)
     const recentResolved = await prisma.request.findMany({
-      where: { 
+      where: {
         status: { in: ['RESOLVED', 'VERIFIED', 'CLOSED'] },
         assignedAuthorityId: { not: null },
         resolvedAt: { gte: new Date(now.getTime() - 7 * 24 * 3600000) }
@@ -177,15 +172,15 @@ export class CommandCenterService {
       }
     }
 
-    // Deduplicate needsAttention based on ID to avoid spamming the same request
-    const uniqueNeedsAttention = Array.from(new Map(needsAttention.map(item => [item.id, item])).values())
+    // Convert attention map to sorted array
+    const needsAttention = Array.from(attentionMap.values())
       .sort((a, b) => {
-        const priorityScore = (p: string) => ({'CRITICAL': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1}[p] || 0);
+        const priorityScore = (p: string) => ({ 'CRITICAL': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1 }[p] || 0);
         return priorityScore(b.priority) - priorityScore(a.priority);
       });
 
     return {
-      needsAttention: uniqueNeedsAttention,
+      needsAttention,
       incidents: incidents.sort((a, b) => (b.impactScore || 0) - (a.impactScore || 0)),
       workload,
       staffWorkload: Object.values(staffMap)

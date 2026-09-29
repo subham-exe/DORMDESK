@@ -8,9 +8,8 @@ vi.mock('@/lib/admin/api', () => ({
 
 describe('GET /api/admin/command-center', () => {
   it('should reject non-admin access', async () => {
-    const req = new Request('http://localhost/api/admin/command-center');
     const response = await GET();
-    
+
     expect(response.status).toBe(401);
   });
 });

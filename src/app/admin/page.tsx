@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { RequestStatus } from "@/lib/types/request";
 import { AlertCircle, Clock, ChevronRight, User } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,21 +11,56 @@ import { AdminSLACheckButton } from "./components/admin-sla-check-button";
 
 export const dynamic = "force-dynamic";
 
+interface AttentionItem {
+  id: string;
+  identifier: string;
+  description: string;
+  location: string;
+  status: string;
+  ageMs: number;
+  assignedStaff: string | null;
+  reasons: string[];
+  priority: string;
+  type: 'REQUEST' | 'INCIDENT';
+}
+
+interface IncidentItem {
+  id: string;
+  identifier: string;
+  title: string;
+  category: string;
+  location: string;
+  status: string;
+  ageMs: number;
+  requestCount: number;
+  userCount: number;
+  impactScore: number | null;
+  groupingReason: string | null;
+}
+
+interface StaffItem {
+  id: string;
+  name: string;
+  active: number;
+  overdue: number;
+  recentlyResolved: number;
+}
+
 export default async function AdminDashboardPage() {
   const admin = await verifyAdminAuthority();
   const dashboard = await CommandCenterService.getDashboard(admin.id);
   const { needsAttention, incidents, workload, staffWorkload } = dashboard;
 
-  const totalActiveRequests = 
+  const totalActiveRequests =
     workload.PENDING + workload.ASSIGNED + workload.ACKNOWLEDGED + workload.PROCESSING;
 
   return (
     <div className="space-y-8 pb-12">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Operations Command Center</h2>
-        <p className="text-text-secondary mt-1">Real-time operational intelligence and workload overview.</p>
+        <p className="text-text-secondary mt-1">Operational workload and attention overview.</p>
       </div>
-      
+
       {/* KPI Layer */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card className="bg-surface-muted">
@@ -36,7 +72,7 @@ export default async function AdminDashboardPage() {
             <p className="text-xs text-text-secondary">{workload.PENDING} pending, {workload.PROCESSING} processing</p>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-surface-muted">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-error flex items-center gap-2">
@@ -75,7 +111,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Left Column: Needs Attention */}
         <div className="lg:col-span-2 space-y-4">
           <h3 className="text-lg font-semibold tracking-tight flex items-center gap-2">
@@ -84,11 +120,11 @@ export default async function AdminDashboardPage() {
               <Badge variant="error" className="rounded-full px-2 py-0.5">{needsAttention.length}</Badge>
             )}
           </h3>
-          
+
           {needsAttention.length === 0 ? (
             <Card className="bg-surface-muted/50 border-dashed">
               <CardContent className="pt-6">
-                <EmptyState 
+                <EmptyState
                   title="All Caught Up"
                   description="There are no active issues requiring immediate attention."
                 />
@@ -96,10 +132,9 @@ export default async function AdminDashboardPage() {
             </Card>
           ) : (
             <div className="grid gap-3">
-              {// eslint-disable-next-line @typescript-eslint/no-explicit-any
-              needsAttention.map((item: any, idx: number) => (
-                <Link 
-                  key={`${item.id}-${idx}`} 
+              {(needsAttention as AttentionItem[]).map((item, idx) => (
+                <Link
+                  key={`${item.id}-${idx}`}
                   href={item.type === 'INCIDENT' ? `/admin/incidents/${item.id}` : `/admin/requests/${item.id}`}
                   className="block group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
                 >
@@ -113,11 +148,17 @@ export default async function AdminDashboardPage() {
                             {item.location}
                           </span>
                         </div>
-                        <p className="text-sm text-text-primary font-medium line-clamp-1">{item.reason}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {item.reasons.map((reason, ri) => (
+                            <span key={ri} className="text-xs font-medium px-1.5 py-0.5 bg-warning/10 text-warning rounded">
+                              {reason}
+                            </span>
+                          ))}
+                        </div>
                         <p className="text-sm text-text-secondary line-clamp-1">{item.description}</p>
-                        
+
                         <div className="flex items-center gap-3 pt-1">
-                          <StatusBadge status={item.status} />
+                          <StatusBadge status={item.status as RequestStatus} />
                           {item.assignedStaff ? (
                             <span className="text-xs text-text-secondary">Assigned: {item.assignedStaff}</span>
                           ) : (
@@ -127,12 +168,12 @@ export default async function AdminDashboardPage() {
                       </div>
 
                       <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0">
-                        {item.priority === 'CRITICAL' ? (
+                        {item.reasons.some(r => r.includes('Breached')) ? (
                           <div className="flex items-center text-error font-bold text-sm">
                             <AlertCircle className="w-4 h-4 mr-1.5" />
-                            CRITICAL
+                            BREACHED
                           </div>
-                        ) : item.reason.includes('Warning') ? (
+                        ) : item.reasons.some(r => r.includes('Warning')) ? (
                           <div className="flex items-center text-warning font-bold text-sm">
                             <Clock className="w-4 h-4 mr-1.5" />
                             WARNING
@@ -152,7 +193,7 @@ export default async function AdminDashboardPage() {
 
         {/* Right Column: Active Incidents & Staff Workload */}
         <div className="space-y-8">
-          
+
           {/* Active Incidents */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold tracking-tight flex items-center gap-2">
@@ -161,7 +202,7 @@ export default async function AdminDashboardPage() {
                 <Badge variant="warning" className="rounded-full px-2 py-0.5">{incidents.length}</Badge>
               )}
             </h3>
-            
+
             {incidents.length === 0 ? (
               <Card className="bg-surface-muted/50 border-dashed">
                 <CardContent className="py-6 text-center text-sm text-text-secondary">
@@ -170,9 +211,8 @@ export default async function AdminDashboardPage() {
               </Card>
             ) : (
               <div className="grid gap-3">
-                {// eslint-disable-next-line @typescript-eslint/no-explicit-any
-                incidents.map((inc: any) => (
-                  <Link 
+                {(incidents as IncidentItem[]).map((inc) => (
+                  <Link
                     key={inc.id}
                     href={`/admin/incidents/${inc.id}`}
                     className="block group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
@@ -188,7 +228,7 @@ export default async function AdminDashboardPage() {
                         </div>
                         <div className="flex items-center justify-between text-xs pt-1 border-t border-border/50">
                           <span className="text-text-secondary">{inc.requestCount} requests • {inc.userCount} users</span>
-                          <span className={`font-medium ${inc.impactScore >= 30 ? 'text-error' : 'text-warning'}`}>Impact: {inc.impactScore}</span>
+                          <span className={`font-medium ${(inc.impactScore || 0) >= 30 ? 'text-error' : 'text-warning'}`}>Impact: {inc.impactScore}</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -197,7 +237,7 @@ export default async function AdminDashboardPage() {
               </div>
             )}
           </div>
-          
+
           {/* Staff Workload */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold tracking-tight">Staff Workload</h3>
@@ -207,8 +247,7 @@ export default async function AdminDashboardPage() {
                   {staffWorkload.length === 0 && (
                     <div className="p-4 text-center text-sm text-text-secondary">No active staff assignments.</div>
                   )}
-                  {// eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  staffWorkload.map((staff: any) => (
+                  {(staffWorkload as StaffItem[]).map((staff) => (
                     <div key={staff.id} className="p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-surface-muted flex items-center justify-center">

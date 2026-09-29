@@ -29,8 +29,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const userIds = new Set(incident.requests.map((r: any) => r.requester.id));
+    const userIds = new Set(incident.requests.map(r => r.requester.id));
 
     return NextResponse.json({
       ...incident,
