@@ -747,3 +747,10 @@ Prompt J: CLOSED
  -   P r e s e r v e d   P r o m p t   J   p r e c e d e n c e   r u l e s . 
  -   A d d e d   1 7   p o l i c y   t e s t s .  
  
+ #   P r o m p t   M :   I M P L E M E N T E D   -   C L O S U R E   A U D I T   R E Q U I R E D 
+ # #   I m p l e m e n t a t i o n   D e t a i l s 
+ -   R e f a c t o r e d   C o m m a n d C e n t e r S e r v i c e   t o   r e t u r n   s p e c i f i c   o p e r a t i o n a l   s e c t i o n s . 
+ -   C r e a t e d   U I   a t   / a d m i n / c o m m a n d - c e n t e r . 
+ -   R e d i r e c t e d   / a d m i n   t o   / a d m i n / c o m m a n d - c e n t e r . 
+ -   R e u s e d   S L A S e r v i c e ,   P o l i c y S e r v i c e ,   I n c i d e n t I n t e l l i g e n c e S e r v i c e .  
+ 

@@ -8,6 +8,8 @@ describe('CommandCenterService', () => {
   beforeEach(async () => {
     await prisma.request.deleteMany();
     await prisma.incident.deleteMany();
+    await prisma.escalation.deleteMany();
+    await prisma.auditLog.deleteMany();
 
     let admin = await prisma.user.findFirst({ where: { role: 'Admin' } });
     if (!admin) {
@@ -83,22 +85,27 @@ describe('CommandCenterService', () => {
     expect(dashboard.workload.UNASSIGNED).toBe(3);
     expect(dashboard.workload.BREACHED).toBe(1);
 
-    // Check needsAttention: items have reasons arrays, not a single reason string
-    const allReasons = dashboard.needsAttention.flatMap(n => n.reasons);
+    const allReasons = [
+      ...dashboard.unassigned.map(n => n.reason),
+      ...dashboard.sla.map(n => n.reason),
+      ...dashboard.stale.map(n => n.reason)
+    ];
+
     expect(allReasons).toContain('Unassigned request');
     expect(allReasons.some((r: string) => r.includes('SLA Breached'))).toBe(true);
     expect(allReasons).toContain('Stale: No progress for 24 hours');
 
-    // The stale request should have BOTH "Unassigned" and "Stale" reasons
-    const staleItem = dashboard.needsAttention.find(n => n.identifier === 'CC-STALE');
+    const unassignedItem = dashboard.unassigned.find(n => n.identifier === 'CC-STALE');
+    const staleItem = dashboard.stale.find(n => n.identifier === 'CC-STALE');
+    expect(unassignedItem).toBeDefined();
     expect(staleItem).toBeDefined();
-    expect(staleItem!.reasons).toContain('Unassigned request');
-    expect(staleItem!.reasons).toContain('Stale: No progress for 24 hours');
   });
 
   it('should handle empty state gracefully', async () => {
     const dashboard = await CommandCenterService.getDashboard();
-    expect(dashboard.needsAttention.length).toBe(0);
+    expect(dashboard.unassigned.length).toBe(0);
+    expect(dashboard.sla.length).toBe(0);
+    expect(dashboard.stale.length).toBe(0);
     expect(dashboard.incidents.length).toBe(0);
     expect(dashboard.workload.PENDING).toBe(0);
     expect(dashboard.workload.BREACHED).toBe(0);
@@ -107,7 +114,6 @@ describe('CommandCenterService', () => {
   });
 
   it('should not mutate database on getDashboard call', async () => {
-    // Create 3 matching complaint requests (enough to trigger auto-clustering)
     for (let i = 0; i < 3; i++) {
       await prisma.request.create({
         data: {
@@ -123,10 +129,8 @@ describe('CommandCenterService', () => {
       });
     }
 
-    // getDashboard should NOT auto-cluster
     await CommandCenterService.getDashboard();
-
     const incidents = await prisma.incident.findMany();
-    expect(incidents.length).toBe(0); // No incidents created by a read operation
+    expect(incidents.length).toBe(0);
   });
 });

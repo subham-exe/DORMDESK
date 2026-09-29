@@ -8,7 +8,7 @@ export function AdminMobileNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    { label: "Dashboard", href: "/admin/command-center", icon: LayoutDashboard },
     { label: "Requests", href: "/admin/requests", icon: ListTodo },
     { label: "Announcements", href: "/admin/announcements", icon: Megaphone },
     { label: "Incidents", href: "/admin/incidents", icon: AlertTriangle },

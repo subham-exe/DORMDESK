@@ -8,7 +8,7 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   const navItems = [
-    { label: "Command Center", href: "/admin", icon: LayoutDashboard },
+    { label: "Command Center", href: "/admin/command-center", icon: LayoutDashboard },
     { label: "Requests", href: "/admin/requests", icon: ListTodo },
     { label: "Incidents", href: "/admin/incidents", icon: AlertTriangle },
     { label: "Announcements", href: "/admin/announcements", icon: Megaphone },
