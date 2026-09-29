@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EscalationService } from '../escalation';
 import { prisma } from '@/lib/db/prisma';
@@ -52,6 +51,7 @@ describe('EscalationService', () => {
     const { PolicyService } = await import('../policy');
     const { NotificationService } = await import('../notification');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const request: any = {
       id: 'req-1',
       ticketNumber: 'REQ-123',
@@ -61,8 +61,10 @@ describe('EscalationService', () => {
       assignedAuthorityId: 'staff-1',
     };
 
-    vi.mocked(PolicyService.resolvePolicyForRequest).mockResolvedValue({} as unknown);
-    vi.mocked(prisma.escalation.create).mockResolvedValue({} as unknown);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(PolicyService.resolvePolicyForRequest).mockResolvedValue({} as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(prisma.escalation.create).mockResolvedValue({} as any);
 
     await EscalationService.triggerEscalationIfRequired(request, new Date());
 
@@ -79,6 +81,7 @@ describe('EscalationService', () => {
     const { PolicyService } = await import('../policy');
     const { NotificationService } = await import('../notification');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const request: any = {
       id: 'req-2',
       ticketNumber: 'REQ-456',
@@ -88,15 +91,18 @@ describe('EscalationService', () => {
       assignedAuthorityId: 'staff-2',
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(PolicyService.resolvePolicyForRequest).mockResolvedValue({
       escalationPolicy: { escalateToRole: 'Admin', sendSms: true }
-    } as unknown);
+    } as any);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.user.findMany).mockResolvedValue([
       { id: 'admin-1', role: 'Admin', phone: '1234567890' }
-    ] as unknown);
+    ] as any);
 
-    vi.mocked(prisma.escalation.create).mockResolvedValue({} as unknown);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(prisma.escalation.create).mockResolvedValue({} as any);
 
     await EscalationService.triggerEscalationIfRequired(request, new Date());
 
