@@ -38,7 +38,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                 href={item.href}
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                   isActive ? "bg-info-bg text-info font-medium" : "text-text-secondary hover:bg-surface hover:text-text-primary"
                 }`}
               >
@@ -90,7 +90,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               href={item.href}
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
-              className={`flex flex-col items-center justify-center w-full h-full gap-1 ${
+              className={`flex flex-col items-center justify-center w-full h-full gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${
                 isActive ? "text-info" : "text-text-secondary"
               }`}
             >
