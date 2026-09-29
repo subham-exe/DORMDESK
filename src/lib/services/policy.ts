@@ -1,5 +1,7 @@
 import { prisma } from '../db/prisma';
 import { Request } from '@prisma/client';
+import { PolicyInput, PolicyValidator } from './policy-validator';
+import { AuditService } from './audit';
 
 export interface PolicyEvaluationResult {
   policyId?: string;
@@ -133,5 +135,127 @@ export class PolicyService {
      }
 
      return { valid: true, explanation: 'Transition permitted by policy.' };
+  }
+
+  // --- CRUD Operations ---
+
+  static async listPolicies() {
+    return prisma.policy.findMany({
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }]
+    });
+  }
+
+  static async getPolicy(id: string) {
+    const policy = await prisma.policy.findUnique({ where: { id } });
+    if (!policy) throw new Error('NOT_FOUND');
+    return policy;
+  }
+
+  static async createPolicy(input: PolicyInput, actorId: string) {
+    PolicyValidator.validate(input);
+
+    const created = await prisma.policy.create({
+      data: {
+        name: input.name,
+        description: input.description,
+        requestType: input.requestType,
+        category: input.category,
+        domain: input.domain,
+        approvalRequired: input.approvalRequired ?? true,
+        autoApproveCondition: input.autoApproveCondition,
+        slaHours: input.slaHours,
+        escalationPolicy: input.escalationPolicy,
+        allowedTransitions: input.allowedTransitions,
+        isActive: input.isActive ?? true,
+      }
+    });
+
+    await AuditService.log({
+      actorId,
+      action: 'POLICY_CREATED',
+      domain: 'System',
+      targetId: created.id,
+      metadata: { name: created.name }
+    });
+
+    return created;
+  }
+
+  static async updatePolicy(id: string, input: PolicyInput, actorId: string) {
+    PolicyValidator.validate(input);
+
+    const existing = await prisma.policy.findUnique({ where: { id } });
+    if (!existing) throw new Error('NOT_FOUND');
+    if (input.version !== undefined && existing.version !== input.version) {
+      throw new Error('CONCURRENCY_CONFLICT');
+    }
+
+    if (!input.isActive && existing.isActive) {
+      // Trying to deactivate. Check if this is the only default fallback.
+      const isDefaultFallback = !existing.requestType && !existing.category && !existing.domain;
+      if (isDefaultFallback) {
+        const activeFallbacksCount = await prisma.policy.count({
+          where: { isActive: true, requestType: null, category: null, domain: null }
+        });
+        if (activeFallbacksCount <= 1) {
+          throw new Error('SAFETY_VIOLATION: Cannot deactivate the only active global fallback policy.');
+        }
+      }
+    }
+
+    const updated = await prisma.policy.update({
+      where: { id },
+      data: {
+        name: input.name,
+        description: input.description,
+        requestType: input.requestType,
+        category: input.category,
+        domain: input.domain,
+        approvalRequired: input.approvalRequired ?? true,
+        autoApproveCondition: input.autoApproveCondition,
+        slaHours: input.slaHours,
+        escalationPolicy: input.escalationPolicy,
+        allowedTransitions: input.allowedTransitions,
+        isActive: input.isActive,
+        version: { increment: 1 }
+      }
+    });
+
+    const action = (!input.isActive && existing.isActive) ? 'POLICY_DEACTIVATED' :
+                   (input.isActive && !existing.isActive) ? 'POLICY_ACTIVATED' : 'POLICY_UPDATED';
+
+    await AuditService.log({
+      actorId,
+      action,
+      domain: 'System',
+      targetId: updated.id,
+      metadata: { name: updated.name, version: updated.version }
+    });
+
+    return updated;
+  }
+
+  static async deletePolicy(id: string, actorId: string) {
+    // Soft delete/deactivate is preferred over hard delete. 
+    return this.deactivatePolicy(id, actorId);
+  }
+
+  static async deactivatePolicy(id: string, actorId: string) {
+    const existing = await prisma.policy.findUnique({ where: { id } });
+    if (!existing) throw new Error('NOT_FOUND');
+    return this.updatePolicy(id, {
+      name: existing.name,
+      description: existing.description,
+      requestType: existing.requestType,
+      category: existing.category,
+      domain: existing.domain,
+      approvalRequired: existing.approvalRequired,
+      autoApproveCondition: existing.autoApproveCondition,
+      slaHours: existing.slaHours,
+      escalationPolicy: existing.escalationPolicy,
+      allowedTransitions: existing.allowedTransitions,
+      version: existing.version,
+      isActive: false
+    }, actorId);
   }
 }

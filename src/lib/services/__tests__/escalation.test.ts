@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- specific reason: practical testing with partial Prisma objects */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EscalationService } from '../escalation';
 import { prisma } from '@/lib/db/prisma';
@@ -51,7 +52,7 @@ describe('EscalationService', () => {
     const { PolicyService } = await import('../policy');
     const { NotificationService } = await import('../notification');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    
     const request: any = {
       id: 'req-1',
       ticketNumber: 'REQ-123',
@@ -61,10 +62,10 @@ describe('EscalationService', () => {
       assignedAuthorityId: 'staff-1',
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(PolicyService.resolvePolicyForRequest).mockResolvedValue({} as any);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(prisma.escalation.create).mockResolvedValue({} as any);
+    
+    vi.mocked(PolicyService.resolvePolicyForRequest).mockResolvedValue({} as any /* specific reason: testing with partial Prisma objects */);
+    
+    vi.mocked(prisma.escalation.create).mockResolvedValue({} as any /* specific reason: testing with partial Prisma objects */);
 
     await EscalationService.triggerEscalationIfRequired(request, new Date());
 
@@ -81,7 +82,7 @@ describe('EscalationService', () => {
     const { PolicyService } = await import('../policy');
     const { NotificationService } = await import('../notification');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    
     const request: any = {
       id: 'req-2',
       ticketNumber: 'REQ-456',
@@ -91,18 +92,18 @@ describe('EscalationService', () => {
       assignedAuthorityId: 'staff-2',
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    
     vi.mocked(PolicyService.resolvePolicyForRequest).mockResolvedValue({
       escalationPolicy: { escalateToRole: 'Admin', sendSms: true }
-    } as any);
+    } as any /* specific reason: testing with partial Prisma objects */);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    
     vi.mocked(prisma.user.findMany).mockResolvedValue([
       { id: 'admin-1', role: 'Admin', phone: '1234567890' }
-    ] as any);
+    ] as any /* specific reason: testing with partial Prisma objects */);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(prisma.escalation.create).mockResolvedValue({} as any);
+    
+    vi.mocked(prisma.escalation.create).mockResolvedValue({} as any /* specific reason: testing with partial Prisma objects */);
 
     await EscalationService.triggerEscalationIfRequired(request, new Date());
 

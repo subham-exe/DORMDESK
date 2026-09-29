@@ -9,62 +9,61 @@ generator client {
 
 // User model for One Identity
 model User {
-  id             String    @id @default(uuid())
-  email          String    @unique
-  password       String?
-  name           String
-  role           String    // Student, Warden, Admin, Faculty, Staff
-  department     String?
-  year           Int?
-  branch         String?
-  isResident     Boolean   @default(false)
-  hostel         String?
-  block          String?
-  room           String?
-    phone          String?
+  id         String  @id @default(uuid())
+  email      String  @unique
+  password   String?
+  name       String
+  role       String // Student, Warden, Admin, Faculty, Staff
+  department String?
+  year       Int?
+  branch     String?
+  isResident Boolean @default(false)
+  hostel     String?
+  block      String?
+  room       String?
+  phone      String?
 
   // Relationships
-  requestsCreated Request[] @relation("RequestCreator")
-  requestsAssigned Request[] @relation("RequestAssignee")
-  auditLogs       AuditLog[]
-  scholarship     Scholarship?
-  notifications   Notification[]
-  announcementsCreated Announcement[] @relation("AnnouncementCreator")
-    smsReceived          SmsOutbox[]
+  requestsCreated      Request[]             @relation("RequestCreator")
+  requestsAssigned     Request[]             @relation("RequestAssignee")
+  auditLogs            AuditLog[]
+  scholarship          Scholarship?
+  notifications        Notification[]
+  announcementsCreated Announcement[]        @relation("AnnouncementCreator")
+  smsReceived          SmsOutbox[]
   announcementReceipts AnnouncementReceipt[]
-  messFeedbacks MessFeedback[]
+  messFeedbacks        MessFeedback[]
 
-  coursesOwned   Course[]       @relation("CourseFaculty")
-  enrollments    Enrollment[]
-  attendances    Attendance[]
-
+  coursesOwned Course[]     @relation("CourseFaculty")
+  enrollments  Enrollment[]
+  attendances  Attendance[]
 }
 
 model Request {
-  id                 String    @id @default(uuid())
-  ticketNumber       String    @unique
-  requestType        String    // COMPLAINT, LEAVE, CERTIFICATE, etc.
-  category           String
-  requesterId        String
-  requester          User      @relation("RequestCreator", fields: [requesterId], references: [id])
-  description        String
-  location           String?
-  priority           String    @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
-  status             String    @default("PENDING") // PENDING, ASSIGNED, ACKNOWLEDGED, PROCESSING, RESOLVED, VERIFIED, CLOSED, REJECTED
-  assignedDepartment String?
+  id                  String       @id @default(uuid())
+  ticketNumber        String       @unique
+  requestType         String // COMPLAINT, LEAVE, CERTIFICATE, etc.
+  category            String
+  requesterId         String
+  requester           User         @relation("RequestCreator", fields: [requesterId], references: [id])
+  description         String
+  location            String?
+  priority            String       @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+  status              String       @default("PENDING") // PENDING, ASSIGNED, ACKNOWLEDGED, PROCESSING, RESOLVED, VERIFIED, CLOSED, REJECTED
+  assignedDepartment  String?
   assignedAuthorityId String?
-  assignedAuthority  User?     @relation("RequestAssignee", fields: [assignedAuthorityId], references: [id])
-  SLA                Int?      // Hours
-  dueAt              DateTime?
-  incidentId         String?
-  incident           Incident? @relation(fields: [incidentId], references: [id])
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  resolvedAt         DateTime?
-  exitTime           DateTime? // for leave/gate-pass metadata
-  metadata           String?   // JSON string for attachments, custom fields, etc.
-  idempotencyKey     String?   @unique
-  escalations        Escalation[]
+  assignedAuthority   User?        @relation("RequestAssignee", fields: [assignedAuthorityId], references: [id])
+  SLA                 Int? // Hours
+  dueAt               DateTime?
+  incidentId          String?
+  incident            Incident?    @relation(fields: [incidentId], references: [id])
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  resolvedAt          DateTime?
+  exitTime            DateTime? // for leave/gate-pass metadata
+  metadata            String? // JSON string for attachments, custom fields, etc.
+  idempotencyKey      String?      @unique
+  escalations         Escalation[]
 }
 
 model Incident {
@@ -84,23 +83,23 @@ model Incident {
 }
 
 model Scholarship {
-  id                 String    @id @default(uuid())
-  studentId          String    @unique
-  student            User      @relation(fields: [studentId], references: [id])
-  academicYear       String
-  status             String    // ELIGIBLE, APPLIED, SUBMITTED, UNDER_VERIFICATION, APPROVED, SANCTIONED, DISBURSED, REJECTED, CANCELLED
-  updatedAt          DateTime  @updatedAt
+  id           String   @id @default(uuid())
+  studentId    String   @unique
+  student      User     @relation(fields: [studentId], references: [id])
+  academicYear String
+  status       String // ELIGIBLE, APPLIED, SUBMITTED, UNDER_VERIFICATION, APPROVED, SANCTIONED, DISBURSED, REJECTED, CANCELLED
+  updatedAt    DateTime @updatedAt
 }
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  actorId     String?
-  actor       User?    @relation(fields: [actorId], references: [id])
-  action      String
-  entity      String
-  entityId    String
-  timestamp   DateTime @default(now())
-  metadata    String?  // JSON string
+  id        String   @id @default(uuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String
+  timestamp DateTime @default(now())
+  metadata  String? // JSON string
 }
 
 model Notification {
@@ -109,9 +108,9 @@ model Notification {
   recipient   User      @relation(fields: [recipientId], references: [id])
   title       String
   message     String
-  type        String    // e.g., 'REQUEST_UPDATE', 'SYSTEM_ALERT'
+  type        String // e.g., 'REQUEST_UPDATE', 'SYSTEM_ALERT'
   readAt      DateTime? // null indicates unread
-  metadata    String?   // JSON string
+  metadata    String? // JSON string
   createdAt   DateTime  @default(now())
 
   @@index([recipientId, createdAt])
@@ -130,29 +129,29 @@ model Escalation {
 }
 
 model Announcement {
-  id             String    @id @default(uuid())
-  title          String
-  body           String
-  createdById    String
-  creator        User      @relation("AnnouncementCreator", fields: [createdById], references: [id])
-  targetBranch   String?
-  targetYear     Int?
-  targetHostel   String?
-  targetBlock    String?
-  requiresAck    Boolean   @default(false)
-  priority       String    @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
-  createdAt      DateTime  @default(now())
+  id           String   @id @default(uuid())
+  title        String
+  body         String
+  createdById  String
+  creator      User     @relation("AnnouncementCreator", fields: [createdById], references: [id])
+  targetBranch String?
+  targetYear   Int?
+  targetHostel String?
+  targetBlock  String?
+  requiresAck  Boolean  @default(false)
+  priority     String   @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+  createdAt    DateTime @default(now())
 
-  receipts       AnnouncementReceipt[]
+  receipts AnnouncementReceipt[]
 }
 
 model AnnouncementReceipt {
-  id             String    @id @default(uuid())
+  id             String       @id @default(uuid())
   announcementId String
   announcement   Announcement @relation(fields: [announcementId], references: [id])
   userId         String
   user           User         @relation(fields: [userId], references: [id])
-  deliveredAt    DateTime  @default(now())
+  deliveredAt    DateTime     @default(now())
   readAt         DateTime?
   acknowledgedAt DateTime?
 
@@ -160,12 +159,10 @@ model AnnouncementReceipt {
   @@index([userId])
 }
 
-
-
 model MessMenu {
   id        String   @id @default(uuid())
   date      DateTime
-  mealType  String   // BREAKFAST, LUNCH, SNACKS, DINNER
+  mealType  String // BREAKFAST, LUNCH, SNACKS, DINNER
   items     String
   notes     String?
   createdAt DateTime @default(now())
@@ -190,30 +187,28 @@ model MessFeedback {
   @@unique([menuId, studentId])
 }
 
-
 model SmsOutbox {
-  id             String    @id @default(uuid())
-  recipientId    String?
-  recipient      User?     @relation(fields: [recipientId], references: [id])
-  phoneNumber    String
-  message        String
-  status         String    // QUEUED, SIMULATED_SENT, SIMULATED_FAILED
-  type           String    // e.g. "REQUEST_UPDATE", "ANNOUNCEMENT", "GENERAL"
-  referenceId    String?   
-  createdAt      DateTime  @default(now())
-  sentAt         DateTime?
-  failureReason  String?
+  id            String    @id @default(uuid())
+  recipientId   String?
+  recipient     User?     @relation(fields: [recipientId], references: [id])
+  phoneNumber   String
+  message       String
+  status        String // QUEUED, SIMULATED_SENT, SIMULATED_FAILED
+  type          String // e.g. "REQUEST_UPDATE", "ANNOUNCEMENT", "GENERAL"
+  referenceId   String?
+  createdAt     DateTime  @default(now())
+  sentAt        DateTime?
+  failureReason String?
 }
 
-
 model Course {
-  id          String   @id @default(uuid())
-  code        String   @unique
-  name        String
-  facultyId   String
-  faculty     User     @relation("CourseFaculty", fields: [facultyId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  facultyId String
+  faculty   User     @relation("CourseFaculty", fields: [facultyId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   sessions    ClassSession[]
   enrollments Enrollment[]
@@ -240,7 +235,7 @@ model ClassSession {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  attendances        Attendance[]
+  attendances Attendance[]
 }
 
 model Attendance {
@@ -249,30 +244,30 @@ model Attendance {
   session   ClassSession @relation(fields: [sessionId], references: [id])
   studentId String
   student   User         @relation(fields: [studentId], references: [id])
-  status    String       // PRESENT, ABSENT
+  status    String // PRESENT, ABSENT
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
   @@unique([sessionId, studentId])
 }
 
-
 model Policy {
-  id                   String   @id @default(uuid())
-  name                 String
-  description          String?
-  
-  requestType          String?
-  category             String?
-  domain               String?
-  
-  approvalRequired     Boolean  @default(true)
-  autoApproveCondition String?  // JSON
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+
+  requestType String?
+  category    String?
+  domain      String?
+
+  approvalRequired     Boolean @default(true)
+  autoApproveCondition String? // JSON
   slaHours             Int?
-  escalationPolicy     String?  // JSON
-  allowedTransitions   String?  // JSON
-  
-  isActive             Boolean  @default(true)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  escalationPolicy     String? // JSON
+  allowedTransitions   String? // JSON
+
+  isActive  Boolean  @default(true)
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

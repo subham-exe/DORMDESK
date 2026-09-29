@@ -1,12 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PolicyService } from '../policy';
+import { PolicyValidator } from '../policy-validator';
 
-// Mock dependencies
 const mockFindMany = vi.fn();
+const mockCreate = vi.fn();
+const mockUpdate = vi.fn();
+const mockFindUnique = vi.fn();
+const mockCount = vi.fn();
+
+vi.mock('../audit', () => ({
+  AuditService: {
+    log: vi.fn(),
+  }
+}));
+
 vi.mock('../../db/prisma', () => ({
   prisma: {
     policy: {
       findMany: (...args: unknown[]) => mockFindMany(...args),
+      create: (...args: unknown[]) => mockCreate(...args),
+      update: (...args: unknown[]) => mockUpdate(...args),
+      findUnique: (...args: unknown[]) => mockFindUnique(...args),
+      count: (...args: unknown[]) => mockCount(...args),
     }
   }
 }));
@@ -55,14 +70,12 @@ describe('PolicyService', () => {
     });
 
     it('handles conflicting policy selection via explicit precedence', async () => {
-      // If we have category match and requestType match, which wins?
-      // Our logic: categoryRequestTypeMatch > categoryMatch > requestTypeMatch > domainMatch
       mockFindMany.mockResolvedValue([
         { id: 'cat', name: 'Category Match', requestType: null, category: 'Plumbing', isActive: true },
         { id: 'req', name: 'Request Type Match', requestType: 'COMPLAINT', category: null, isActive: true },
       ]);
       const result = await PolicyService.resolvePolicyForRequest({ requestType: 'COMPLAINT', category: 'Plumbing' });
-      expect(result.policyId).toBe('cat'); // Category takes precedence over requestType in our implementation
+      expect(result.policyId).toBe('cat'); 
     });
   });
 
@@ -139,6 +152,84 @@ describe('PolicyService', () => {
       );
       expect(result.valid).toBe(false);
       expect(result.explanation).toContain('Transition rejected');
+    });
+  });
+
+  describe('Policy CRUD', () => {
+    it('creates a policy after validation', async () => {
+      mockCreate.mockResolvedValue({ id: 'p1', name: 'Test' });
+      
+      const created = await PolicyService.createPolicy({
+        name: 'Test',
+        slaHours: 24
+      }, 'admin-1');
+
+      expect(created.id).toBe('p1');
+      expect(mockCreate).toHaveBeenCalled();
+    });
+
+    it('rejects invalid SLA on creation', async () => {
+      await expect(PolicyService.createPolicy({
+        name: 'Test',
+        slaHours: -5
+      }, 'admin-1')).rejects.toThrow('SLA hours must be a non-negative number');
+    });
+
+    it('updates a policy safely with version check', async () => {
+      mockFindUnique.mockResolvedValue({ id: 'p1', name: 'Existing', version: 2, isActive: true });
+      mockUpdate.mockResolvedValue({ id: 'p1', name: 'Updated', version: 3 });
+      
+      const updated = await PolicyService.updatePolicy('p1', {
+        name: 'Updated',
+        version: 2
+      }, 'admin-1');
+
+      expect(updated.version).toBe(3);
+    });
+
+    it('rejects update on stale version', async () => {
+      mockFindUnique.mockResolvedValue({ id: 'p1', name: 'Existing', version: 3, isActive: true });
+      
+      await expect(PolicyService.updatePolicy('p1', {
+        name: 'Updated',
+        version: 2 // stale
+      }, 'admin-1')).rejects.toThrow('CONCURRENCY_CONFLICT');
+    });
+
+    it('rejects deactivating the last fallback', async () => {
+      mockFindUnique.mockResolvedValue({ id: 'p1', requestType: null, category: null, domain: null, isActive: true });
+      mockCount.mockResolvedValue(1); // only 1 fallback
+      
+      await expect(PolicyService.updatePolicy('p1', {
+        name: 'Fallback',
+        isActive: false // trying to deactivate
+      }, 'admin-1')).rejects.toThrow('SAFETY_VIOLATION');
+    });
+  });
+
+  describe('PolicyValidator', () => {
+    it('validates escalation JSON structure', async () => {
+      expect(() => PolicyValidator.validate({
+        name: 'Test',
+        escalationPolicy: JSON.stringify({ escalateToRole: 'Warden' })
+      })).not.toThrow();
+
+      expect(() => PolicyValidator.validate({
+        name: 'Test',
+        escalationPolicy: JSON.stringify({ escalateToRole: 'InvalidRole' })
+      })).toThrow('must be one of');
+    });
+
+    it('validates allowedTransitions JSON structure', async () => {
+      expect(() => PolicyValidator.validate({
+        name: 'Test',
+        allowedTransitions: JSON.stringify({ 'Staff': ['RESOLVED'] })
+      })).not.toThrow();
+
+      expect(() => PolicyValidator.validate({
+        name: 'Test',
+        allowedTransitions: JSON.stringify({ 'Student': ['INVALID_STATUS'] })
+      })).toThrow('Invalid status in allowedTransitions for role Student: INVALID_STATUS');
     });
   });
 });

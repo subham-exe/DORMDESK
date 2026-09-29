@@ -2,23 +2,6 @@ import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/session';
 import { PolicyService } from '@/lib/services/policy';
 
-export async function GET() {
-  try {
-    const user = await requireAuth();
-    if (user.role !== 'Admin') {
-      return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
-    }
-
-    const policies = await PolicyService.listPolicies();
-    return NextResponse.json({ success: true, data: policies });
-  } catch (error: unknown) {
-    if (error instanceof Error && error.message === 'UNAUTHORIZED') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-}
-
 export async function POST(req: Request) {
   try {
     const user = await requireAuth();
@@ -27,8 +10,15 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const created = await PolicyService.createPolicy(body, user.id);
-    return NextResponse.json({ success: true, data: created });
+    const result = await PolicyService.resolvePolicyForRequest(
+      {
+        requestType: body.requestType,
+        category: body.category,
+        domain: body.domain
+      },
+      { request: body.context }
+    );
+    return NextResponse.json({ success: true, data: result });
   } catch (error: unknown) {
     if (error instanceof Error) {
       if (error.message === 'UNAUTHORIZED') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

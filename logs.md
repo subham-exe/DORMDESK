@@ -739,3 +739,11 @@ Prompt J: CLOSED
  #   P r o m p t   K :   C L O S E D 
  # #   F i n a l   C l o s u r e   A u d i t :   P A S S  
  
+ #   P r o m p t   L :   I M P L E M E N T E D   -   C L O S U R E   A U D I T   R E Q U I R E D 
+ # #   I m p l e m e n t a t i o n   D e t a i l s 
+ -   A d d e d   / a p i / a d m i n / p o l i c i e s   C R U D   A P I . 
+ -   A d d e d   p o l i c y   s i m u l a t o r . 
+ -   A d d e d   s a f e   d e a c t i v a t i o n   l o c k   f o r   f a l l b a c k . 
+ -   P r e s e r v e d   P r o m p t   J   p r e c e d e n c e   r u l e s . 
+ -   A d d e d   1 7   p o l i c y   t e s t s .  
+ 

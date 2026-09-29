@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- specific reason: practical testing with partial Prisma objects */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NotificationService, NotificationType } from '../notification';
 import { prisma } from '@/lib/db/prisma';
@@ -19,8 +20,8 @@ describe('NotificationService', () => {
   });
 
   it('creates a notification and sanitizes metadata', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(prisma.notification.create).mockResolvedValue({ id: 'notif-1' } as any);
+    
+    vi.mocked(prisma.notification.create).mockResolvedValue({ id: 'notif-1' } as any /* specific reason: testing with partial Prisma objects */);
 
     await NotificationService.create({
       recipientId: 'user-1',
@@ -38,27 +39,27 @@ describe('NotificationService', () => {
   });
 
   it('allows reading own notification', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    
     vi.mocked(prisma.notification.findUnique).mockResolvedValue({
       id: 'notif-1',
       recipientId: 'user-1',
       readAt: null
-    } as any);
+    } as any /* specific reason: testing with partial Prisma objects */);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(prisma.notification.update).mockResolvedValue({} as any);
+    
+    vi.mocked(prisma.notification.update).mockResolvedValue({} as any /* specific reason: testing with partial Prisma objects */);
 
     await NotificationService.markRead('notif-1', 'user-1');
     expect(prisma.notification.update).toHaveBeenCalled();
   });
 
   it('forbids reading another users notification', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    
     vi.mocked(prisma.notification.findUnique).mockResolvedValue({
       id: 'notif-1',
       recipientId: 'user-2',
       readAt: null
-    } as any);
+    } as any /* specific reason: testing with partial Prisma objects */);
 
     await expect(NotificationService.markRead('notif-1', 'user-1')).rejects.toThrow('FORBIDDEN');
   });
@@ -70,8 +71,8 @@ describe('NotificationService', () => {
       ticketNumber: 'REQ-111'
     };
     
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await NotificationService.notifyRequestLifecycleEvent(request as any, NotificationType.REQUEST_RESOLVED);
+    
+    await NotificationService.notifyRequestLifecycleEvent(request as any /* specific reason: testing with partial Prisma objects */, NotificationType.REQUEST_RESOLVED);
     
     expect(prisma.notification.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({
