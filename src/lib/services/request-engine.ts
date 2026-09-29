@@ -2,6 +2,7 @@ import { prisma } from '../db/prisma';
 import { CreateRequestPayload, TransitionRequestPayload, AssignRequestPayload, RequestStatus } from '../types/request';
 import { AuditService } from './audit';
 import { NotificationService } from './notification';
+import { PolicyService } from './policy';
 
 const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   PENDING: ['ASSIGNED', 'RESOLVED', 'CANCELLED', 'REJECTED', 'APPROVED'],
@@ -49,11 +50,12 @@ export class RequestEngine {
       if (existing) return existing;
     }
 
-    // Zero-Touch auto-approval for short leaves (Differentiator)
-    let autoApprove = false;
-    if (payload.requestType === 'LEAVE' && (payload.metadata?.leaveDays as number) <= 2) {
-      autoApprove = true;
-    }
+    const policyResult = await PolicyService.resolvePolicyForRequest(
+      { requestType: payload.requestType, category: payload.category },
+      { request: { metadata: payload.metadata ? JSON.stringify(payload.metadata) : null } }
+    );
+
+    const autoApprove = policyResult.autoApproveAllowed;
 
     const ticketNumber = `${payload.requestType.substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}`;
     
@@ -68,9 +70,8 @@ export class RequestEngine {
         priority: payload.priority || 'LOW',
         status: autoApprove ? 'APPROVED' : 'PENDING',
         metadata: payload.metadata ? JSON.stringify(payload.metadata) : null,
-          idempotencyKey: payload.idempotencyKey || null,
-        // SLA logic can be injected here based on category
-        SLA: payload.requestType === 'COMPLAINT' ? 24 : undefined,
+        idempotencyKey: payload.idempotencyKey || null,
+        SLA: policyResult.slaHours,
       },
     });
 
@@ -78,7 +79,7 @@ export class RequestEngine {
     await triggerNotification(request.id, 'CREATED');
     
     if (autoApprove) {
-      await logAudit(request.id, payload.requesterId, 'AUTO_APPROVED', { reason: 'Leave <= 2 days' });
+      await logAudit(request.id, payload.requesterId, 'AUTO_APPROVED', { reason: policyResult.explanation, policyId: policyResult.policyId });
     }
 
     return request;
@@ -91,6 +92,18 @@ export class RequestEngine {
     const validNext = VALID_TRANSITIONS[request.status as RequestStatus] || [];
     if (!validNext.includes('ASSIGNED') && request.status !== 'ASSIGNED') {
       throw new Error(`Invalid transition from ${request.status} to ASSIGNED`);
+    }
+
+    const actor = await prisma.user.findUnique({ where: { id: payload.actorId } });
+    if (actor) {
+       const transitionCheck = await PolicyService.validateTransition(
+          request,
+          'ASSIGNED',
+          { id: actor.id, role: actor.role, domain: actor.department || undefined }
+       );
+       if (!transitionCheck.valid) {
+          throw new Error(transitionCheck.explanation);
+       }
     }
 
     const updated = await prisma.request.update({
@@ -117,11 +130,22 @@ export class RequestEngine {
       throw new Error(`Invalid transition from ${request.status} to ${payload.newStatus}`);
     }
 
+    const actor = await prisma.user.findUnique({ where: { id: payload.actorId } });
     if (payload.newStatus === 'REJECTED') {
-      const actor = await prisma.user.findUnique({ where: { id: payload.actorId } });
       if (actor?.role === 'Student') {
         throw new Error('Students cannot reject requests');
       }
+    }
+
+    if (actor) {
+       const transitionCheck = await PolicyService.validateTransition(
+          request,
+          payload.newStatus,
+          { id: actor.id, role: actor.role, domain: actor.department || undefined }
+       );
+       if (!transitionCheck.valid) {
+          throw new Error(transitionCheck.explanation);
+       }
     }
 
     const isTerminal = ['RESOLVED', 'APPROVED', 'CANCELLED', 'REJECTED', 'CLOSED'].includes(payload.newStatus);

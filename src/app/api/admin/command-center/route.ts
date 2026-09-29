@@ -5,7 +5,7 @@ import { CommandCenterService } from "@/lib/services/command-center";
 export async function GET() {
   try {
     const admin = await verifyAdminAuthority();
-    const data = await CommandCenterService.getDashboard(admin.id);
+    const data = await CommandCenterService.getDashboard();
     return NextResponse.json(data);
   } catch (err: unknown) {
     if (err instanceof Error) {

@@ -724,3 +724,13 @@ PASS
 - Browser verification: not independently performed
 - Temporary artifacts: none
 - Prompt H: IMPLEMENTED\n\n## Prompt H � Offline Sync\n- Status: IMPLEMENTED\n- Added idempotencyKey to Request model.\n- Created deterministic sync engine managing SYNCING, PENDING_SYNC, SYNC_ERROR, and AUTH_REQUIRED states.\n- Modified UI to queue fetch on navigator offline or network errors.\n- Preserved session safety by failing sync on 401/403 requiring login.\n- Added unit tests for idempotency engine.\n- Prompt H closure audit: REQUIRED\n\n- Prompt I: IMPLEMENTED � CLOSURE AUDIT REQUIRED\n
+Prompt J: CONFIGURABLE WORKFLOWS + POLICY ENGINE
+
+- **PolicyService responsibility**: Evaluates and resolves policies for requests (determines auto-approval, SLA targets, transition validity) but does not execute workflows itself.
+- **Policy Precedence**: Specific requestType + category > category > requestType > domain > global default fallback.
+- **Approval rules**: Leave <= 2 days is evaluated and dynamically auto-approved via typed condition JSON if applicable; else standard manual approval is enforced.
+- **SLA responsibility split**: PolicyService determines SLA targets from configured policies. SLAService continues to calculate countdowns and breach status using timestamps.
+- **Transition authorization**: PolicyService can restrict valid next-status transitions per actor role via llowedTransitions JSON config.
+- **Policy explanation**: Emits clear readable explanations dynamically attached to UI surfaces and audit logs.
+- **Offline behavior**: Handled safely because requests sync to server where policies are authoritatively applied (no insecure local policy evaluation).
+- **Known limitations**: Policy editing UI is omitted by design for hackathon safety; policies are injected via seed script. Admin UI is read-only.

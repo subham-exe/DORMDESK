@@ -21,6 +21,9 @@ vi.mock('../../db/prisma', () => ({
     },
     user: {
       findUnique: vi.fn().mockResolvedValue({ id: 'admin1', role: 'Admin' })
+    },
+    policy: {
+      findMany: vi.fn().mockResolvedValue([])
     }
   }
 }));

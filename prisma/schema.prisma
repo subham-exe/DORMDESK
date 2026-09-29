@@ -256,3 +256,23 @@ model Attendance {
   @@unique([sessionId, studentId])
 }
 
+
+model Policy {
+  id                   String   @id @default(uuid())
+  name                 String
+  description          String?
+  
+  requestType          String?
+  category             String?
+  domain               String?
+  
+  approvalRequired     Boolean  @default(true)
+  autoApproveCondition String?  // JSON
+  slaHours             Int?
+  escalationPolicy     String?  // JSON
+  allowedTransitions   String?  // JSON
+  
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}

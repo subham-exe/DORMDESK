@@ -20,7 +20,7 @@ export class CommandCenterService {
    * This is a READ-ONLY operation. It does NOT mutate the database.
    * Incident auto-clustering should be triggered via a separate explicit admin action.
    */
-  static async getDashboard(_adminId: string) {
+  static async getDashboard() {
     const now = new Date();
 
     // Fetch active requests
@@ -92,14 +92,15 @@ export class CommandCenterService {
       // SLA Check
       const sla = SLAService.evaluate(req, now);
       if (sla) {
+        const policyContext = req.SLA ? ` (${req.SLA}h policy)` : '';
         if (sla.isBreached) {
           workload.BREACHED++;
-          addAttention(req.id, 'SLA Breached', baseItem);
+          addAttention(req.id, `SLA Breached${policyContext}`, baseItem);
           if (req.assignedAuthorityId && staffMap[req.assignedAuthorityId]) {
             staffMap[req.assignedAuthorityId].overdue++;
           }
         } else if (sla.remainingMs > 0 && sla.remainingMs <= 4 * 3600000) {
-          addAttention(req.id, 'SLA Warning (Due soon)', baseItem);
+          addAttention(req.id, `SLA Warning (Due soon)${policyContext}`, baseItem);
         }
       }
 

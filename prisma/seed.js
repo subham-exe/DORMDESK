@@ -346,6 +346,71 @@ async function main() {
   const s5 = await prisma.classSession.create({ data: { courseId: c2.id, scheduledAt: new Date(now - 48 * 3600000), status: 'COMPLETED' } });
   await prisma.attendance.create({ data: { sessionId: s5.id, studentId: users.student1.id, status: 'PRESENT' } });
 
+  console.log('Seeding Policies...');
+
+  await prisma.policy.createMany({
+    data: [
+      {
+        name: 'Short Leave Auto-Approval',
+        description: 'Auto-approves leave requests <= 2 days',
+        requestType: 'LEAVE',
+        approvalRequired: true, // But we allow auto-approve
+        autoApproveCondition: JSON.stringify({ type: 'LEAVE_DAYS_LESS_THAN_OR_EQUAL', days: 2 }),
+        isActive: true,
+      },
+      {
+        name: 'Long Leave Policy',
+        description: 'Leaves > 2 days require manual approval',
+        requestType: 'LEAVE',
+        approvalRequired: true,
+        isActive: true,
+        // No auto-approve condition here because the more specific one (or rather, the engine evaluating it) will fallback to this one if days > 2... Wait, precedence!
+        // If we want a separate policy for > 2 days, we can't just rely on precedence if both are "LEAVE".
+        // Let's combine them into one LEAVE policy or use the fact that if autoApproveAllowed is false, it falls back to approvalRequired: true.
+      }
+    ]
+  });
+  
+  // We should just use one LEAVE policy for simplicity. Let's delete the duplicate and seed a unified one.
+  await prisma.policy.deleteMany(); // Reset policies
+
+  await prisma.policy.createMany({
+    data: [
+      {
+        name: 'Leave Policy',
+        description: 'Auto-approves leave requests <= 2 days, otherwise requires manual approval',
+        requestType: 'LEAVE',
+        approvalRequired: true, 
+        autoApproveCondition: JSON.stringify({ type: 'LEAVE_DAYS_LESS_THAN_OR_EQUAL', days: 2 }),
+        isActive: true,
+      },
+      {
+        name: 'General Complaint SLA',
+        description: 'All complaints have a 24-hour target SLA by default',
+        requestType: 'COMPLAINT',
+        approvalRequired: false,
+        slaHours: 24,
+        isActive: true,
+      },
+      {
+        name: 'Plumbing Escalation Policy',
+        description: 'Plumbing complaints escalate to Warden if SLA breached',
+        requestType: 'COMPLAINT',
+        category: 'Plumbing',
+        approvalRequired: false,
+        slaHours: 12,
+        escalationPolicy: JSON.stringify({ escalateToRole: 'Warden', afterSlaBreach: true }),
+        isActive: true,
+      },
+      {
+        name: 'Default Fallback Policy',
+        description: 'Catch-all policy',
+        approvalRequired: true,
+        isActive: true,
+      }
+    ]
+  });
+
   console.log('Demo database seeded successfully!');
 }
 

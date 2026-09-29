@@ -32,7 +32,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
           } else {
             localStorage.removeItem("dormdesk_user_id");
           }
-        } catch (_e) {}
+        } catch {}
       }
 
       const requests = await getOfflineRequests();

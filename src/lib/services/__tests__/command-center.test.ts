@@ -80,7 +80,7 @@ describe('CommandCenterService', () => {
       }
     });
 
-    const dashboard = await CommandCenterService.getDashboard(adminId);
+    const dashboard = await CommandCenterService.getDashboard();
 
     expect(dashboard.workload.UNASSIGNED).toBe(3);
     expect(dashboard.workload.BREACHED).toBe(1);
@@ -88,7 +88,7 @@ describe('CommandCenterService', () => {
     // Check needsAttention: items have reasons arrays, not a single reason string
     const allReasons = dashboard.needsAttention.flatMap(n => n.reasons);
     expect(allReasons).toContain('Unassigned request');
-    expect(allReasons).toContain('SLA Breached');
+    expect(allReasons.some((r: string) => r.includes('SLA Breached'))).toBe(true);
     expect(allReasons).toContain('Stale: No progress for 24 hours');
 
     // The stale request should have BOTH "Unassigned" and "Stale" reasons
@@ -99,7 +99,7 @@ describe('CommandCenterService', () => {
   });
 
   it('should handle empty state gracefully', async () => {
-    const dashboard = await CommandCenterService.getDashboard(adminId);
+    const dashboard = await CommandCenterService.getDashboard();
     expect(dashboard.needsAttention.length).toBe(0);
     expect(dashboard.incidents.length).toBe(0);
     expect(dashboard.workload.PENDING).toBe(0);
@@ -126,7 +126,7 @@ describe('CommandCenterService', () => {
     }
 
     // getDashboard should NOT auto-cluster
-    await CommandCenterService.getDashboard(adminId);
+    await CommandCenterService.getDashboard();
 
     const incidents = await prisma.incident.findMany();
     expect(incidents.length).toBe(0); // No incidents created by a read operation

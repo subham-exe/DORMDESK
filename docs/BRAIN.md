@@ -172,3 +172,9 @@ Validation:
 
 Prompt H:
 CLOSED\n\n## Prompt H � Offline Sync\nDORMDESK supports resilient offline submission for selected student requests. Requests are queued locally (IndexedDB) and synchronized with the server when connectivity returns, using server-side idempotency protection.\n## Prompt I � Operations Command Center & Incident Intelligence\nImplemented a deterministic IncidentIntelligenceService that auto-clusters requests by category and location within a 24h window. The admin dashboard (Command Center) aggregates active workload, SLA breaches/warnings, stale requests, and high-impact incidents using explainable algorithms (request count, user count, and priority weight). An incident detail view exposes the grouping reasoning and impact formulation.\n\nPrompt I:\nCLOSED\n
+
+## Policy Engine (Prompt J)
+- **PolicyService**: Provides deterministic policy evaluation for requests based on type, category, and domain.
+- **Precedence**: Specific category + request type > Category > Request Type > Domain > Default.
+- **Separation of Concerns**: PolicyService handles *configuration* (SLA targets, auto-approval rules). SLAService handles *state* (calculating remaining time). RequestEngine handles *mutation*.
+- **Offline Considerations**: The server remains authoritative. Offline-created requests evaluate policy only upon sync.
