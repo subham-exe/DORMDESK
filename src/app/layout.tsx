@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import "./globals.css";
 import { OfflineProvider } from "@/components/OfflineProvider";
 import { ToastProvider } from "@/components/ui/use-toast";
@@ -24,11 +25,13 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:p-4 focus:bg-surface focus:text-primary focus:font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">Skip to main content</a>
-        <OfflineProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </OfflineProvider>
+        <LanguageProvider>
+          <OfflineProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </OfflineProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

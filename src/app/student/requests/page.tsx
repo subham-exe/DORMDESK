@@ -14,8 +14,10 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { StatusIndicator } from "@/components/ui/status-indicator";
 import { getOfflineRequests } from "@/lib/services/offline-store";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function RequestListPage() {
+  const { t } = useLanguage();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +102,7 @@ export default function RequestListPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">My Requests</h1>
+          <h1 className="text-2xl font-bold text-text-primary">{t("requests.title")}</h1>
           <p className="text-text-secondary">Track and manage your requests.</p>
         </div>
         <Link href="/student/requests/new" passHref>

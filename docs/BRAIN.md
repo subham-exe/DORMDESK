@@ -126,3 +126,4 @@ These files must reflect:
 - the next actionable step
 
 Do not modify canonical planning documents merely to record implementation progress.
+\n\n## Prompt G (Language Foundation)\nImplemented lightweight local-first multilingual UI foundation supporting English, Odia, and Hindi without external dependencies. Added LanguageContext and LanguageSelector.\n

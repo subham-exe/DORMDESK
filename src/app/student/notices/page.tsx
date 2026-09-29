@@ -8,6 +8,7 @@ import { LoadingState } from "@/components/ui/loading-state";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface Notice {
   id: string;
@@ -32,6 +33,7 @@ interface Announcement {
 }
 
 export default function NoticesPage() {
+  const { t } = useLanguage();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +95,7 @@ export default function NoticesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Notices & Announcements</h1>
+        <h1 className="text-2xl font-bold">{t("notices.title")}</h1>
         <p className="text-text-secondary">Important updates and personal notifications.</p>
       </div>
 

@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { LoadingState } from "@/components/ui/loading-state";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Star, MessageSquare, Utensils } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function StudentMessPage() {
+  const { t } = useLanguage();
   const [menus, setMenus] = useState<{id: string; items: string; mealType: string; notes?: string; date: string; feedbacks?: {rating: number; comment?: string}[]}[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -77,7 +79,7 @@ export default function StudentMessPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Mess Menu</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t("mess.title")}</h1>
         <p className="text-text-secondary">View weekly meals and submit feedback.</p>
       </div>
 

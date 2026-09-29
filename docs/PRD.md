@@ -138,3 +138,4 @@ The hackathon demo must deliver one complete vertical slice:
 - **Students:** Can view their attendance summary and percentage across enrolled courses, and see class cancellation notices deterministically.
 - **Faculty:** Can view their assigned courses, record class session attendance (Present/Absent), and cancel sessions. Cancellations trigger automated system alerts for enrolled students.
 - **Scope Limit:** No biometric, QR, GPS, facial, or predictive attendance functionality is included.
+\n\n## Prompt G (Language Foundation)\nImplemented lightweight local-first multilingual UI foundation supporting English, Odia, and Hindi. Translates high-visibility student-facing surfaces with English fallback. User-generated content is strictly untranslated.\n

@@ -12,8 +12,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { getOfflineRequests, deleteOfflineRequest } from "@/lib/services/offline-store";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function StudentDashboard() {
+  const { t } = useLanguage();
   const [requests, setRequests] = useState<any[]>([]);
   const [scholarship, setScholarship] = useState<any>(null);
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -165,8 +167,8 @@ export default function StudentDashboard() {
       {/* Header & Primary Action */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Welcome Back</h1>
-          <p className="text-text-secondary">Here&apos;s what&apos;s happening today.</p>
+          <h1 className="text-2xl font-bold text-text-primary">{t("dashboard.title")}</h1>
+          <p className="text-text-secondary">{t("dashboard.subtitle") || "Here's what's happening today."}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Link href="/student/requests/new?type=COMPLAINT" passHref>
@@ -201,28 +203,28 @@ export default function StudentDashboard() {
         <Card>
           <CardContent className="p-4 flex flex-col items-center text-center">
             <Clock className="h-8 w-8 text-info mb-2" />
-            <p className="text-sm font-medium text-text-secondary">Active Requests</p>
+            <p className="text-sm font-medium text-text-secondary">{t("dashboard.active_requests") || "Active Requests"}</p>
             <p className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-8 mx-auto" /> : activeRequests.length}</p>
           </CardContent>
         </Card>
         <Card className={verificationRequired.length > 0 ? "border-success bg-success-bg" : ""}>
           <CardContent className="p-4 flex flex-col items-center text-center">
             <CheckCircle className="h-8 w-8 text-success mb-2" />
-            <p className="text-sm font-medium text-text-secondary">Verification Needed</p>
+            <p className="text-sm font-medium text-text-secondary">{t("dashboard.verification_needed") || "Verification Needed"}</p>
             <p className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-8 mx-auto" /> : verificationRequired.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 flex flex-col items-center text-center">
             <FileText className="h-8 w-8 text-text-secondary mb-2" />
-            <p className="text-sm font-medium text-text-secondary">Total Created</p>
+            <p className="text-sm font-medium text-text-secondary">{t("dashboard.total_created") || "Total Created"}</p>
             <p className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-8 mx-auto" /> : requests.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 flex flex-col items-center text-center">
             <AlertTriangle className="h-8 w-8 text-warning mb-2" />
-            <p className="text-sm font-medium text-text-secondary">Escalated</p>
+            <p className="text-sm font-medium text-text-secondary">{t("dashboard.escalated") || "Escalated"}</p>
             <p className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-8 mx-auto" /> : requests.filter(r => r.status === "ESCALATED").length}</p>
           </CardContent>
         </Card>
@@ -230,7 +232,7 @@ export default function StudentDashboard() {
 
       {/* Scholarship Section */}
       <div className="mt-8">
-        <h2 className="text-xl font-bold mb-4">Scholarship Status</h2>
+        <h2 className="text-xl font-bold mb-4">{t("dashboard.scholarship_status") || "Scholarship Status"}</h2>
         {loading ? (
           <Skeleton className="h-24 w-full" />
         ) : scholarship ? (
@@ -244,15 +246,15 @@ export default function StudentDashboard() {
             </div>
             <CardContent className="p-4 flex flex-col sm:flex-row gap-4 justify-between items-center">
               <div>
-                <p className="text-sm text-text-secondary">Application ID</p>
+                <p className="text-sm text-text-secondary">{t("dashboard.application_id") || "Application ID"}</p>
                 <p className="font-medium font-mono text-sm">{scholarship.id.split('-')[0].toUpperCase()}</p>
               </div>
               <div>
-                <p className="text-sm text-text-secondary">Last Updated</p>
+                <p className="text-sm text-text-secondary">{t("dashboard.last_updated") || "Last Updated"}</p>
                 <p className="font-medium text-sm">{new Date(scholarship.updatedAt).toLocaleDateString()}</p>
               </div>
               <Link href="/student/scholarship" passHref>
-                <Button variant="outline" size="sm">View Details</Button>
+                <Button variant="outline" size="sm">{t("dashboard.view_details") || "View Details"}</Button>
               </Link>
             </CardContent>
           </Card>
@@ -260,10 +262,10 @@ export default function StudentDashboard() {
           <Card className="bg-surface-muted border-dashed shadow-none">
             <CardContent className="p-6 text-center">
               <GraduationCap className="w-8 h-8 mx-auto text-text-secondary mb-2" />
-              <p className="font-medium">No Active Scholarships</p>
-              <p className="text-sm text-text-secondary mb-4">You have not applied for or been awarded any scholarships yet.</p>
+              <p className="font-medium">{t("dashboard.no_scholarships") || "No Active Scholarships"}</p>
+              <p className="text-sm text-text-secondary mb-4">{t("dashboard.no_scholarships_desc") || "You have not applied for or been awarded any scholarships yet."}</p>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/student/scholarship">Apply Now</Link>
+                <Link href="/student/scholarship">{t("dashboard.apply_now") || "Apply Now"}</Link>
               </Button>
             </CardContent>
           </Card>
@@ -273,7 +275,7 @@ export default function StudentDashboard() {
       {/* Recent Requests */}
       <div className="mt-8">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Recent Requests</h2>
+          <h2 className="text-xl font-bold">{t("dashboard.recent_requests")}</h2>
           <Link href="/student/requests" className="text-sm text-info font-medium hover:underline">
             View All
           </Link>
@@ -292,7 +294,7 @@ export default function StudentDashboard() {
             icon={<ListTodo className="h-6 w-6" />}
             title="No recent requests"
             description="You haven't made any requests recently. Need help? Create a new one."
-            action={<Link href="/student/requests/new" passHref><Button>Create Request</Button></Link>}
+            action={<Link href="/student/requests/new" passHref><Button>{t("requests.new")}</Button></Link>}
           />
         ) : (
           <div className="space-y-3">

@@ -4,18 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, ListTodo, Bell, User, GraduationCap, Utensils, Calendar } from "lucide-react";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   const navItems = [
-    { label: "Home", href: "/student", icon: Home },
-    { label: "Requests", href: "/student/requests", icon: ListTodo },
-    { label: "Notices", href: "/student/notices", icon: Bell },
-    { label: "Scholarships", href: "/student/scholarship", icon: GraduationCap },
-    { label: "Mess Menu", href: "/student/mess", icon: Utensils },
-    { label: "Attendance", href: "/student/attendance", icon: Calendar },
-    { label: "Profile", href: "/student/profile", icon: User },
+    { label: t("nav.home"), href: "/student", icon: Home },
+    { label: t("nav.requests"), href: "/student/requests", icon: ListTodo },
+    { label: t("nav.notices"), href: "/student/notices", icon: Bell },
+    { label: t("nav.scholarships"), href: "/student/scholarship", icon: GraduationCap },
+    { label: t("nav.mess"), href: "/student/mess", icon: Utensils },
+    { label: t("nav.attendance"), href: "/student/attendance", icon: Calendar },
+    { label: t("nav.profile"), href: "/student/profile", icon: User },
   ];
 
   return (
@@ -52,6 +55,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         {/* Desktop Header */}
         <header className="hidden md:flex justify-end items-center p-4 border-b border-border bg-surface sticky top-0 z-10">
           <div className="flex items-center gap-4">
+            <LanguageSelector />
             <NotificationDropdown />
             <div className="w-8 h-8 bg-info-bg text-info rounded-full flex items-center justify-center font-bold text-sm">
               ST
@@ -63,6 +67,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         <header className="md:hidden bg-surface border-b border-border p-4 sticky top-0 z-10 flex justify-between items-center">
           <h1 className="text-lg font-bold text-primary">DormDesk</h1>
           <div className="flex items-center gap-3">
+            <LanguageSelector />
             <NotificationDropdown />
             <div className="w-8 h-8 bg-info-bg text-info rounded-full flex items-center justify-center font-bold text-sm">
               ST
@@ -98,5 +103,3 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     </div>
   );
 }
-
-

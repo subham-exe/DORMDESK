@@ -703,4 +703,4 @@ PASS
 - No temporary artifacts remain.
 
 ## Known Limitations
-- No biometric, QR, GPS, or predictive attendance algorithms are implemented (kept intentionally lite).
+- No biometric, QR, GPS, or predictive attendance algorithms are implemented (kept intentionally lite).\n\n## Prompt G Closure\n- Language foundation implemented.\n- English, Odia, and Hindi local dictionaries added.\n- Fallback mechanisms intact.\n- No DB changes.\n- Verified zero TS/Lint errors and successful build.\n- Prompt H unblocked.\n
