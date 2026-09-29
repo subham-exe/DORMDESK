@@ -28,8 +28,8 @@ DormDesk is a campus-wide operations platform, not just a hostel management app.
 - **Incident Clustering:** The `clusterIntoIncident` primitive exists in the service, but automatic detection and UI triggers are not yet implemented.
 
 **PLANNED / NOT IMPLEMENTED:**
-- Automatic Incident Intelligence and "Me Too" UX.
-- Automatic SLA escalation.
+- Automatic Incident Intelligence and "Me Too" UX (Implemented via Prompt I and Prompt K).
+- Automatic SLA escalation (Implemented via Prompt K).
 - Recurring issue detection.
 - Operations Command Center (Admin Dashboard).
 - Configurable workflows.
@@ -178,3 +178,8 @@ CLOSED\n\n## Prompt H � Offline Sync\nDORMDESK supports resilient offline subm
 - **Precedence**: Specific category + request type > Category > Request Type > Domain > Default.
 - **Separation of Concerns**: PolicyService handles *configuration* (SLA targets, auto-approval rules). SLAService handles *state* (calculating remaining time). RequestEngine handles *mutation*.
 - **Offline Considerations**: The server remains authoritative. Offline-created requests evaluate policy only upon sync.
+
+ # #   P r o m p t   K   S t a t u s 
+ P r o m p t   K :   C L O S E D 
+ N o t i f i c a t i o n   a n d   E s c a l a t i o n   I n t e l l i g e n c e   s u c c e s s f u l l y   i m p l e m e n t e d ,   t e s t e d ,   a n d   a u d i t e d .  
+ 
