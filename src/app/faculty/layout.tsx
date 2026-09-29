@@ -2,20 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ListTodo, Bell, User, GraduationCap, Utensils, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 
-export default function StudentLayout({ children }: { children: React.ReactNode }) {
+export default function FacultyLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const navItems = [
-    { label: "Home", href: "/student", icon: Home },
-    { label: "Requests", href: "/student/requests", icon: ListTodo },
-    { label: "Notices", href: "/student/notices", icon: Bell },
-    { label: "Scholarships", href: "/student/scholarship", icon: GraduationCap },
-    { label: "Mess Menu", href: "/student/mess", icon: Utensils },
-    { label: "Attendance", href: "/student/attendance", icon: Calendar },
-    { label: "Profile", href: "/student/profile", icon: User },
+    { label: "Attendance", href: "/faculty/attendance", icon: Calendar },
   ];
 
   return (
@@ -24,11 +18,11 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       <aside className="hidden md:flex flex-col w-64 bg-surface border-r border-border">
         <div className="p-4 border-b border-border">
           <h1 className="text-xl font-bold text-primary">DormDesk</h1>
-          <p className="text-sm text-text-secondary">Student Portal</p>
+          <p className="text-sm text-text-secondary">Faculty Portal</p>
         </div>
         <nav className="flex-1 overflow-y-auto p-4 space-y-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/student" && pathname.startsWith(item.href));
+            const isActive = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
@@ -54,18 +48,18 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           <div className="flex items-center gap-4">
             <NotificationDropdown />
             <div className="w-8 h-8 bg-info-bg text-info rounded-full flex items-center justify-center font-bold text-sm">
-              ST
+              FA
             </div>
           </div>
         </header>
 
         {/* Mobile Header */}
         <header className="md:hidden bg-surface border-b border-border p-4 sticky top-0 z-10 flex justify-between items-center">
-          <h1 className="text-lg font-bold text-primary">DormDesk</h1>
+          <h1 className="text-lg font-bold text-primary">Faculty Portal</h1>
           <div className="flex items-center gap-3">
             <NotificationDropdown />
             <div className="w-8 h-8 bg-info-bg text-info rounded-full flex items-center justify-center font-bold text-sm">
-              ST
+              FA
             </div>
           </div>
         </header>
@@ -78,7 +72,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       {/* Bottom Tab Bar for Mobile */}
       <nav className="md:hidden fixed bottom-0 w-full bg-surface border-t border-border flex justify-around items-center h-16 pb-safe z-10">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/student" && pathname.startsWith(item.href));
+          const isActive = pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
@@ -98,5 +92,3 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     </div>
   );
 }
-
-

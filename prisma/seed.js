@@ -20,6 +20,10 @@ async function main() {
   await prisma.scholarship.deleteMany();
   await prisma.messFeedback.deleteMany();
   await prisma.messMenu.deleteMany();
+  await prisma.attendance.deleteMany();
+  await prisma.classSession.deleteMany();
+  await prisma.enrollment.deleteMany();
+  await prisma.course.deleteMany();
   await prisma.user.deleteMany();
 
   console.log('Seeding Demo Users (Core 9)...');
@@ -300,6 +304,47 @@ async function main() {
       failureReason: 'Invalid demo number'
     }
   });
+
+  
+  console.log('Seeding Courses and Sessions...');
+  
+  await prisma.attendance.deleteMany();
+  await prisma.classSession.deleteMany();
+  await prisma.enrollment.deleteMany();
+  await prisma.course.deleteMany();
+
+  const c1 = await prisma.course.create({
+    data: { code: 'CS101', name: 'Intro to Computer Science', facultyId: users.professor.id }
+  });
+  const c2 = await prisma.course.create({
+    data: { code: 'CS201', name: 'Data Structures', facultyId: users.hod.id }
+  });
+
+  // Enroll some students
+  const enrolledStudents = [users.student1.id, users.student2.id, ...extraStudents.slice(0, 3).map(s => s.id)];
+  
+  for (const sId of enrolledStudents) {
+    await prisma.enrollment.create({ data: { courseId: c1.id, studentId: sId } });
+    await prisma.enrollment.create({ data: { courseId: c2.id, studentId: sId } });
+  }
+
+  // Sessions for CS101
+  const s1 = await prisma.classSession.create({ data: { courseId: c1.id, scheduledAt: new Date(now - 48 * 3600000), status: 'COMPLETED' } });
+  const s2 = await prisma.classSession.create({ data: { courseId: c1.id, scheduledAt: new Date(now - 24 * 3600000), status: 'COMPLETED' } });
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+  const _s3 = await prisma.classSession.create({ data: { courseId: c1.id, scheduledAt: new Date(now), status: 'SCHEDULED' } });
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+  const _s4_cancelled = await prisma.classSession.create({ data: { courseId: c1.id, scheduledAt: new Date(now + 24 * 3600000), status: 'CANCELLED', cancellationReason: 'Faculty on leave' } });
+
+  // Attendance for CS101
+  await prisma.attendance.create({ data: { sessionId: s1.id, studentId: users.student1.id, status: 'PRESENT' } });
+  await prisma.attendance.create({ data: { sessionId: s1.id, studentId: users.student2.id, status: 'ABSENT' } });
+  await prisma.attendance.create({ data: { sessionId: s2.id, studentId: users.student1.id, status: 'PRESENT' } });
+  await prisma.attendance.create({ data: { sessionId: s2.id, studentId: users.student2.id, status: 'PRESENT' } });
+
+  // Sessions for CS201
+  const s5 = await prisma.classSession.create({ data: { courseId: c2.id, scheduledAt: new Date(now - 48 * 3600000), status: 'COMPLETED' } });
+  await prisma.attendance.create({ data: { sessionId: s5.id, studentId: users.student1.id, status: 'PRESENT' } });
 
   console.log('Demo database seeded successfully!');
 }

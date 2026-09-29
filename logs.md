@@ -683,3 +683,24 @@ PASS
 
 ## Verdict
 - PASS
+
+
+# Prompt F: Attendance-Lite & Class Cancellation
+
+## Status
+- Fully implemented.
+- after-F tag ready.
+
+## Verification
+- Schema updated with Course, ClassSession, Enrollment, Attendance models.
+- Faculty can view their courses, manage session attendance, and cancel classes.
+- Students can view their attendance and class status.
+- Cancellation notifies enrolled students and creates an audit log.
+- Strict RBAC enforced: Students cannot mutate attendance; Faculty can only manage their own courses.
+- 67/67 tests passing (13 new tests added for Academic Service).
+- 0 TS errors, 0 ESLint errors/warnings.
+- Build PASS.
+- No temporary artifacts remain.
+
+## Known Limitations
+- No biometric, QR, GPS, or predictive attendance algorithms are implemented (kept intentionally lite).

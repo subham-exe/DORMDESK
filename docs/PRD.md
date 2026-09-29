@@ -133,3 +133,8 @@ The hackathon demo must deliver one complete vertical slice:
 ### E. Mess Menu & Feedback
 - **Students:** Can view daily/weekly meal schedules deterministically and submit rated feedback per meal slot.
 - **Wardens/Admins:** Can manage meal slot schedules and monitor average rating aggregations to ensure operational quality. (Billing, Inventory, and Vendor APIs remain strictly out of scope).
+
+### F. Attendance-Lite & Class Cancellation
+- **Students:** Can view their attendance summary and percentage across enrolled courses, and see class cancellation notices deterministically.
+- **Faculty:** Can view their assigned courses, record class session attendance (Present/Absent), and cancel sessions. Cancellations trigger automated system alerts for enrolled students.
+- **Scope Limit:** No biometric, QR, GPS, facial, or predictive attendance functionality is included.

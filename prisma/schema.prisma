@@ -33,6 +33,11 @@ model User {
     smsReceived          SmsOutbox[]
   announcementReceipts AnnouncementReceipt[]
   messFeedbacks MessFeedback[]
+
+  coursesOwned   Course[]       @relation("CourseFaculty")
+  enrollments    Enrollment[]
+  attendances    Attendance[]
+
 }
 
 model Request {
@@ -196,4 +201,55 @@ model SmsOutbox {
   createdAt      DateTime  @default(now())
   sentAt         DateTime?
   failureReason  String?
+}
+
+
+model Course {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  facultyId   String
+  faculty     User     @relation("CourseFaculty", fields: [facultyId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sessions    ClassSession[]
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  studentId String
+  student   User     @relation(fields: [studentId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([courseId, studentId])
+}
+
+model ClassSession {
+  id                 String   @id @default(uuid())
+  courseId           String
+  course             Course   @relation(fields: [courseId], references: [id])
+  scheduledAt        DateTime
+  status             String   @default("SCHEDULED") // SCHEDULED, CANCELLED, COMPLETED
+  cancellationReason String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  attendances        Attendance[]
+}
+
+model Attendance {
+  id        String       @id @default(uuid())
+  sessionId String
+  session   ClassSession @relation(fields: [sessionId], references: [id])
+  studentId String
+  student   User         @relation(fields: [studentId], references: [id])
+  status    String       // PRESENT, ABSENT
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([sessionId, studentId])
 }
