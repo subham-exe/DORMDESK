@@ -740,7 +740,7 @@ To easily prepare your local database and start the server, run:
 `powershell
 npm run local
 `
-This safely applies missing migrations, optionally seeds if the database is empty, and starts the development server at http://localhost:3000.
+This safely synchronizes the schema, optionally seeds if the database is empty, and starts the development server at http://localhost:3000.
 
 ## Demo Reset
 If you need to explicitly destroy and recreate the local deterministic demo state, use:

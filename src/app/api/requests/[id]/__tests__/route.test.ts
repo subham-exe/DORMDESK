@@ -32,10 +32,10 @@ describe('PATCH /api/requests/[id]', () => {
 
   it('rejects STUDENT attempting to ASSIGN', async () => {
     const mockRequireAuth = requireAuth as unknown as MockedFunction<typeof requireAuth>;
-    mockRequireAuth.mockResolvedValue({ id: 'student-1', role: 'Student', name: 'Student', email: 's@local', isResident: true } as unknown as ReturnType<typeof requireAuth>);
+    mockRequireAuth.mockResolvedValue({ id: 'student-1', role: 'Student', name: 'Student', email: 's@local', isResident: true } as unknown as Awaited<ReturnType<typeof requireAuth>>);
     
     const mockFindUnique = prisma.request.findUnique as unknown as MockedFunction<typeof prisma.request.findUnique>;
-    mockFindUnique.mockResolvedValue({ id: 'req-1', requesterId: 'student-1' } as unknown as ReturnType<typeof prisma.request.findUnique>);
+    mockFindUnique.mockResolvedValue({ id: 'req-1', requesterId: 'student-1' } as unknown as Awaited<ReturnType<typeof prisma.request.findUnique>>);
 
     const req = createMockRequest({ action: 'ASSIGN', assigneeId: 'staff-1', department: 'Plumbing' });
     const res = await PATCH(req, { params: Promise.resolve({ id: 'req-1' }) });
@@ -47,10 +47,10 @@ describe('PATCH /api/requests/[id]', () => {
 
   it('rejects STUDENT attempting forbidden TRANSITION (e.g. RESOLVED)', async () => {
     const mockRequireAuth = requireAuth as unknown as MockedFunction<typeof requireAuth>;
-    mockRequireAuth.mockResolvedValue({ id: 'student-1', role: 'Student', name: 'Student', email: 's@local', isResident: true } as unknown as ReturnType<typeof requireAuth>);
+    mockRequireAuth.mockResolvedValue({ id: 'student-1', role: 'Student', name: 'Student', email: 's@local', isResident: true } as unknown as Awaited<ReturnType<typeof requireAuth>>);
     
     const mockFindUnique = prisma.request.findUnique as unknown as MockedFunction<typeof prisma.request.findUnique>;
-    mockFindUnique.mockResolvedValue({ id: 'req-1', requesterId: 'student-1' } as unknown as ReturnType<typeof prisma.request.findUnique>);
+    mockFindUnique.mockResolvedValue({ id: 'req-1', requesterId: 'student-1' } as unknown as Awaited<ReturnType<typeof prisma.request.findUnique>>);
 
     const req = createMockRequest({ action: 'TRANSITION', newStatus: 'RESOLVED' });
     const res = await PATCH(req, { params: Promise.resolve({ id: 'req-1' }) });
@@ -62,10 +62,10 @@ describe('PATCH /api/requests/[id]', () => {
 
   it('rejects STUDENT attempting to transition another user request', async () => {
     const mockRequireAuth = requireAuth as unknown as MockedFunction<typeof requireAuth>;
-    mockRequireAuth.mockResolvedValue({ id: 'student-1', role: 'Student', name: 'Student', email: 's@local', isResident: true } as unknown as ReturnType<typeof requireAuth>);
+    mockRequireAuth.mockResolvedValue({ id: 'student-1', role: 'Student', name: 'Student', email: 's@local', isResident: true } as unknown as Awaited<ReturnType<typeof requireAuth>>);
     
     const mockFindUnique = prisma.request.findUnique as unknown as MockedFunction<typeof prisma.request.findUnique>;
-    mockFindUnique.mockResolvedValue({ id: 'req-1', requesterId: 'student-2' } as unknown as ReturnType<typeof prisma.request.findUnique>);
+    mockFindUnique.mockResolvedValue({ id: 'req-1', requesterId: 'student-2' } as unknown as Awaited<ReturnType<typeof prisma.request.findUnique>>);
 
     const req = createMockRequest({ action: 'TRANSITION', newStatus: 'CANCELLED' });
     const res = await PATCH(req, { params: Promise.resolve({ id: 'req-1' }) });
