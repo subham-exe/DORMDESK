@@ -197,3 +197,7 @@ CLOSED\n\n## Prompt H � Offline Sync\nDORMDESK supports resilient offline subm
 ## Prompt N Status
 Prompt N: CLOSED
 Accessibility and PWA hardening pass complete. Service worker secured against auth leakage, offline page added, UI layout responsive fixed, keyboard navigation improved, semantic markup verified.
+
+## Prompt O Status
+Prompt O: IMPLEMENTED - CLOSURE AUDIT REQUIRED
+Demo seeded properly with deterministic incidents, SLAs, and escalations. Reset mechanism works via npx prisma db seed.

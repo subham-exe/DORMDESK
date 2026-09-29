@@ -25,3 +25,10 @@
 - Fixed policies UI responsive grids.
 - Fixed CC links to have focus styles.
 - Upgraded notification dropdown to use semantic buttons.
+
+# Prompt O: IMPLEMENTED - CLOSURE AUDIT REQUIRED
+## Implementation Details
+- Added demo reset script via prisma/seed.js.
+- Fixed lint error.
+- Updated incident intelligence hook.
+- Seed data has deterministic SLA warnings and breaches.

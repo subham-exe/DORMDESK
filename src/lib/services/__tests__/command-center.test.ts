@@ -6,6 +6,8 @@ describe('CommandCenterService', () => {
   let studentId: string;
 
   beforeEach(async () => {
+    await prisma.auditLog.deleteMany();
+    await prisma.escalation.deleteMany();
     await prisma.request.deleteMany();
     await prisma.incident.deleteMany();
     await prisma.escalation.deleteMany();

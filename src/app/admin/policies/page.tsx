@@ -38,7 +38,6 @@ export default function PoliciesPage() {
   const [simResult, setSimResult] = useState<Record<string, unknown> | null>(null);
 
   const fetchPolicies = useCallback(() => {
-    setLoading(true);
     fetch('/api/admin/policies')
       .then(res => res.json())
       .then(res => {

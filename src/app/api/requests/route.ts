@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { RequestEngine } from '@/lib/services/request-engine';
+import { IncidentIntelligenceService } from '@/lib/services/incident-intelligence';
 import { prisma } from '@/lib/db/prisma';
 import { requireAuth } from '@/lib/auth/session';
 
@@ -37,6 +38,10 @@ export async function POST(req: NextRequest) {
       idempotencyKey
     });
 
+    if (requestType === 'COMPLAINT') {
+      await IncidentIntelligenceService.autoClusterIncidents(user.id);
+    }
+
     return NextResponse.json({ success: true, data: request }, { status: 201 });
   } catch (error: unknown) {
     console.error('Create Request Error:', error);
@@ -44,3 +49,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: msg }, { status: 400 });
   }
 }
+

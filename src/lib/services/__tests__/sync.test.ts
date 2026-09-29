@@ -11,7 +11,9 @@ describe('Idempotency logic in RequestEngine', () => {
   let userId: string;
 
   beforeEach(async () => {
-    await prisma.request.deleteMany({});
+    await prisma.auditLog.deleteMany();
+    await prisma.escalation.deleteMany();
+    await prisma.request.deleteMany();
     let user = await prisma.user.findFirst({ where: { role: 'Student' } });
     if (!user) {
       user = await prisma.user.create({

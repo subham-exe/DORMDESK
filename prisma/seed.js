@@ -25,365 +25,34 @@ async function main() {
   await prisma.enrollment.deleteMany();
   await prisma.course.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.policy.deleteMany();
 
-  console.log('Seeding Demo Users (Core 9)...');
+  console.log('Seeding Users (Demo Core)...');
   const users = {
-    student1: await prisma.user.create({ data: { email: 'student1@demo.dormdesk.local', password: hashedPassword, name: 'Aarav Sharma', role: 'Student', department: 'Computer Science', year: 2, branch: 'CSE', isResident: true, hostel: 'Hostel A', block: 'North', room: '101' } }),
-    student2: await prisma.user.create({ data: { email: 'student2@demo.dormdesk.local', password: hashedPassword, name: 'Priya Patel', role: 'Student', department: 'Electrical', year: 3, branch: 'EE', isResident: true, hostel: 'Hostel B', block: 'South', room: '205' } }),
-    student3: await prisma.user.create({ data: { email: 'student3@demo.dormdesk.local', password: hashedPassword, name: 'Rohan Gupta', role: 'Student', department: 'Mechanical', year: 1, branch: 'ME', isResident: false } }),
-    warden: await prisma.user.create({ data: { email: 'warden@demo.dormdesk.local', password: hashedPassword, name: 'Rajesh Kumar', role: 'Warden', hostel: 'Hostel A' } }),
-    professor: await prisma.user.create({ data: { email: 'professor@demo.dormdesk.local', password: hashedPassword, name: 'Dr. Neha Singh', role: 'Faculty', department: 'Computer Science' } }),
-    hod: await prisma.user.create({ data: { email: 'hod@demo.dormdesk.local', password: hashedPassword, name: 'Dr. Amit Verma', role: 'Faculty', department: 'Computer Science' } }),
-    principal: await prisma.user.create({ data: { email: 'principal@demo.dormdesk.local', password: hashedPassword, name: 'Dr. S. K. Reddy', role: 'Admin' } }),
-    staff1: await prisma.user.create({ data: { email: 'staff.electrical@demo.dormdesk.local', password: hashedPassword, name: 'Electrical Maintenance', role: 'Staff', department: 'Electrical' } }),
-    staff2: await prisma.user.create({ data: { email: 'staff.plumbing@demo.dormdesk.local', password: hashedPassword, name: 'Plumbing Services', role: 'Staff', department: 'Plumbing' } }),
+    student: await prisma.user.create({ data: { email: 'student@demo.local', password: hashedPassword, name: 'Student (Judge)', role: 'Student', department: 'Computer Science', year: 2, branch: 'CSE', isResident: true, hostel: 'Hostel A', block: 'North', room: '101' } }),
+    warden: await prisma.user.create({ data: { email: 'warden@demo.local', password: hashedPassword, name: 'Warden', role: 'Warden', hostel: 'Hostel A' } }),
+    staff: await prisma.user.create({ data: { email: 'staff@demo.local', password: hashedPassword, name: 'Staff (Plumbing)', role: 'Staff', department: 'Plumbing' } }),
+    admin: await prisma.user.create({ data: { email: 'admin@demo.local', password: hashedPassword, name: 'Admin (Command Center)', role: 'Admin' } }),
   };
 
-  console.log('Seeding 20 Additional Demo Students...');
-  const branches = ['CSE', 'EE', 'ME', 'Civil'];
-  const depts = ['Computer Science', 'Electrical', 'Mechanical', 'Civil Engineering'];
-  const hostels = ['Hostel A', 'Hostel B', 'Hostel C'];
   const extraStudents = [];
-  for(let i = 4; i <= 23; i++) {
-    const isRes = i % 4 !== 0; // 75% resident
+  for(let i = 1; i <= 3; i++) {
     extraStudents.push(await prisma.user.create({
       data: {
-        email: `student${i}@demo.dormdesk.local`,
+        email: `peer${i}@demo.local`,
         password: hashedPassword,
-        name: `Demo Student ${i}`,
+        name: `Peer Student ${i}`,
         role: 'Student',
-        department: depts[i % 4],
-        year: (i % 4) + 1,
-        branch: branches[i % 4],
-        isResident: isRes,
-        hostel: isRes ? hostels[i % 3] : null,
-        block: isRes ? (i % 2 === 0 ? 'North' : 'South') : null,
-        room: isRes ? `${(i%3)+1}0${i%9}` : null
+        isResident: true,
+        hostel: 'Hostel A',
+        block: 'North',
       }
     }));
   }
 
-  const allStudents = [users.student1, users.student2, users.student3, ...extraStudents];
-
-  console.log('Seeding Incidents...');
-  const incident1 = await prisma.incident.create({
-    data: {
-      title: 'No Water Supply in Hostel A (North Block)',
-      description: 'Multiple students reporting lack of water in North Block washrooms.',
-      category: 'Plumbing',
-      location: 'Hostel A, North Block',
-      assignedDepartment: 'Plumbing',
-      status: 'OPEN',
-    }
-  });
-
-  const incident1_closed = await prisma.incident.create({
-    data: {
-      title: 'Power Outage in Hostel B (South Block)',
-      description: 'Main breaker tripped causing power loss.',
-      category: 'Electrical',
-      location: 'Hostel B, South Block',
-      assignedDepartment: 'Electrical',
-      status: 'RESOLVED',
-    }
-  });
-
-  console.log('Seeding Requests...');
-  const createReq = async (ticketPrefix, type, category, reqId, desc, loc, prio, status, extra = {}) => {
-    return prisma.request.create({
-      data: {
-        ticketNumber: `${ticketPrefix}-${Date.now().toString().slice(-5)}-${Math.floor(Math.random() * 1000)}`,
-        requestType: type,
-        category,
-        requesterId: reqId,
-        description: desc,
-        location: loc,
-        priority: prio,
-        status: status,
-        ...extra
-      }
-    });
-  };
-
-  const now = Date.now();
-  const ONE_HOUR = 3600000;
-
-  // Core requests from original seed
-  await createReq('ELE', 'COMPLAINT', 'Electrical', users.student1.id, 'Ceiling fan is making loud noise', 'Hostel A, Room 101', 'MEDIUM', 'PENDING');
-  await createReq('PLM', 'COMPLAINT', 'Plumbing', users.student1.id, 'Washroom tap is dry', 'Hostel A, North Block Washroom', 'HIGH', 'ASSIGNED', { assignedDepartment: 'Plumbing', assignedAuthorityId: users.staff2.id, incidentId: incident1.id, SLA: 4, dueAt: new Date(now + 2 * ONE_HOUR) });
-  await createReq('PLM', 'COMPLAINT', 'Plumbing', users.student2.id, 'No water for morning shower', 'Hostel A, North Block 2nd Floor', 'HIGH', 'ACKNOWLEDGED', { assignedDepartment: 'Plumbing', assignedAuthorityId: users.staff2.id, incidentId: incident1.id, SLA: 4, dueAt: new Date(now - 1 * ONE_HOUR) });
-  await createReq('ACA', 'CERTIFICATE', 'Bonafide', users.student3.id, 'Need bonafide certificate for bank loan', 'Admin Block', 'LOW', 'PROCESSING', { assignedDepartment: 'Computer Science', assignedAuthorityId: users.professor.id });
-  const reqRes = await createReq('MNT', 'COMPLAINT', 'Carpentry', users.student1.id, 'Broken chair in room', 'Hostel A, Room 101', 'LOW', 'RESOLVED', { assignedDepartment: 'Maintenance', assignedAuthorityId: users.staff1.id, createdAt: new Date(now - 300 * 3600000), resolvedAt: new Date(now - 24 * ONE_HOUR) });
-  await createReq('IT', 'COMPLAINT', 'Wi-Fi', users.student2.id, 'Wi-Fi speed is too slow', 'Hostel B, Room 205', 'MEDIUM', 'VERIFIED', { assignedDepartment: 'IT', createdAt: new Date(now - 300 * 3600000), resolvedAt: new Date(now - 48 * ONE_HOUR) });
-  await createReq('IT', 'COMPLAINT', 'Wi-Fi', users.student2.id, 'Cannot connect to campus wifi', 'Hostel B, Room 205', 'MEDIUM', 'CLOSED', { assignedDepartment: 'IT', createdAt: new Date(now - 300 * 3600000), resolvedAt: new Date(now - 72 * ONE_HOUR) });
-  await createReq('LV', 'LEAVE', 'Medical', users.student1.id, 'Going home for weekend (2 days)', 'Home', 'MEDIUM', 'APPROVED');
-  await createReq('LV', 'LEAVE', 'Personal', users.student3.id, 'Want to go for a movie', 'City Mall', 'LOW', 'REJECTED', { assignedAuthorityId: users.warden.id });
-  await createReq('ELE', 'COMPLAINT', 'Electrical', users.student2.id, 'Tubelight flickering', 'Hostel B, Room 205', 'LOW', 'CANCELLED');
-
-  // Add more requests to hit 40
-  // Gate Passes
-  for(let i=0; i<3; i++) {
-    await createReq('GP', 'GATEPASS', 'Local', allStudents[i].id, 'Going to local market', 'Market', 'LOW', 'APPROVED');
-  }
-  
-  // Breaches (at least 4)
-  for(let i=3; i<6; i++) {
-    await createReq('ELE', 'COMPLAINT', 'Electrical', allStudents[i].id, 'Sparking socket', 'Hostel C', 'HIGH', 'ASSIGNED', { assignedDepartment: 'Electrical', assignedAuthorityId: users.staff1.id, SLA: 2, dueAt: new Date(now - Math.random() * 5 * ONE_HOUR) });
-  }
-
-  // Warnings (at least 3)
-  for(let i=6; i<9; i++) {
-    await createReq('PLM', 'COMPLAINT', 'Plumbing', allStudents[i].id, 'Leaking pipe', 'Hostel B', 'MEDIUM', 'PENDING', { SLA: 12, dueAt: new Date(now + 0.5 * ONE_HOUR) });
-  }
-
-  // Recurring Electrical/Plumbing (closed/verified to form patterns)
-  for(let i=9; i<15; i++) {
-    await createReq('PLM', 'COMPLAINT', 'Plumbing', allStudents[i].id, 'Blockage in sink', 'Hostel A', 'MEDIUM', 'CLOSED', { createdAt: new Date(now - 300 * 3600000), resolvedAt: new Date(now - (i*10) * ONE_HOUR) });
-  }
-  for(let i=15; i<20; i++) {
-    await createReq('ELE', 'COMPLAINT', 'Electrical', allStudents[i].id, 'AC not working', 'Hostel C', 'MEDIUM', 'RESOLVED', { createdAt: new Date(now - 300 * 3600000), resolvedAt: new Date(now - (i*5) * ONE_HOUR) });
-  }
-  
-  // Incident 2 requests (resolved)
-  for(let i=0; i<5; i++) {
-    await createReq('ELE', 'COMPLAINT', 'Electrical', allStudents[20-i].id, 'Total power outage', 'Hostel B, South Block', 'HIGH', 'CLOSED', { assignedDepartment: 'Electrical', incidentId: incident1_closed.id, createdAt: new Date(now - 300 * 3600000), resolvedAt: new Date(now - 100 * ONE_HOUR) });
-  }
-
-  console.log('Seeding Notifications...');
-  await prisma.notification.createMany({
-    data: [
-      { recipientId: users.student1.id, title: 'Request Assigned', message: 'Your plumbing request has been assigned to Plumbing Services.', type: 'REQUEST_UPDATE' },
-      { recipientId: users.student1.id, title: 'Request Resolved', message: 'Your carpentry request has been marked as resolved. Please verify.', type: 'REQUEST_UPDATE', metadata: JSON.stringify({ requestId: reqRes.id }) },
-      { recipientId: users.staff2.id, title: 'Incident Assigned', message: 'You have been assigned to incident: No Water Supply in Hostel A', type: 'SYSTEM_ALERT' }
-    ]
-  });
-
-  console.log('Seeding Scholarships...');
-  await prisma.scholarship.createMany({
-    data: [
-      { studentId: users.student1.id, academicYear: '2025-2026', status: 'SUBMITTED' },
-      { studentId: users.student2.id, academicYear: '2025-2026', status: 'APPROVED' },
-      { studentId: users.student3.id, academicYear: '2025-2026', status: 'REJECTED' }
-    ]
-  });
-
-  console.log('Seeding Announcements...');
-  
-  // Announcement 1: Targeted group (Hostel A), some read, some unread, some acked
-  const ann1 = await prisma.announcement.create({
-    data: {
-      title: 'Hostel A Water Supply Interruption',
-      body: 'Water supply will be interrupted tomorrow from 10 AM to 2 PM due to tank cleaning.',
-      createdById: users.warden.id,
-      targetHostel: 'Hostel A',
-      requiresAck: true,
-      priority: 'HIGH'
-    }
-  });
-
-  const hostelAStudents = allStudents.filter(s => s.hostel === 'Hostel A');
-  for (let i = 0; i < hostelAStudents.length; i++) {
-    const student = hostelAStudents[i];
-    let readAt = null;
-    let ackAt = null;
-    if (i % 3 === 0) {
-      readAt = new Date();
-      ackAt = new Date();
-    } else if (i % 3 === 1) {
-      readAt = new Date();
-    }
-    
-    await prisma.announcementReceipt.create({
-      data: {
-        announcementId: ann1.id,
-        userId: student.id,
-        deliveredAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        readAt,
-        acknowledgedAt: ackAt
-      }
-    });
-  }
-
-  // Announcement 2: Requires ack, all students (mixed states)
-  const ann2 = await prisma.announcement.create({
-    data: {
-      title: 'Mandatory Anti-Ragging Undertaking',
-      body: 'All students must submit their anti-ragging undertaking by Friday. Acknowledge this notice to confirm receipt.',
-      createdById: users.principal.id,
-      requiresAck: true,
-      priority: 'CRITICAL'
-    }
-  });
-
-  for (let i = 0; i < allStudents.length; i++) {
-    const student = allStudents[i];
-    let readAt = null;
-    let ackAt = null;
-    if (i < 10) {
-      readAt = new Date(Date.now() - 48 * 60 * 60 * 1000);
-      ackAt = new Date(Date.now() - 47 * 60 * 60 * 1000);
-    } else if (i < 20) {
-      readAt = new Date(Date.now() - 10 * 60 * 60 * 1000);
-    }
-
-    await prisma.announcementReceipt.create({
-      data: {
-        announcementId: ann2.id,
-        userId: student.id,
-        deliveredAt: new Date(Date.now() - 72 * 60 * 60 * 1000),
-        readAt,
-        acknowledgedAt: ackAt
-      }
-    });
-  }
-
-  // Announcement 3: Different targeting filter (Year 2)
-  const ann3 = await prisma.announcement.create({
-    data: {
-      title: 'Year 2 Industrial Visit Schedule',
-      body: 'The industrial visit for 2nd year students is scheduled for next month. Details will be shared via email.',
-      createdById: users.hod.id,
-      targetYear: 2,
-      requiresAck: false,
-      priority: 'MEDIUM'
-    }
-  });
-
-  const year2Students = allStudents.filter(s => s.year === 2);
-  for (let i = 0; i < year2Students.length; i++) {
-    const student = year2Students[i];
-    await prisma.announcementReceipt.create({
-      data: {
-        announcementId: ann3.id,
-        userId: student.id,
-        deliveredAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        readAt: i % 2 === 0 ? new Date() : null,
-      }
-    });
-  }
-
-  
-  console.log('Seeding Mess Menu...');
-  const m1 = await prisma.messMenu.create({
-    data: { date: new Date(now), mealType: 'BREAKFAST', items: 'Idli, Sambar, Chutney, Tea', notes: 'South Indian Special' }
-  });
-  const m2 = await prisma.messMenu.create({
-    data: { date: new Date(now), mealType: 'LUNCH', items: 'Rice, Roti, Dal Fry, Paneer Butter Masala, Salad' }
-  });
-  await prisma.messMenu.create({
-    data: { date: new Date(now), mealType: 'DINNER', items: 'Veg Biryani, Raita, Gulab Jamun' }
-  });
-  await prisma.messMenu.create({
-    data: { date: new Date(now + 24 * 3600 * 1000), mealType: 'BREAKFAST', items: 'Aloo Paratha, Curd, Pickle, Coffee' }
-  });
-
-  console.log('Seeding Mess Feedback...');
-  await prisma.messFeedback.create({ data: { menuId: m1.id, studentId: users.student1.id, rating: 5, comment: 'Very good' } });
-  await prisma.messFeedback.create({ data: { menuId: m1.id, studentId: users.student2.id, rating: 4 } });
-  await prisma.messFeedback.create({ data: { menuId: m2.id, studentId: users.student1.id, rating: 3, comment: 'Paneer was a bit tough' } });
-
-  
-  console.log('Seeding SMS Outbox...');
-  await prisma.smsOutbox.deleteMany();
-  await prisma.smsOutbox.create({
-    data: {
-      recipientId: users.student1.id,
-      phoneNumber: '+91-555-SIMULATE',
-      message: 'Your hostel request #REQ-1 has been marked URGENT.',
-      type: 'REQUEST_UPDATE',
-      status: 'SIMULATED_SENT'
-    }
-  });
-  await prisma.smsOutbox.create({
-    data: {
-      recipientId: users.student2.id,
-      phoneNumber: '+91-555-DEMO123',
-      message: 'Maintenance will visit your room tomorrow.',
-      type: 'GENERAL',
-      status: 'SIMULATED_FAILED',
-      failureReason: 'Invalid demo number'
-    }
-  });
-
-  
-  console.log('Seeding Courses and Sessions...');
-  
-  await prisma.attendance.deleteMany();
-  await prisma.classSession.deleteMany();
-  await prisma.enrollment.deleteMany();
-  await prisma.course.deleteMany();
-
-  const c1 = await prisma.course.create({
-    data: { code: 'CS101', name: 'Intro to Computer Science', facultyId: users.professor.id }
-  });
-  const c2 = await prisma.course.create({
-    data: { code: 'CS201', name: 'Data Structures', facultyId: users.hod.id }
-  });
-
-  // Enroll some students
-  const enrolledStudents = [users.student1.id, users.student2.id, ...extraStudents.slice(0, 3).map(s => s.id)];
-  
-  for (const sId of enrolledStudents) {
-    await prisma.enrollment.create({ data: { courseId: c1.id, studentId: sId } });
-    await prisma.enrollment.create({ data: { courseId: c2.id, studentId: sId } });
-  }
-
-  // Sessions for CS101
-  const s1 = await prisma.classSession.create({ data: { courseId: c1.id, scheduledAt: new Date(now - 48 * 3600000), status: 'COMPLETED' } });
-  const s2 = await prisma.classSession.create({ data: { courseId: c1.id, scheduledAt: new Date(now - 24 * 3600000), status: 'COMPLETED' } });
-  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-  const _s3 = await prisma.classSession.create({ data: { courseId: c1.id, scheduledAt: new Date(now), status: 'SCHEDULED' } });
-  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-  const _s4_cancelled = await prisma.classSession.create({ data: { courseId: c1.id, scheduledAt: new Date(now + 24 * 3600000), status: 'CANCELLED', cancellationReason: 'Faculty on leave' } });
-
-  // Attendance for CS101
-  await prisma.attendance.create({ data: { sessionId: s1.id, studentId: users.student1.id, status: 'PRESENT' } });
-  await prisma.attendance.create({ data: { sessionId: s1.id, studentId: users.student2.id, status: 'ABSENT' } });
-  await prisma.attendance.create({ data: { sessionId: s2.id, studentId: users.student1.id, status: 'PRESENT' } });
-  await prisma.attendance.create({ data: { sessionId: s2.id, studentId: users.student2.id, status: 'PRESENT' } });
-
-  // Sessions for CS201
-  const s5 = await prisma.classSession.create({ data: { courseId: c2.id, scheduledAt: new Date(now - 48 * 3600000), status: 'COMPLETED' } });
-  await prisma.attendance.create({ data: { sessionId: s5.id, studentId: users.student1.id, status: 'PRESENT' } });
-
   console.log('Seeding Policies...');
-
   await prisma.policy.createMany({
     data: [
-      {
-        name: 'Short Leave Auto-Approval',
-        description: 'Auto-approves leave requests <= 2 days',
-        requestType: 'LEAVE',
-        approvalRequired: true, // But we allow auto-approve
-        autoApproveCondition: JSON.stringify({ type: 'LEAVE_DAYS_LESS_THAN_OR_EQUAL', days: 2 }),
-        isActive: true,
-      },
-      {
-        name: 'Long Leave Policy',
-        description: 'Leaves > 2 days require manual approval',
-        requestType: 'LEAVE',
-        approvalRequired: true,
-        isActive: true,
-        // No auto-approve condition here because the more specific one (or rather, the engine evaluating it) will fallback to this one if days > 2... Wait, precedence!
-        // If we want a separate policy for > 2 days, we can't just rely on precedence if both are "LEAVE".
-        // Let's combine them into one LEAVE policy or use the fact that if autoApproveAllowed is false, it falls back to approvalRequired: true.
-      }
-    ]
-  });
-  
-  // We should just use one LEAVE policy for simplicity. Let's delete the duplicate and seed a unified one.
-  await prisma.policy.deleteMany(); // Reset policies
-
-  await prisma.policy.createMany({
-    data: [
-      {
-        name: 'Leave Policy',
-        description: 'Auto-approves leave requests <= 2 days, otherwise requires manual approval',
-        requestType: 'LEAVE',
-        approvalRequired: true, 
-        autoApproveCondition: JSON.stringify({ type: 'LEAVE_DAYS_LESS_THAN_OR_EQUAL', days: 2 }),
-        isActive: true,
-      },
       {
         name: 'General Complaint SLA',
         description: 'All complaints have a 24-hour target SLA by default',
@@ -398,7 +67,7 @@ async function main() {
         requestType: 'COMPLAINT',
         category: 'Plumbing',
         approvalRequired: false,
-        slaHours: 12,
+        slaHours: 12, // Strict 12h SLA for plumbing
         escalationPolicy: JSON.stringify({ escalateToRole: 'Warden', afterSlaBreach: true }),
         isActive: true,
       },
@@ -411,75 +80,119 @@ async function main() {
     ]
   });
 
-  console.log('Seeding Notifications and Escalations...');
-  await prisma.notification.deleteMany();
-  await prisma.escalation.deleteMany();
+  console.log('Seeding Deterministic Requests & Incident...');
   
-  // Create an unread student notification
-  await prisma.notification.create({
+  const now = Date.now();
+  const ONE_HOUR = 3600000;
+
+  const createReq = async (ticketPrefix, type, category, reqId, desc, loc, prio, status, extra = {}) => {
+    return prisma.request.create({
+      data: {
+        ticketNumber: `${ticketPrefix}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+        requestType: type,
+        category,
+        requesterId: reqId,
+        description: desc,
+        location: loc,
+        priority: prio,
+        status: status,
+        ...extra
+      }
+    });
+  };
+
+  // 1. Existing Incident for Water Supply
+  const incident = await prisma.incident.create({
     data: {
-      recipientId: users.student1.id,
-      title: 'Request Assigned',
-      message: 'Your request REQ-001 has been assigned to Staff.',
-      type: 'REQUEST_ASSIGNED',
-      metadata: JSON.stringify({ requestId: r1.id })
+      title: 'Multiple issues reported: Plumbing at Hostel A, North Block',
+      description: 'Auto-clustered 3 requests for Plumbing at Hostel A, North Block.',
+      category: 'Plumbing',
+      location: 'Hostel A, North Block',
+      assignedDepartment: 'Plumbing',
+      status: 'OPEN',
+      impactScore: 25, // Just below High Impact threshold (30)
+      groupingReason: "Grouped 3 requests sharing category 'Plumbing' and location 'Hostel A, North Block' within 24h."
     }
   });
 
-  // Create an unread staff notification
-  await prisma.notification.create({
-    data: {
-      recipientId: users.staff.id,
-      title: 'SLA Warning',
-      message: 'Request REQ-002 is approaching its 24h SLA. 2h remaining.',
-      type: 'SLA_WARNING',
-      metadata: JSON.stringify({ requestId: r2.id })
-    }
+  // Peer students filed requests earlier today for the incident
+  await createReq('PLM', 'COMPLAINT', 'Plumbing', extraStudents[0].id, 'No water in 1st floor washrooms', 'Hostel A, North Block', 'HIGH', 'ASSIGNED', { incidentId: incident.id, assignedDepartment: 'Plumbing', assignedAuthorityId: users.staff.id, SLA: 12, dueAt: new Date(now + 8 * ONE_HOUR), createdAt: new Date(now - 4 * ONE_HOUR) });
+  await createReq('PLM', 'COMPLAINT', 'Plumbing', extraStudents[1].id, 'Water is completely dry', 'Hostel A, North Block', 'HIGH', 'ASSIGNED', { incidentId: incident.id, assignedDepartment: 'Plumbing', assignedAuthorityId: users.staff.id, SLA: 12, dueAt: new Date(now + 9 * ONE_HOUR), createdAt: new Date(now - 3 * ONE_HOUR) });
+  await createReq('PLM', 'COMPLAINT', 'Plumbing', extraStudents[2].id, 'Washroom taps empty', 'Hostel A, North Block', 'HIGH', 'PENDING', { incidentId: incident.id, SLA: 12, dueAt: new Date(now + 10 * ONE_HOUR), createdAt: new Date(now - 2 * ONE_HOUR) });
+
+
+  // 2. SLA Warning Request (Due in 1 hour)
+  await createReq('ELE', 'COMPLAINT', 'Electrical', users.student.id, 'Fan is not working', 'Hostel A, Room 101', 'MEDIUM', 'ASSIGNED', { 
+    assignedDepartment: 'Electrical',
+    SLA: 24, 
+    createdAt: new Date(now - 23 * ONE_HOUR),
+    dueAt: new Date(now + 1 * ONE_HOUR) 
   });
 
-  // Simulate an SLA breach and Escalation
+  // 3. SLA Breached Request with Escalation (Due 2 hours ago)
+  const breached = await createReq('PLM', 'COMPLAINT', 'Plumbing', users.student.id, 'Pipe leaking continuously', 'Hostel A, Room 101', 'HIGH', 'PENDING', { 
+    SLA: 12, 
+    createdAt: new Date(now - 14 * ONE_HOUR),
+    dueAt: new Date(now - 2 * ONE_HOUR) 
+  });
+
   await prisma.escalation.create({
     data: {
-      requestId: r2.id,
-      level: 1
+      requestId: breached.id,
+      level: 1,
+      createdAt: new Date(now - 1 * ONE_HOUR)
     }
   });
 
+  // 4. Stale Request (Pending for 3 days)
+  await createReq('CLN', 'COMPLAINT', 'Cleanliness', extraStudents[0].id, 'Corridor not swept', 'Hostel A, North Block', 'LOW', 'PENDING', { 
+    createdAt: new Date(now - 72 * ONE_HOUR)
+  });
+
+  console.log('Seeding Notifications...');
+  
+  // Notification to Warden about the escalation
   await prisma.notification.create({
     data: {
-      recipientId: users.admin.id,
-      title: 'Escalation: SLA Breached REQ-002',
-      message: 'Request REQ-002 has breached its 24h SLA.',
+      recipientId: users.warden.id,
+      title: 'Escalation: SLA Breached',
+      message: `Request ${breached.ticketNumber} has breached its SLA. Action required.`,
       type: 'ESCALATION',
-      metadata: JSON.stringify({ requestId: r2.id })
+      metadata: JSON.stringify({ requestId: breached.id })
     }
   });
-
-  // Simulated SMS Escalation
+  
+  // Simulated SMS outbox for the escalation
   await prisma.smsOutbox.create({
     data: {
-      recipientId: users.admin.id,
-      phoneNumber: '1234567890',
-      message: 'DORMDESK ESCALATION: REQ-002 breached. Action required.',
+      recipientId: users.warden.id,
+      phoneNumber: '+91-555-WARDEN1',
+      message: `DORMDESK ESCALATION: Request ${breached.ticketNumber} breached SLA.`,
       type: 'ESCALATION',
       status: 'SIMULATED_SENT',
-      referenceId: r2.id,
+      referenceId: breached.id,
       sentAt: new Date()
     }
   });
 
-  // High Impact Incident Notification
-  await prisma.notification.create({
-    data: {
-      recipientId: users.admin.id,
-      title: 'High-Impact Incident Detected',
-      message: `Incident "Water Outage" has reached a high impact score of 55.`,
-      type: 'INCIDENT_HIGH_IMPACT',
-      metadata: JSON.stringify({ incidentId: inc1.id, score: 55, previousScore: 10 })
-    }
-  });
-
-  console.log('Demo database seeded successfully!');
+  console.log('\n=========================================');
+  console.log('  DEMO DATABASE SEEDED SUCCESSFULLY!     ');
+  console.log('=========================================\n');
+  
+  console.log('Demo Identity Credentials (Password: dormdesk2026):');
+  console.log(' - Student : student@demo.local');
+  console.log(' - Staff   : staff@demo.local');
+  console.log(' - Warden  : warden@demo.local');
+  console.log(' - Admin   : admin@demo.local');
+  
+  console.log('\nDemo Scenario Instructions:');
+  console.log(' 1. Log in as student@demo.local');
+  console.log(' 2. Submit a new Plumbing complaint for "Hostel A, North Block"');
+  console.log(' 3. This will trigger auto-clustering, adding your request to the existing incident.');
+  console.log(' 4. The incident impact score will cross 30 (High Impact).');
+  console.log(' 5. Log in as admin@demo.local to see the High Impact Incident in Command Center.');
+  console.log(' 6. See SLA breaches, Warnings, and Escalations clearly visible.');
+  console.log('=========================================\n');
 }
 
 main()
