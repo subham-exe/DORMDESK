@@ -411,6 +411,74 @@ async function main() {
     ]
   });
 
+  console.log('Seeding Notifications and Escalations...');
+  await prisma.notification.deleteMany();
+  await prisma.escalation.deleteMany();
+  
+  // Create an unread student notification
+  await prisma.notification.create({
+    data: {
+      recipientId: users.student1.id,
+      title: 'Request Assigned',
+      message: 'Your request REQ-001 has been assigned to Staff.',
+      type: 'REQUEST_ASSIGNED',
+      metadata: JSON.stringify({ requestId: r1.id })
+    }
+  });
+
+  // Create an unread staff notification
+  await prisma.notification.create({
+    data: {
+      recipientId: users.staff.id,
+      title: 'SLA Warning',
+      message: 'Request REQ-002 is approaching its 24h SLA. 2h remaining.',
+      type: 'SLA_WARNING',
+      metadata: JSON.stringify({ requestId: r2.id })
+    }
+  });
+
+  // Simulate an SLA breach and Escalation
+  await prisma.escalation.create({
+    data: {
+      requestId: r2.id,
+      level: 1
+    }
+  });
+
+  await prisma.notification.create({
+    data: {
+      recipientId: users.admin.id,
+      title: 'Escalation: SLA Breached REQ-002',
+      message: 'Request REQ-002 has breached its 24h SLA.',
+      type: 'ESCALATION',
+      metadata: JSON.stringify({ requestId: r2.id })
+    }
+  });
+
+  // Simulated SMS Escalation
+  await prisma.smsOutbox.create({
+    data: {
+      recipientId: users.admin.id,
+      phoneNumber: '1234567890',
+      message: 'DORMDESK ESCALATION: REQ-002 breached. Action required.',
+      type: 'ESCALATION',
+      status: 'SIMULATED_SENT',
+      referenceId: r2.id,
+      sentAt: new Date()
+    }
+  });
+
+  // High Impact Incident Notification
+  await prisma.notification.create({
+    data: {
+      recipientId: users.admin.id,
+      title: 'High-Impact Incident Detected',
+      message: `Incident "Water Outage" has reached a high impact score of 55.`,
+      type: 'INCIDENT_HIGH_IMPACT',
+      metadata: JSON.stringify({ incidentId: inc1.id, score: 55, previousScore: 10 })
+    }
+  });
+
   console.log('Demo database seeded successfully!');
 }
 

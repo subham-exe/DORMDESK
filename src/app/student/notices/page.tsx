@@ -75,6 +75,20 @@ export default function NoticesPage() {
     }
   };
 
+  const handleNotificationRead = async (id: string, index: number) => {
+    const notice = notices[index];
+    if (!notice.isRead) {
+      try {
+        const res = await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
+        if (res.ok) {
+          setNotices(prev => prev.map((item, i) => i === index ? { ...item, isRead: true } : item));
+        }
+      } catch (e) {
+        console.error('Failed to mark notification read', e);
+      }
+    }
+  };
+
   const handleAck = async (id: string, index: number, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -171,7 +185,7 @@ export default function NoticesPage() {
               />
             ) : (
               notices.map((notice) => (
-                <Card key={notice.id} className={!notice.isRead ? "border-l-4 border-l-primary" : ""}>
+                <Card key={notice.id} className={(!notice.isRead ? "border-l-4 border-l-primary " : "") + "cursor-pointer transition-colors"} onClick={() => handleNotificationRead(notice.id, notices.indexOf(notice))}>
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start gap-4">
                       <div className="space-y-1">

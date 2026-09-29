@@ -23,6 +23,7 @@ export async function GET() {
       
       return {
         ...n,
+        isRead: !!n.readAt,
         timestamp: n.createdAt,
         link
       };

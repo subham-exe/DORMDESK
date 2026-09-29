@@ -32,10 +32,29 @@ export class IncidentIntelligenceService {
     // Deterministic impact formula
     const score = (requestCount * 2) + (userCount * 5) + priorityScore;
 
+    const previousScore = incident.impactScore || 0;
+    const HIGH_IMPACT_THRESHOLD = 30;
+
     await prisma.incident.update({
       where: { id: incidentId },
       data: { impactScore: score }
     });
+
+    if (score >= HIGH_IMPACT_THRESHOLD && previousScore < HIGH_IMPACT_THRESHOLD) {
+      // Just became high impact!
+      const admins = await prisma.user.findMany({ where: { role: 'Admin' } });
+      const { NotificationService, NotificationType } = await import('./notification');
+      
+      for (const admin of admins) {
+        await NotificationService.create({
+          recipientId: admin.id,
+          title: 'High-Impact Incident Detected',
+          message: `Incident "${incident.title}" has reached a high impact score of ${score}.`,
+          type: NotificationType.INCIDENT_HIGH_IMPACT,
+          metadata: { incidentId: incident.id, score, previousScore }
+        });
+      }
+    }
 
     return score;
   }

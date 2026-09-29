@@ -1,7 +1,7 @@
 import { prisma } from '../db/prisma';
 import { CreateRequestPayload, TransitionRequestPayload, AssignRequestPayload, RequestStatus } from '../types/request';
 import { AuditService } from './audit';
-import { NotificationService } from './notification';
+import { NotificationService, NotificationType } from './notification';
 import { PolicyService } from './policy';
 
 const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
@@ -17,16 +17,34 @@ const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   CANCELLED: [],
 };
 
-async function triggerNotification(requestId: string, event: string) {
+async function triggerNotification(requestId: string, event: string, assigneeId?: string) {
   const req = await prisma.request.findUnique({ where: { id: requestId }});
   if (!req) return;
-  await NotificationService.create({
-    recipientId: req.requesterId,
-    title: 'Request Update',
-    message: `Your request status changed: ${event}`,
-    type: 'UPDATE',
-    metadata: { requestId }
-  });
+  
+  if (event === 'ASSIGNED') {
+    await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_ASSIGNED, assigneeId);
+  } else if (event === 'STATUS_CHANGED_RESOLVED') {
+    await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_RESOLVED);
+  } else if (event === 'STATUS_CHANGED_REJECTED') {
+    await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_REJECTED);
+  } else if (event === 'STATUS_CHANGED_VERIFIED') {
+    await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_VERIFIED);
+  } else if (event === 'STATUS_CHANGED_ACKNOWLEDGED') {
+    await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_ACKNOWLEDGED);
+  } else if (event === 'STATUS_CHANGED_PROCESSING' || event === 'STATUS_CHANGED_PENDING') {
+    await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_REOPENED);
+  } else if (event === 'CREATED') {
+    // Keep generic update for creation, or don't spam. The prompt says "Do not spam users with redundant notifications. Do not send notifications merely because a page was opened."
+    // Let's not send notification on CREATED unless needed. We will skip CREATED.
+  } else if (event === 'ATTACHED_TO_INCIDENT') {
+    await NotificationService.create({
+      recipientId: req.requesterId,
+      title: 'Incident Update',
+      message: `Your request ${req.ticketNumber} has been linked to a larger incident.`,
+      type: NotificationType.INCIDENT_HIGH_IMPACT,
+      metadata: { requestId: req.id }
+    });
+  }
 }
 
 async function logAudit(requestId: string, actorId: string, action: string, metadata?: Record<string, unknown>) {
@@ -116,7 +134,7 @@ export class RequestEngine {
     });
 
     await logAudit(updated.id, payload.actorId, 'ASSIGNED', { assigneeId: payload.assigneeId });
-    await triggerNotification(updated.id, 'ASSIGNED');
+    await triggerNotification(updated.id, 'ASSIGNED', payload.assigneeId);
 
     return updated;
   }

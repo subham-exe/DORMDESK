@@ -1,10 +1,24 @@
 import { prisma } from '@/lib/db/prisma';
 
+export enum NotificationType {
+  REQUEST_ASSIGNED = 'REQUEST_ASSIGNED',
+  REQUEST_ACKNOWLEDGED = 'REQUEST_ACKNOWLEDGED',
+  REQUEST_RESOLVED = 'REQUEST_RESOLVED',
+  REQUEST_VERIFIED = 'REQUEST_VERIFIED',
+  REQUEST_REJECTED = 'REQUEST_REJECTED',
+  REQUEST_REOPENED = 'REQUEST_REOPENED',
+  SLA_WARNING = 'SLA_WARNING',
+  SLA_BREACH = 'SLA_BREACH',
+  ESCALATION = 'ESCALATION',
+  INCIDENT_HIGH_IMPACT = 'INCIDENT_HIGH_IMPACT',
+  ANNOUNCEMENT = 'ANNOUNCEMENT',
+}
+
 export interface CreateNotificationPayload {
   recipientId: string;
   title: string;
   message: string;
-  type: string;
+  type: NotificationType | string;
   metadata?: Record<string, unknown>;
 }
 
@@ -82,5 +96,68 @@ export class NotificationService {
       where: { id: notificationId },
       data: { readAt: new Date() },
     });
+  }
+
+  static async notifyRequestLifecycleEvent(request: import('@prisma/client').Request, eventType: NotificationType, assigneeId?: string) {
+    if (eventType === NotificationType.REQUEST_ASSIGNED) {
+      // Notify requester
+      await this.create({
+        recipientId: request.requesterId,
+        title: 'Request Assigned',
+        message: `Your request ${request.ticketNumber} has been assigned.`,
+        type: eventType,
+        metadata: { requestId: request.id }
+      });
+      // Notify staff
+      if (assigneeId) {
+        await this.create({
+          recipientId: assigneeId,
+          title: 'Request Assigned to You',
+          message: `Request ${request.ticketNumber} has been assigned to you.`,
+          type: eventType,
+          metadata: { requestId: request.id }
+        });
+      }
+    } else if (eventType === NotificationType.REQUEST_RESOLVED) {
+      await this.create({
+        recipientId: request.requesterId,
+        title: 'Request Resolved',
+        message: `Your request ${request.ticketNumber} has been resolved and is ready for verification.`,
+        type: eventType,
+        metadata: { requestId: request.id }
+      });
+    } else if (eventType === NotificationType.REQUEST_REJECTED) {
+      await this.create({
+        recipientId: request.requesterId,
+        title: 'Request Rejected',
+        message: `Your request ${request.ticketNumber} has been rejected.`,
+        type: eventType,
+        metadata: { requestId: request.id }
+      });
+    } else if (eventType === NotificationType.REQUEST_VERIFIED) {
+      await this.create({
+        recipientId: request.requesterId,
+        title: 'Request Verified',
+        message: `Your request ${request.ticketNumber} has been successfully verified.`,
+        type: eventType,
+        metadata: { requestId: request.id }
+      });
+    } else if (eventType === NotificationType.REQUEST_ACKNOWLEDGED) {
+      await this.create({
+        recipientId: request.requesterId,
+        title: 'Request Acknowledged',
+        message: `Your request ${request.ticketNumber} has been acknowledged.`,
+        type: eventType,
+        metadata: { requestId: request.id }
+      });
+    } else if (eventType === NotificationType.REQUEST_REOPENED) {
+      await this.create({
+        recipientId: request.requesterId,
+        title: 'Request Reopened',
+        message: `Your request ${request.ticketNumber} has been reopened.`,
+        type: eventType,
+        metadata: { requestId: request.id }
+      });
+    }
   }
 }

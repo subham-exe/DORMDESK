@@ -36,7 +36,21 @@ vi.mock('../audit', () => ({
 
 vi.mock('../notification', () => ({
   NotificationService: {
-    create: vi.fn().mockResolvedValue(true)
+    create: vi.fn().mockResolvedValue(true),
+    notifyRequestLifecycleEvent: vi.fn().mockResolvedValue(true),
+  },
+  NotificationType: {
+    REQUEST_ASSIGNED: 'REQUEST_ASSIGNED',
+    REQUEST_ACKNOWLEDGED: 'REQUEST_ACKNOWLEDGED',
+    REQUEST_RESOLVED: 'REQUEST_RESOLVED',
+    REQUEST_VERIFIED: 'REQUEST_VERIFIED',
+    REQUEST_REJECTED: 'REQUEST_REJECTED',
+    REQUEST_REOPENED: 'REQUEST_REOPENED',
+    SLA_WARNING: 'SLA_WARNING',
+    SLA_BREACH: 'SLA_BREACH',
+    ESCALATION: 'ESCALATION',
+    INCIDENT_HIGH_IMPACT: 'INCIDENT_HIGH_IMPACT',
+    ANNOUNCEMENT: 'ANNOUNCEMENT',
   }
 }));
 
