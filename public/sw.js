@@ -1,10 +1,7 @@
-const CACHE_NAME = 'dormdesk-cache-v1';
+const CACHE_NAME = 'dormdesk-cache-v3';
 
 const PRECACHE_URLS = [
-  '/student',
-  '/student/requests',
-  '/student/notices',
-  '/student/profile',
+  '/_offline',
   '/favicon.ico'
 ];
 
@@ -12,7 +9,6 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_URLS).catch(err => {
-         // Gracefully handle precache errors (e.g. if some routes are 404 or dynamically rendered during build and not available yet)
          console.warn('Precache failed for some URLs:', err);
       });
     })
@@ -34,20 +30,34 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
-  // Don't cache API requests or admin routes for security
-  if (event.request.url.includes('/api/') || event.request.url.includes('/admin/')) {
-    return; // Pass through to network
+  const url = new URL(event.request.url);
+
+  // Never cache API, admin, or student authenticated routes
+  // Caching these risks cross-user data leakage on shared devices
+  if (
+    url.pathname.startsWith('/api/') || 
+    url.pathname.startsWith('/admin') ||
+    url.pathname.startsWith('/student') ||
+    url.pathname.startsWith('/warden') ||
+    url.pathname.startsWith('/faculty')
+  ) {
+    const isHtml = event.request.headers.get('accept')?.includes('text/html');
+    if (isHtml) {
+      event.respondWith(
+        fetch(event.request).catch(() => {
+           return caches.match('/_offline');
+        })
+      );
+    }
+    return;
   }
 
-  // Network-first strategy for HTML pages, cache-first for static assets
-  const isHtml = event.request.headers.get('accept')?.includes('text/html');
-  const isStaticAsset = event.request.url.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg)$/);
+  // Network-first strategy for static assets
+  const isStaticAsset = event.request.url.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?|ttf)$/) || url.pathname.startsWith('/_next/static/');
 
   if (isStaticAsset) {
-    // Cache-first strategy for static assets
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
         if (cachedResponse) return cachedResponse;
@@ -60,30 +70,10 @@ self.addEventListener('fetch', (event) => {
             cache.put(event.request, responseToCache);
           });
           return response;
+        }).catch(() => {
+            return new Response();
         });
       })
-    );
-  } else if (isHtml) {
-    // Network-first strategy for HTML
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-          return response;
-        })
-        .catch(() => {
-          return caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) return cachedResponse;
-            // Fallback to /student if navigating offline
-            return caches.match('/student');
-          });
-        })
     );
   }
 });

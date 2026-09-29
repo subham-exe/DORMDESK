@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <AdminSidebar />
 
       {/* Main Content */}
-      <main id="main" className="flex-1 overflow-y-auto pb-16 md:pb-0">
+      <main id="main" tabIndex={-1} className="focus:outline-none flex-1 overflow-y-auto pb-16 md:pb-0">
         <AdminHeader />
         
         <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto h-full">

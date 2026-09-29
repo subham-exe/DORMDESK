@@ -7,8 +7,7 @@ import { useRouter } from "next/navigation";
 
 export function NotificationDropdown() {
   const [open, setOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Record<string, unknown>[]>([]);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
@@ -43,7 +42,7 @@ export function NotificationDropdown() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const unreadCount = notifications.filter(n => !n.readAt && !readIds.has(n.id)).length;
+  const unreadCount = notifications.filter(n => !(n.readAt as string) && !readIds.has(n.id as string)).length;
 
   const markAsRead = async (id: string) => {
     setReadIds(prev => new Set(prev).add(id));
@@ -51,23 +50,22 @@ export function NotificationDropdown() {
   };
 
   const markAllAsRead = async () => {
-    const unread = notifications.filter(n => !n.readAt && !readIds.has(n.id));
+    const unread = notifications.filter(n => !(n.readAt as string) && !readIds.has(n.id as string));
     setReadIds(prev => {
       const next = new Set(prev);
-      unread.forEach(n => next.add(n.id));
+      unread.forEach(n => next.add(n.id as string));
       return next;
     });
     await Promise.all(
-      unread.map(n => fetch(`/api/notifications/${n.id}/read`, { method: "PATCH" }).catch(() => {}))
+      unread.map(n => fetch(`/api/notifications/${n.id as string}/read`, { method: "PATCH" }).catch(() => {}))
     );
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleNotificationClick = (n: any) => {
-    markAsRead(n.id);
+  const handleNotificationClick = (n: Record<string, unknown>) => {
+    markAsRead(n.id as string);
     setOpen(false);
-    if (n.link) {
-      router.push(n.link);
+    if (n.link as string) {
+      router.push(n.link as string);
     }
   };
 
@@ -77,6 +75,7 @@ export function NotificationDropdown() {
         onClick={() => setOpen(!open)}
         className="relative p-2 rounded-full hover:bg-surface-muted transition-colors focus:outline-none focus:ring-2 focus:ring-info"
         aria-label="Notifications"
+        aria-expanded={open}
       >
         <Bell className="w-5 h-5 text-text-secondary" />
         {unreadCount > 0 && (
@@ -91,7 +90,7 @@ export function NotificationDropdown() {
             {unreadCount > 0 && (
               <button 
                 onClick={markAllAsRead}
-                className="text-xs text-info hover:underline font-medium flex items-center gap-1"
+                className="text-xs text-info hover:underline font-medium flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-info rounded"
               >
                 <Check className="w-3 h-3" /> Mark all read
               </button>
@@ -108,14 +107,13 @@ export function NotificationDropdown() {
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {notifications.map((n: any) => {
-                  const isRead = !!n.readAt || readIds.has(n.id);
+                {notifications.map((n) => {
+                  const isRead = !!(n.readAt as string) || readIds.has(n.id as string);
                   return (
-                    <div 
-                      key={n.id} 
+                    <button 
+                      key={n.id as string} 
                       onClick={() => handleNotificationClick(n)}
-                      className={`p-3 cursor-pointer hover:bg-surface transition-colors flex gap-3 ${!isRead ? 'bg-info-bg/30' : ''}`}
+                      className={`w-full text-left p-3 cursor-pointer hover:bg-surface transition-colors flex gap-3 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-info ${!isRead ? 'bg-info-bg/30' : ''}`}
                     >
                       <div className="shrink-0 mt-1">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${!isRead ? 'bg-info-bg text-info' : 'bg-surface-muted text-text-secondary'}`}>
@@ -124,13 +122,13 @@ export function NotificationDropdown() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm mb-0.5 truncate ${!isRead ? 'font-semibold text-text-primary' : 'font-medium text-text-secondary'}`}>
-                          {n.title}
+                          {n.title as string}
                         </p>
                         <p className={`text-xs truncate ${!isRead ? 'text-text-primary' : 'text-text-secondary'}`}>
-                          {n.message}
+                          {n.message as string}
                         </p>
                         <p className="text-[10px] text-text-secondary mt-1">
-                          {new Date(n.timestamp).toLocaleString()}
+                          {new Date(n.timestamp as string).toLocaleString()}
                         </p>
                       </div>
                       {!isRead && (
@@ -138,7 +136,7 @@ export function NotificationDropdown() {
                           <div className="w-2 h-2 rounded-full bg-info"></div>
                         </div>
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -149,7 +147,7 @@ export function NotificationDropdown() {
             <Link 
               href="/student/notices" 
               onClick={() => setOpen(false)}
-              className="text-xs text-info font-medium hover:underline inline-block p-1"
+              className="text-xs text-info font-medium hover:underline inline-block p-1 focus:outline-none focus:ring-2 focus:ring-info rounded"
             >
               View all notices
             </Link>

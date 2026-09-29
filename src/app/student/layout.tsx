@@ -51,7 +51,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       </aside>
 
       {/* Main Content */}
-      <main id="main" className="flex-1 overflow-y-auto pb-16 md:pb-0 flex flex-col">
+      <main id="main" tabIndex={-1} className="focus:outline-none flex-1 overflow-y-auto pb-16 md:pb-0 flex flex-col">
         {/* Desktop Header */}
         <header className="hidden md:flex justify-end items-center p-4 border-b border-border bg-surface sticky top-0 z-10">
           <div className="flex items-center gap-4">

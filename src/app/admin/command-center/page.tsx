@@ -73,7 +73,7 @@ export default function CommandCenterPage() {
             {incidents.length === 0 ? <EmptyState msg="No active incidents." /> : (
               <div className="grid gap-3">
                 {incidents.map((inc) => (
-                  <Link key={inc.id as string} href={`/admin/incidents/${inc.id}`}>
+                  <Link key={inc.id as string} href={`/admin/incidents/${inc.id}`} className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl">
                     <Card className="hover:border-error border-error/30 bg-error/5 transition-colors">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between">
@@ -104,7 +104,7 @@ export default function CommandCenterPage() {
             {sla.length === 0 ? <EmptyState msg="All requests within SLA targets." /> : (
               <div className="grid gap-3">
                 {sla.map((s) => (
-                  <Link key={s.id as string} href={`/admin/requests/${s.id}`}>
+                  <Link key={s.id as string} href={`/admin/requests/${s.id}`} className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl">
                     <Card className={`hover:border-text-secondary transition-colors ${s.severity === 'BREACH' ? 'border-error/30 bg-error/5' : 'border-warning/30 bg-warning/5'}`}>
                       <CardContent className="p-4 flex items-center justify-between">
                         <div>
@@ -132,7 +132,7 @@ export default function CommandCenterPage() {
             {escalations.length === 0 ? <EmptyState msg="No active escalations." /> : (
               <div className="grid gap-3">
                 {escalations.map((e) => (
-                  <Link key={e.id as string} href={`/admin/requests/${e.requestId}`}>
+                  <Link key={e.id as string} href={`/admin/requests/${e.requestId}`} className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl">
                     <Card className="hover:border-primary transition-colors border-l-4 border-l-primary">
                       <CardContent className="p-4">
                         <div className="flex justify-between">
@@ -159,7 +159,7 @@ export default function CommandCenterPage() {
             {unassigned.length === 0 ? <EmptyState msg="All requests assigned." /> : (
               <div className="grid gap-2">
                 {unassigned.slice(0, 5).map((u) => (
-                  <Link key={u.id as string} href={`/admin/requests/${u.id}`} className="flex items-center justify-between p-3 bg-surface-muted rounded hover:bg-border/50 text-sm">
+                  <Link key={u.id as string} href={`/admin/requests/${u.id}`} className="flex items-center justify-between p-3 bg-surface-muted rounded hover:bg-border/50 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1">
                     <div>
                       <span className="font-medium">{u.identifier as string}</span>
                       <div className="text-xs text-text-secondary">{u.location as string}</div>
@@ -178,7 +178,7 @@ export default function CommandCenterPage() {
             {stale.length === 0 ? <EmptyState msg="No stale requests." /> : (
               <div className="grid gap-2">
                 {stale.slice(0, 5).map((s) => (
-                  <Link key={s.id as string} href={`/admin/requests/${s.id}`} className="p-3 bg-surface-muted rounded hover:bg-border/50 text-sm flex justify-between">
+                  <Link key={s.id as string} href={`/admin/requests/${s.id}`} className="p-3 bg-surface-muted rounded hover:bg-border/50 text-sm flex justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1">
                     <div>
                       <div className="font-medium">{s.identifier as string}</div>
                       <div className="text-xs text-text-secondary">{s.reason as string}</div>

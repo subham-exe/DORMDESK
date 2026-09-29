@@ -1,6 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 type Policy = {
   id: string;
@@ -135,35 +140,35 @@ export default function PoliciesPage() {
           <p className="text-slate-500 mt-1">Manage configuration rules for requests, SLAs, and workflows.</p>
         </div>
         <div className="space-x-3">
-          <button onClick={() => { setShowSimulation(true); setShowForm(false); }} className="px-4 py-2 bg-slate-100 border text-slate-700 rounded hover:bg-slate-200">
+          <Button onClick={() => { setShowSimulation(true); setShowForm(false); }} className="px-4 py-2 bg-slate-100 border text-slate-700 rounded hover:bg-slate-200">
             Simulate Request
-          </button>
-          <button onClick={() => { setEditingPolicy(null); setShowForm(true); setShowSimulation(false); }} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          </Button>
+          <Button onClick={() => { setEditingPolicy(null); setShowForm(true); setShowSimulation(false); }} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
             Create Policy
-          </button>
+          </Button>
         </div>
       </div>
 
       {showSimulation && (
         <div className="bg-slate-50 border rounded-lg p-6">
           <h2 className="text-lg font-bold mb-4">Simulate Policy Matching</h2>
-          <form onSubmit={handleSimulate} className="flex gap-4 items-end mb-6">
+          <form onSubmit={handleSimulate} className="flex flex-col md:flex-row gap-4 md:items-end mb-6">
             <div>
-              <label className="block text-sm font-medium mb-1">Request Type</label>
-              <input name="requestType" className="border rounded px-3 py-2 w-48" placeholder="e.g. COMPLAINT" />
+              <Label className="block text-sm font-medium mb-1">Request Type</Label>
+              <Input name="requestType" className="border rounded px-3 py-2 w-48" placeholder="e.g. COMPLAINT" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Category</label>
-              <input name="category" className="border rounded px-3 py-2 w-48" placeholder="e.g. Plumbing" />
+              <Label className="block text-sm font-medium mb-1">Category</Label>
+              <Input name="category" className="border rounded px-3 py-2 w-48" placeholder="e.g. Plumbing" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Domain</label>
-              <input name="domain" className="border rounded px-3 py-2 w-48" placeholder="e.g. Maintenance" />
+              <Label className="block text-sm font-medium mb-1">Domain</Label>
+              <Input name="domain" className="border rounded px-3 py-2 w-48" placeholder="e.g. Maintenance" />
             </div>
-            <button type="submit" className="px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-900">
+            <Button type="submit" className="px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-900">
               Run Simulation
-            </button>
-            <button type="button" onClick={() => setShowSimulation(false)} className="px-4 py-2 border rounded">Close</button>
+            </Button>
+            <Button type="button" onClick={() => setShowSimulation(false)} className="px-4 py-2 border rounded">Close</Button>
           </form>
 
           {simResult && (
@@ -171,7 +176,7 @@ export default function PoliciesPage() {
               <div className="font-bold text-lg mb-2">{simResult.policyName as string || 'No Policy Matched'}</div>
               <p className="text-slate-700 mb-4">{simResult.explanation as string}</p>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div><strong>Approval:</strong> {simResult.approvalRequired ? 'Required' : 'Not Required'}</div>
                 <div><strong>Auto Approve:</strong> {simResult.autoApproveAllowed ? 'Yes' : 'No'}</div>
                 <div><strong>SLA:</strong> {simResult.slaHours ? `${simResult.slaHours} hours` : 'N/A'}</div>
@@ -186,71 +191,71 @@ export default function PoliciesPage() {
         <div className="bg-white border rounded-lg p-6 shadow-sm">
           <h2 className="text-xl font-bold mb-4">{editingPolicy ? 'Edit Policy' : 'Create Policy'}</h2>
           <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Policy Name *</label>
-                <input required name="name" defaultValue={editingPolicy?.name} className="w-full border rounded px-3 py-2" />
+                <Label className="block text-sm font-medium mb-1">Policy Name *</Label>
+                <Input required name="name" defaultValue={editingPolicy?.name} className="w-full border rounded px-3 py-2" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
-                <input name="description" defaultValue={editingPolicy?.description || ''} className="w-full border rounded px-3 py-2" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 border rounded">
-              <div>
-                <label className="block text-sm font-medium mb-1">Request Type Match</label>
-                <input name="requestType" defaultValue={editingPolicy?.requestType || ''} className="w-full border rounded px-3 py-2" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Category Match</label>
-                <input name="category" defaultValue={editingPolicy?.category || ''} className="w-full border rounded px-3 py-2" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Domain Match</label>
-                <input name="domain" defaultValue={editingPolicy?.domain || ''} className="w-full border rounded px-3 py-2" />
+                <Label className="block text-sm font-medium mb-1">Description</Label>
+                <Input name="description" defaultValue={editingPolicy?.description || ''} className="w-full border rounded px-3 py-2" />
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-slate-50 border rounded">
               <div>
-                <label className="block text-sm font-medium mb-1">Approval Required</label>
-                <select name="approvalRequired" defaultValue={editingPolicy?.approvalRequired ? 'true' : 'false'} className="w-full border rounded px-3 py-2">
+                <Label className="block text-sm font-medium mb-1">Request Type Match</Label>
+                <Input name="requestType" defaultValue={editingPolicy?.requestType || ''} className="w-full border rounded px-3 py-2" />
+              </div>
+              <div>
+                <Label className="block text-sm font-medium mb-1">Category Match</Label>
+                <Input name="category" defaultValue={editingPolicy?.category || ''} className="w-full border rounded px-3 py-2" />
+              </div>
+              <div>
+                <Label className="block text-sm font-medium mb-1">Domain Match</Label>
+                <Input name="domain" defaultValue={editingPolicy?.domain || ''} className="w-full border rounded px-3 py-2" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="block text-sm font-medium mb-1">Approval Required</Label>
+                <Select name="approvalRequired" defaultValue={editingPolicy?.approvalRequired ? 'true' : 'false'} className="w-full border rounded px-3 py-2">
                   <option value="true">Yes</option>
                   <option value="false">No</option>
-                </select>
+                </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">SLA Hours</label>
-                <input type="number" name="slaHours" defaultValue={editingPolicy?.slaHours || ''} className="w-full border rounded px-3 py-2" />
+                <Label className="block text-sm font-medium mb-1">SLA Hours</Label>
+                <Input type="number" name="slaHours" defaultValue={editingPolicy?.slaHours || ''} className="w-full border rounded px-3 py-2" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Active</label>
-                <select name="isActive" defaultValue={editingPolicy?.isActive !== false ? 'true' : 'false'} className="w-full border rounded px-3 py-2">
+                <Label className="block text-sm font-medium mb-1">Active</Label>
+                <Select name="isActive" defaultValue={editingPolicy?.isActive !== false ? 'true' : 'false'} className="w-full border rounded px-3 py-2">
                   <option value="true">Yes</option>
                   <option value="false">No</option>
-                </select>
+                </Select>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Escalation JSON</label>
-              <textarea name="escalationPolicy" defaultValue={editingPolicy?.escalationPolicy || ''} className="w-full border rounded px-3 py-2 font-mono text-sm" rows={2} placeholder='{"escalateToRole":"Warden","sendSms":true}' />
+              <Label className="block text-sm font-medium mb-1">Escalation JSON</Label>
+              <Textarea name="escalationPolicy" defaultValue={editingPolicy?.escalationPolicy || ''} className="w-full border rounded px-3 py-2 font-mono text-sm" rows={2} placeholder='{"escalateToRole":"Warden","sendSms":true}' />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Auto-Approve JSON</label>
-              <textarea name="autoApproveCondition" defaultValue={editingPolicy?.autoApproveCondition || ''} className="w-full border rounded px-3 py-2 font-mono text-sm" rows={2} />
+              <Label className="block text-sm font-medium mb-1">Auto-Approve JSON</Label>
+              <Textarea name="autoApproveCondition" defaultValue={editingPolicy?.autoApproveCondition || ''} className="w-full border rounded px-3 py-2 font-mono text-sm" rows={2} />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Allowed Transitions JSON</label>
-              <textarea name="allowedTransitions" defaultValue={editingPolicy?.allowedTransitions || ''} className="w-full border rounded px-3 py-2 font-mono text-sm" rows={2} placeholder='{"Staff":["PROCESSING","RESOLVED"]}' />
+              <Label className="block text-sm font-medium mb-1">Allowed Transitions JSON</Label>
+              <Textarea name="allowedTransitions" defaultValue={editingPolicy?.allowedTransitions || ''} className="w-full border rounded px-3 py-2 font-mono text-sm" rows={2} placeholder='{"Staff":["PROCESSING","RESOLVED"]}' />
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t">
-              <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 border rounded hover:bg-slate-50">Cancel</button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Policy</button>
+              <Button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 border rounded hover:bg-slate-50">Cancel</Button>
+              <Button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save Policy</Button>
             </div>
           </form>
         </div>
@@ -270,12 +275,12 @@ export default function PoliciesPage() {
                 <p className="text-sm text-slate-600 mt-1">{policy.description}</p>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => { setEditingPolicy(policy); setShowForm(true); setShowSimulation(false); }} className="text-sm text-blue-600 border border-blue-200 bg-blue-50 px-3 py-1 rounded hover:bg-blue-100">
+                <Button onClick={() => { setEditingPolicy(policy); setShowForm(true); setShowSimulation(false); }} className="text-sm text-blue-600 border border-blue-200 bg-blue-50 px-3 py-1 rounded hover:bg-blue-100">
                   Edit
-                </button>
-                <button onClick={() => handleToggleActive(policy)} className={`text-sm px-3 py-1 rounded border ${policy.isActive ? 'text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100' : 'text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100'}`}>
+                </Button>
+                <Button onClick={() => handleToggleActive(policy)} className={`text-sm px-3 py-1 rounded border ${policy.isActive ? 'text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100' : 'text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100'}`}>
                   {policy.isActive ? 'Deactivate' : 'Activate'}
-                </button>
+                </Button>
               </div>
             </div>
             
