@@ -201,3 +201,7 @@ Accessibility and PWA hardening pass complete. Service worker secured against au
 ## Prompt O Status
 Prompt O: CLOSED
 Demo seeded properly with deterministic incidents, SLAs, and escalations. Reset mechanism works via npx prisma db seed.
+
+## Prompt P Status
+Prompt P: IMPLEMENTED - CLOSURE AUDIT REQUIRED
+Security audit fixed a student state escalation path. Regression checked. Demo freeze established.
