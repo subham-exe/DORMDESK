@@ -723,4 +723,4 @@ PASS
 - Build: PASS
 - Browser verification: not independently performed
 - Temporary artifacts: none
-- Prompt H: IMPLEMENTED\n\n## Prompt H � Offline Sync\n- Status: IMPLEMENTED\n- Added idempotencyKey to Request model.\n- Created deterministic sync engine managing SYNCING, PENDING_SYNC, SYNC_ERROR, and AUTH_REQUIRED states.\n- Modified UI to queue fetch on navigator offline or network errors.\n- Preserved session safety by failing sync on 401/403 requiring login.\n- Added unit tests for idempotency engine.\n- Prompt H closure audit: REQUIRED\n
+- Prompt H: IMPLEMENTED\n\n## Prompt H � Offline Sync\n- Status: IMPLEMENTED\n- Added idempotencyKey to Request model.\n- Created deterministic sync engine managing SYNCING, PENDING_SYNC, SYNC_ERROR, and AUTH_REQUIRED states.\n- Modified UI to queue fetch on navigator offline or network errors.\n- Preserved session safety by failing sync on 401/403 requiring login.\n- Added unit tests for idempotency engine.\n- Prompt H closure audit: REQUIRED\n\n- Prompt I: IMPLEMENTED � CLOSURE AUDIT REQUIRED\n

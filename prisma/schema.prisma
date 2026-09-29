@@ -78,7 +78,8 @@ model Incident {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   resolvedAt         DateTime?
-  
+  impactScore        Int?      @default(0)
+  groupingReason     String?
   requests           Request[]
 }
 
@@ -254,3 +255,4 @@ model Attendance {
 
   @@unique([sessionId, studentId])
 }
+
