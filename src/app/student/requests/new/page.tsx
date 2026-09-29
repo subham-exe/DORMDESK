@@ -61,7 +61,7 @@ function RequestForm() {
 
     try {
       if (!navigator.onLine) {
-        await saveOfflineRequest(data);
+        await saveOfflineRequest({ ...data, _requesterId: localStorage.getItem('dormdesk_user_id') || undefined });
         toast({ title: "Offline mode", description: "Request saved locally and will sync when online.", variant: "default" });
         setError("You are offline. Request saved locally and will sync when online. Redirecting...");
         setTimeout(() => router.push("/student"), 2500);
@@ -75,9 +75,9 @@ function RequestForm() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
-      } catch (networkError) {
+      } catch {
         // Network error during fetch, treat as offline
-        await saveOfflineRequest(data);
+        await saveOfflineRequest({ ...data, _requesterId: localStorage.getItem('dormdesk_user_id') || undefined });
         toast({ title: "Offline mode", description: "Connection lost. Request saved locally.", variant: "default" });
         setError("Connection lost. Request saved locally and will sync when online. Redirecting...");
         setTimeout(() => router.push("/student"), 2500);
@@ -86,7 +86,7 @@ function RequestForm() {
 
       if (!response.ok) {
         let errorData = { error: "Failed to create request" };
-        try { errorData = await response.json(); } catch(e) {}
+        try { errorData = await response.json(); } catch {}
         throw new Error(errorData.error || "Failed to create request");
       }
 

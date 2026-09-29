@@ -20,9 +20,26 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
   const checkQueue = useCallback(async () => {
     if (syncState === "OFFLINE" || syncState === "SYNCING") return;
     try {
+      // Sync local userId
+      let currentUserId = localStorage.getItem("dormdesk_user_id");
+      if (navigator.onLine) {
+        try {
+          const res = await fetch("/api/auth/me");
+          if (res.ok) {
+            const data = await res.json();
+            currentUserId = data.id;
+            localStorage.setItem("dormdesk_user_id", data.id);
+          } else {
+            localStorage.removeItem("dormdesk_user_id");
+          }
+        } catch (_e) {}
+      }
+
       const requests = await getOfflineRequests();
       if (requests.length > 0) {
-        const hasAuthError = requests.some(r => r._status === "AUTH_REQUIRED");
+        // Enforce user isolation: if any request belongs to a different user, flag as AUTH_REQUIRED
+        const hasCrossUser = requests.some(r => r._requesterId && r._requesterId !== currentUserId);
+        const hasAuthError = requests.some(r => r._status === "AUTH_REQUIRED") || hasCrossUser;
         const hasPermError = requests.some(r => r._status === "FAILED_PERMANENTLY");
         const hasSyncError = requests.some(r => r._status === "SYNC_ERROR");
         
@@ -34,7 +51,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         if (!hasAuthError && navigator.onLine) {
            await syncOfflineRequests((status) => {
              setSyncState(status as SyncState);
-           });
+           }, currentUserId || undefined);
         }
       } else {
         setSyncState(navigator.onLine ? "ONLINE" : "OFFLINE");
@@ -46,7 +63,7 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Initial check
-    checkQueue();
+    setTimeout(checkQueue, 0);
     // Also set an interval to periodically check and retry
     const interval = setInterval(() => {
       if (navigator.onLine) {

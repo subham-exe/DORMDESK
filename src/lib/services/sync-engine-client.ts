@@ -2,7 +2,7 @@ import { getOfflineRequests, deleteOfflineRequest, updateOfflineRequest } from '
 
 let isSyncing = false;
 
-export const syncOfflineRequests = async (onStatusUpdate?: (status: string) => void) => {
+export const syncOfflineRequests = async (onStatusUpdate?: (status: string) => void, currentUserId?: string) => {
   if (isSyncing) return;
   if (!navigator.onLine) return;
   
@@ -22,7 +22,15 @@ export const syncOfflineRequests = async (onStatusUpdate?: (status: string) => v
 
     for (const req of pendingRequests) {
       try {
-        const { localId, _status, _timestamp, ...payload } = req;
+        if (req._requesterId && req._requesterId !== currentUserId) {
+          // Belongs to another user, flag it so UI can prompt login
+          await updateOfflineRequest(req.localId, { _status: "AUTH_REQUIRED" });
+          continue;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const payload = Object.keys(req).filter(k => !['localId', '_status', '_timestamp', '_requesterId'].includes(k)).reduce((obj, key) => { obj[key] = req[key]; return obj; }, {} as any);
+        const localId = req.localId;
         
         const response = await fetch('/api/requests', {
           method: 'POST',
@@ -46,7 +54,7 @@ export const syncOfflineRequests = async (onStatusUpdate?: (status: string) => v
             await updateOfflineRequest(localId, { _status: "SYNC_ERROR" });
           }
         }
-      } catch (err) {
+      } catch {
         // Network error during sync
         await updateOfflineRequest(req.localId, { _status: "SYNC_ERROR" });
       }
@@ -54,9 +62,13 @@ export const syncOfflineRequests = async (onStatusUpdate?: (status: string) => v
     
     if (onStatusUpdate) {
       const remaining = await getOfflineRequests();
-      const hasErrors = remaining.some(r => r._status === "FAILED_PERMANENTLY" || r._status === "AUTH_REQUIRED" || r._status === "SYNC_ERROR");
+      const hasAuthError = remaining.some(r => r._status === "AUTH_REQUIRED");
+      const hasErrors = remaining.some(r => r._status === "FAILED_PERMANENTLY" || r._status === "SYNC_ERROR");
+      
       if (remaining.length === 0) {
         onStatusUpdate('ONLINE');
+      } else if (hasAuthError) {
+        onStatusUpdate('AUTH_REQUIRED');
       } else if (hasErrors) {
         onStatusUpdate('SYNC_ERROR');
       } else {
