@@ -733,48 +733,39 @@ When something does not fit, stop and coordinate rather than silently creating a
 - Node.js (v18+)
 - npm
 
-## Initial Setup
-1. Clone the repository and install dependencies:
-   ```powershell
-   npm install
-   ```
+## Quick Start (One Command)
+DORMDESK is a Next.js full-stack application (frontend and API routes run together in one process). There is NO separate backend server to start.
 
-2. Initialize and Seed the Database:
-   ```powershell
-   npx prisma migrate reset --force
-   ```
-   *This command destroys any existing local SQLite data, applies the schema, and runs the canonical seed script to populate demo data.*
+To easily prepare your local database and start the server, run:
+`powershell
+npm run local
+`
+This safely applies missing migrations, optionally seeds if the database is empty, and starts the development server at http://localhost:3000.
 
-## Running the Application
-```powershell
+## Demo Reset
+If you need to explicitly destroy and recreate the local deterministic demo state, use:
+`powershell
+npm run local:reset
+`
+*WARNING: This will destroy all your local data and reset it back to the deterministic demo state.*
+
+## Running Manually
+If you just want to run the server without setup checks:
+`powershell
 npm run dev
-```
-The application will start at `http://localhost:3000`.
+`
 
 ## Demo Accounts
 The database is seeded with deterministic, fictional local accounts. The password for all seeded accounts is: **dormdesk2026**
 
-- **Student 1:** `student1@demo.dormdesk.local`
-- **Student 2:** `student2@demo.dormdesk.local`
-- **Student 3:** `student3@demo.dormdesk.local`
-- **Warden:** `warden@demo.dormdesk.local`
-- **Professor (Faculty):** `professor@demo.dormdesk.local`
-- **HOD (Faculty):** `hod@demo.dormdesk.local`
-- **Principal (Admin):** `principal@demo.dormdesk.local`
-- **Staff (Electrical):** `staff.electrical@demo.dormdesk.local`
-- **Staff (Plumbing):** `staff.plumbing@demo.dormdesk.local`
-
-## Current Demo Scenarios
-The seed populates a robust, realistic campus state:
-- **Requests:** 10 requests representing complaints, leaves, and certificates across all lifecycle states (PENDING to CLOSED).
-- **Incidents:** A "No Water Supply in Hostel A" incident clustering active plumbing requests.
-- **SLAs:** Explicitly breached (-1h) and upcoming (+2h) SLAs.
-- **Notifications & Scholarships:** Populated to demonstrate the UI matrices.
+- **Student:** student@demo.local
+- **Staff:** staff@demo.local
+- **Warden:** warden@demo.local
+- **Admin:** dmin@demo.local
 
 ## Testing
 The repository uses Vitest for deterministic backend/service testing.
 Run the test suite:
-```powershell
+`powershell
 npm test
-```
-
+`

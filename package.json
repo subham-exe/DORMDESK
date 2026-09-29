@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "local": "node scripts/local.js",
+    "local:reset": "npx prisma db seed && npm run dev"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
