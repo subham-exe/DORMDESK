@@ -1,16 +1,60 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { WifiOff } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { WifiOff, CloudOff, CloudDrizzle, CloudSun, AlertTriangle, Key } from "lucide-react";
+import { syncOfflineRequests } from "@/lib/services/sync-engine-client";
+import { getOfflineRequests } from "@/lib/services/offline-store";
+
+export type SyncState = "ONLINE" | "OFFLINE" | "SYNCING" | "PENDING_SYNC" | "SYNC_ERROR" | "AUTH_REQUIRED";
 
 export function OfflineProvider({ children }: { children: React.ReactNode }) {
-  const [isOffline, setIsOffline] = useState(() => {
+  const [syncState, setSyncState] = useState<SyncState>(() => {
     if (typeof window !== "undefined") {
-      return !navigator.onLine;
+      return !navigator.onLine ? "OFFLINE" : "ONLINE";
     }
-    return false;
+    return "ONLINE";
   });
+  
   const [showBackOnline, setShowBackOnline] = useState(false);
+
+  const checkQueue = useCallback(async () => {
+    if (syncState === "OFFLINE" || syncState === "SYNCING") return;
+    try {
+      const requests = await getOfflineRequests();
+      if (requests.length > 0) {
+        const hasAuthError = requests.some(r => r._status === "AUTH_REQUIRED");
+        const hasPermError = requests.some(r => r._status === "FAILED_PERMANENTLY");
+        const hasSyncError = requests.some(r => r._status === "SYNC_ERROR");
+        
+        if (hasAuthError) setSyncState("AUTH_REQUIRED");
+        else if (hasPermError || hasSyncError) setSyncState("SYNC_ERROR");
+        else setSyncState("PENDING_SYNC");
+        
+        // Attempt sync if we have pending stuff and we are not in an auth error state (force user intervention)
+        if (!hasAuthError && navigator.onLine) {
+           await syncOfflineRequests((status) => {
+             setSyncState(status as SyncState);
+           });
+        }
+      } else {
+        setSyncState(navigator.onLine ? "ONLINE" : "OFFLINE");
+      }
+    } catch (err) {
+      console.error("Error checking offline queue:", err);
+    }
+  }, [syncState]);
+
+  useEffect(() => {
+    // Initial check
+    checkQueue();
+    // Also set an interval to periodically check and retry
+    const interval = setInterval(() => {
+      if (navigator.onLine) {
+        checkQueue();
+      }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [checkQueue]);
 
   useEffect(() => {
     // Register Service Worker
@@ -22,17 +66,16 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Network status detection
-    const handleOnline = () => {
-      setIsOffline(false);
+    const handleOnline = async () => {
       setShowBackOnline(true);
-      setTimeout(() => setShowBackOnline(false), 3000); // Hide after 3s
+      setTimeout(() => setShowBackOnline(false), 3000);
+      setSyncState("ONLINE");
+      await checkQueue();
     };
     const handleOffline = () => {
-      setIsOffline(true);
+      setSyncState("OFFLINE");
       setShowBackOnline(false);
     };
-
-    // Initial state is handled by lazy initializer
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
@@ -41,27 +84,67 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, []);
+  }, [checkQueue]);
+
+  const renderBanner = () => {
+    if (syncState === "OFFLINE") {
+      return (
+        <div className="fixed top-0 left-0 w-full bg-slate-700 text-white px-4 py-2 text-sm font-medium flex items-center justify-center z-[100] shadow-md transition-all duration-300 transform translate-y-0" aria-live="polite" role="status">
+          <WifiOff className="w-4 h-4 mr-2" />
+          You&apos;re offline. Actions will be saved locally.
+        </div>
+      );
+    }
+    if (syncState === "SYNCING") {
+      return (
+        <div className="fixed top-0 left-0 w-full bg-blue-600 text-white px-4 py-2 text-sm font-medium flex items-center justify-center z-[100] shadow-md transition-all duration-300 transform translate-y-0" aria-live="polite" role="status">
+          <CloudDrizzle className="w-4 h-4 mr-2 animate-pulse" />
+          Syncing offline requests...
+        </div>
+      );
+    }
+    if (syncState === "PENDING_SYNC") {
+      return (
+        <div className="fixed top-0 left-0 w-full bg-yellow-600 text-white px-4 py-2 text-sm font-medium flex items-center justify-center z-[100] shadow-md transition-all duration-300 transform translate-y-0" aria-live="polite" role="status">
+          <CloudOff className="w-4 h-4 mr-2" />
+          Waiting to sync requests.
+        </div>
+      );
+    }
+    if (syncState === "SYNC_ERROR") {
+      return (
+        <div className="fixed top-0 left-0 w-full bg-red-600 text-white px-4 py-2 text-sm font-medium flex items-center justify-center z-[100] shadow-md transition-all duration-300 transform translate-y-0" aria-live="polite" role="status">
+          <AlertTriangle className="w-4 h-4 mr-2" />
+          Sync failed. Some requests could not be sent.
+        </div>
+      );
+    }
+    if (syncState === "AUTH_REQUIRED") {
+      return (
+        <div className="fixed top-0 left-0 w-full bg-red-700 text-white px-4 py-2 text-sm font-medium flex items-center justify-center z-[100] shadow-md transition-all duration-300 transform translate-y-0" aria-live="assertive" role="alert">
+          <Key className="w-4 h-4 mr-2" />
+          Session expired. Please log in to sync your offline requests.
+        </div>
+      );
+    }
+    if (showBackOnline) {
+      return (
+        <div className="fixed top-0 left-0 w-full bg-green-600 text-white px-4 py-2 text-sm font-medium flex items-center justify-center z-[100] shadow-md transition-all duration-300 transform translate-y-0" aria-live="polite" role="status">
+          <CloudSun className="w-4 h-4 mr-2" />
+          You&apos;re back online.
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const hasBanner = syncState !== "ONLINE" || showBackOnline;
 
   return (
     <>
-      {/* Offline Banner */}
-      {isOffline && (
-        <div className="fixed top-0 left-0 w-full bg-slate-700 text-white px-4 py-2 text-sm font-medium flex items-center justify-center z-[100] shadow-md transition-all duration-300 transform translate-y-0" aria-live="polite" role="status">
-          <WifiOff className="w-4 h-4 mr-2" />
-          You&apos;re offline. Some features may be unavailable.
-        </div>
-      )}
-      
-      {/* Back Online Banner */}
-      {showBackOnline && !isOffline && (
-        <div className="fixed top-0 left-0 w-full bg-success text-white px-4 py-2 text-sm font-medium flex items-center justify-center z-[100] shadow-md transition-all duration-300 transform translate-y-0" aria-live="polite" role="status">
-          You&apos;re back online
-        </div>
-      )}
-
+      {renderBanner()}
       {/* Main Content */}
-      <div className={`${isOffline || showBackOnline ? 'mt-9' : ''} transition-all duration-300 h-full flex flex-col`}>
+      <div className={`${hasBanner ? 'mt-9' : ''} transition-all duration-300 h-full flex flex-col`}>
         {children}
       </div>
     </>

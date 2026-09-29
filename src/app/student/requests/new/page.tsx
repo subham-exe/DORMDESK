@@ -49,6 +49,7 @@ function RequestForm() {
     }
 
     const data = {
+      idempotencyKey: crypto.randomUUID(),
       requestType: selectedType,
       category: formData.get("category"),
       location: formData.get("location") || undefined,
@@ -67,14 +68,25 @@ function RequestForm() {
         return;
       }
 
-      const response = await fetch("/api/requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      let response: Response;
+      try {
+        response = await fetch("/api/requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+      } catch (networkError) {
+        // Network error during fetch, treat as offline
+        await saveOfflineRequest(data);
+        toast({ title: "Offline mode", description: "Connection lost. Request saved locally.", variant: "default" });
+        setError("Connection lost. Request saved locally and will sync when online. Redirecting...");
+        setTimeout(() => router.push("/student"), 2500);
+        return;
+      }
 
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData = { error: "Failed to create request" };
+        try { errorData = await response.json(); } catch(e) {}
         throw new Error(errorData.error || "Failed to create request");
       }
 

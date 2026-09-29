@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
     const body = await req.json();
-    const { requestType, category, description, location, priority, metadata } = body;
+    const { requestType, category, description, location, priority, metadata, idempotencyKey } = body;
 
     const request = await RequestEngine.createRequest({
       requestType,
@@ -33,7 +33,8 @@ export async function POST(req: NextRequest) {
       description,
       location,
       priority,
-      metadata
+      metadata,
+      idempotencyKey
     });
 
     return NextResponse.json({ success: true, data: request }, { status: 201 });

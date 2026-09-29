@@ -44,6 +44,11 @@ async function logAudit(requestId: string, actorId: string, action: string, meta
 
 export class RequestEngine {
   static async createRequest(payload: CreateRequestPayload) {
+    if (payload.idempotencyKey) {
+      const existing = await prisma.request.findUnique({ where: { idempotencyKey: payload.idempotencyKey } });
+      if (existing) return existing;
+    }
+
     // Zero-Touch auto-approval for short leaves (Differentiator)
     let autoApprove = false;
     if (payload.requestType === 'LEAVE' && (payload.metadata?.leaveDays as number) <= 2) {
@@ -63,6 +68,7 @@ export class RequestEngine {
         priority: payload.priority || 'LOW',
         status: autoApprove ? 'APPROVED' : 'PENDING',
         metadata: payload.metadata ? JSON.stringify(payload.metadata) : null,
+          idempotencyKey: payload.idempotencyKey || null,
         // SLA logic can be injected here based on category
         SLA: payload.requestType === 'COMPLAINT' ? 24 : undefined,
       },

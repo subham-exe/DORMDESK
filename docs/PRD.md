@@ -151,4 +151,4 @@ User-generated content, database-authored free-form text, comments, complaint bo
 
 English remains the fallback language.
 
-The implementation is designed so additional languages can be added through the local translation dictionaries without introducing an external translation service.
+The implementation is designed so additional languages can be added through the local translation dictionaries without introducing an external translation service.\n\n### Offline Synchronization\n\nDORMDESK supports resilient offline submission for selected student requests. Requests are queued locally and synchronized with the server when connectivity returns, using server-side idempotency protection. The sync engine is local-first, lightweight, and bounded to student request mutations.\n

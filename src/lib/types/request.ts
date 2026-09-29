@@ -10,6 +10,7 @@ export interface CreateRequestPayload {
   location?: string;
   priority?: RequestPriority;
   metadata?: Record<string, unknown>;
+  idempotencyKey?: string;
 }
 
 export interface TransitionRequestPayload {

@@ -63,6 +63,7 @@ model Request {
   resolvedAt         DateTime?
   exitTime           DateTime? // for leave/gate-pass metadata
   metadata           String?   // JSON string for attachments, custom fields, etc.
+  idempotencyKey     String?   @unique
   escalations        Escalation[]
 }
 

@@ -76,3 +76,22 @@ export const deleteOfflineRequest = async (id: number) => {
     req.onerror = () => reject(req.error);
   });
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const updateOfflineRequest = async (id: number, updates: any) => {
+  const db = await openOfflineDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("requests", "readwrite");
+    const store = tx.objectStore("requests");
+    const getReq = store.get(id);
+    
+    getReq.onsuccess = () => {
+      if (!getReq.result) return resolve(false);
+      const updatedRecord = { ...getReq.result, ...updates };
+      const putReq = store.put(updatedRecord);
+      putReq.onsuccess = () => resolve(true);
+      putReq.onerror = () => reject(putReq.error);
+    };
+    getReq.onerror = () => reject(getReq.error);
+  });
+};

@@ -171,4 +171,4 @@ Validation:
 - Temporary artifacts: none
 
 Prompt H:
-UNBLOCKED
+CLOSED\n\n## Prompt H � Offline Sync\nDORMDESK supports resilient offline submission for selected student requests. Requests are queued locally (IndexedDB) and synchronized with the server when connectivity returns, using server-side idempotency protection.
