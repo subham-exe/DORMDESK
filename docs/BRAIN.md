@@ -199,5 +199,5 @@ Prompt N: CLOSED
 Accessibility and PWA hardening pass complete. Service worker secured against auth leakage, offline page added, UI layout responsive fixed, keyboard navigation improved, semantic markup verified.
 
 ## Prompt O Status
-Prompt O: IMPLEMENTED - CLOSURE AUDIT REQUIRED
+Prompt O: CLOSED
 Demo seeded properly with deterministic incidents, SLAs, and escalations. Reset mechanism works via npx prisma db seed.

@@ -26,7 +26,7 @@
 - Fixed CC links to have focus styles.
 - Upgraded notification dropdown to use semantic buttons.
 
-# Prompt O: IMPLEMENTED - CLOSURE AUDIT REQUIRED
+# Prompt O: CLOSED
 ## Implementation Details
 - Added demo reset script via prisma/seed.js.
 - Fixed lint error.

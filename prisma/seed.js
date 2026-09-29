@@ -85,10 +85,12 @@ async function main() {
   const now = Date.now();
   const ONE_HOUR = 3600000;
 
+  let ticketCounter = 1;
   const createReq = async (ticketPrefix, type, category, reqId, desc, loc, prio, status, extra = {}) => {
+    const ticketId = ticketCounter++;
     return prisma.request.create({
       data: {
-        ticketNumber: `${ticketPrefix}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+        ticketNumber: `${ticketPrefix}-${ticketId.toString().padStart(4, '0')}`,
         requestType: type,
         category,
         requesterId: reqId,
@@ -101,24 +103,10 @@ async function main() {
     });
   };
 
-  // 1. Existing Incident for Water Supply
-  const incident = await prisma.incident.create({
-    data: {
-      title: 'Multiple issues reported: Plumbing at Hostel A, North Block',
-      description: 'Auto-clustered 3 requests for Plumbing at Hostel A, North Block.',
-      category: 'Plumbing',
-      location: 'Hostel A, North Block',
-      assignedDepartment: 'Plumbing',
-      status: 'OPEN',
-      impactScore: 25, // Just below High Impact threshold (30)
-      groupingReason: "Grouped 3 requests sharing category 'Plumbing' and location 'Hostel A, North Block' within 24h."
-    }
-  });
-
-  // Peer students filed requests earlier today for the incident
-  await createReq('PLM', 'COMPLAINT', 'Plumbing', extraStudents[0].id, 'No water in 1st floor washrooms', 'Hostel A, North Block', 'HIGH', 'ASSIGNED', { incidentId: incident.id, assignedDepartment: 'Plumbing', assignedAuthorityId: users.staff.id, SLA: 12, dueAt: new Date(now + 8 * ONE_HOUR), createdAt: new Date(now - 4 * ONE_HOUR) });
-  await createReq('PLM', 'COMPLAINT', 'Plumbing', extraStudents[1].id, 'Water is completely dry', 'Hostel A, North Block', 'HIGH', 'ASSIGNED', { incidentId: incident.id, assignedDepartment: 'Plumbing', assignedAuthorityId: users.staff.id, SLA: 12, dueAt: new Date(now + 9 * ONE_HOUR), createdAt: new Date(now - 3 * ONE_HOUR) });
-  await createReq('PLM', 'COMPLAINT', 'Plumbing', extraStudents[2].id, 'Washroom taps empty', 'Hostel A, North Block', 'HIGH', 'PENDING', { incidentId: incident.id, SLA: 12, dueAt: new Date(now + 10 * ONE_HOUR), createdAt: new Date(now - 2 * ONE_HOUR) });
+  // 1. Two unclustered Plumbing requests from peers (threshold for clustering is 3)
+  // When the judge creates the 3rd, it will cluster them and trigger a high impact incident.
+  await createReq('PLM', 'COMPLAINT', 'Plumbing', extraStudents[0].id, 'No water in 1st floor washrooms', 'Hostel A, North Block', 'HIGH', 'ASSIGNED', { assignedDepartment: 'Plumbing', assignedAuthorityId: users.staff.id, SLA: 12, dueAt: new Date(now + 8 * ONE_HOUR), createdAt: new Date(now - 4 * ONE_HOUR) });
+  await createReq('PLM', 'COMPLAINT', 'Plumbing', extraStudents[1].id, 'Water is completely dry', 'Hostel A, North Block', 'HIGH', 'ASSIGNED', { assignedDepartment: 'Plumbing', assignedAuthorityId: users.staff.id, SLA: 12, dueAt: new Date(now + 9 * ONE_HOUR), createdAt: new Date(now - 3 * ONE_HOUR) });
 
 
   // 2. SLA Warning Request (Due in 1 hour)

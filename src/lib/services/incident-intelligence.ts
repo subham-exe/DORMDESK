@@ -75,6 +75,8 @@ export class IncidentIntelligenceService {
    * data produces the same result. Already-clustered requests are excluded
    * by the incidentId: null filter.
    */
+  private static clusteringLocks = new Set<string>();
+
   static async autoClusterIncidents(actorId: string): Promise<number> {
     const timeWindow = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -88,7 +90,6 @@ export class IncidentIntelligenceService {
       orderBy: { createdAt: 'desc' }
     });
 
-    // Group by category + location (exact match)
     const groups: Record<string, string[]> = {};
 
     for (const req of candidates) {
@@ -102,46 +103,51 @@ export class IncidentIntelligenceService {
 
     for (const [key, requestIds] of Object.entries(groups)) {
       if (requestIds.length >= 3) {
-        const [category, location] = key.split('|');
-        const title = `Multiple issues reported: ${category} at ${location}`;
-        const description = `Auto-clustered ${requestIds.length} requests for ${category} at ${location}.`;
-        const groupingReason = `Grouped ${requestIds.length} requests sharing category '${category}' and location '${location}' within 24h.`;
+        if (this.clusteringLocks.has(key)) continue;
+        this.clusteringLocks.add(key);
 
-        // Check for existing open incident with same category+location to avoid duplicates
-        const existingIncident = await prisma.incident.findFirst({
-          where: { category, location, status: { notIn: ['RESOLVED', 'CLOSED'] } },
-          include: { requests: { select: { id: true } } }
-        });
+        try {
+          const [category, location] = key.split('|');
+          const title = `Multiple issues reported: ${category} at ${location}`;
+          const description = `Auto-clustered ${requestIds.length} requests for ${category} at ${location}.`;
+          const groupingReason = `Grouped ${requestIds.length} requests sharing category '${category}' and location '${location}' within 24h.`;
 
-        if (existingIncident) {
-          // Filter out requests that are already in this incident
-          const existingRequestIds = new Set(existingIncident.requests.map(r => r.id));
-          const newRequestIds = requestIds.filter(id => !existingRequestIds.has(id));
+          const existingIncident = await prisma.incident.findFirst({
+            where: { category, location, status: { notIn: ['RESOLVED', 'CLOSED'] } },
+            include: { requests: { select: { id: true } } }
+          });
 
-          if (newRequestIds.length > 0) {
-            await RequestEngine.attachToIncident(existingIncident.id, newRequestIds, actorId);
+          if (existingIncident) {
+            const existingRequestIds = new Set(existingIncident.requests.map(r => r.id));
+            const newRequestIds = requestIds.filter(id => !existingRequestIds.has(id));
+
+            if (newRequestIds.length > 0) {
+              await RequestEngine.attachToIncident(existingIncident.id, newRequestIds, actorId);
+              await prisma.incident.update({
+                where: { id: existingIncident.id },
+                data: { groupingReason }
+              });
+            }
+            await this.calculateImpact(existingIncident.id);
+          } else {
+            const inc = await RequestEngine.clusterIntoIncident(
+              requestIds,
+              title,
+              description,
+              category,
+              location,
+              'General',
+              actorId
+            );
             await prisma.incident.update({
-              where: { id: existingIncident.id },
+              where: { id: inc.id },
               data: { groupingReason }
             });
+            await this.calculateImpact(inc.id);
+            clustersCreated++;
           }
-          await this.calculateImpact(existingIncident.id);
-        } else {
-          const inc = await RequestEngine.clusterIntoIncident(
-            requestIds,
-            title,
-            description,
-            category,
-            location,
-            'General',
-            actorId
-          );
-          await prisma.incident.update({
-            where: { id: inc.id },
-            data: { groupingReason }
-          });
-          await this.calculateImpact(inc.id);
-          clustersCreated++;
+        } finally {
+          this.clusteringLocks.delete(key);
         }
       }
     }
