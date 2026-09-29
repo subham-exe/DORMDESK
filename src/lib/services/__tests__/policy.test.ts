@@ -208,7 +208,7 @@ describe('PolicyService', () => {
   });
 
   describe('PolicyValidator', () => {
-    it('validates escalation JSON structure', async () => {
+    it('rejects invalid requestType', async () => { expect(() => PolicyValidator.validate({ name: 'Test', requestType: 'INVALID_TYPE' })).toThrow(/Invalid requestType/); }); it('validates escalation JSON structure', async () => {
       expect(() => PolicyValidator.validate({
         name: 'Test',
         escalationPolicy: JSON.stringify({ escalateToRole: 'Warden' })

@@ -1,7 +1,9 @@
 export const VALID_ROLES = ['Student', 'Warden', 'Admin', 'Faculty', 'Staff'];
 
+export const VALID_REQUEST_TYPES = ['COMPLAINT', 'LEAVE', 'CERTIFICATE', 'OTHER'];
+
 export const VALID_LIFECYCLE_STATES = [
-  'OPEN', 'ASSIGNED', 'ACKNOWLEDGED', 'PROCESSING', 'RESOLVED', 'VERIFIED', 'REJECTED'
+  'PENDING', 'ASSIGNED', 'ACKNOWLEDGED', 'PROCESSING', 'RESOLVED', 'VERIFIED', 'CLOSED', 'REJECTED', 'APPROVED', 'CANCELLED'
 ];
 
 export interface PolicyInput {
@@ -23,6 +25,10 @@ export class PolicyValidator {
   static validate(input: PolicyInput): void {
     if (!input.name || typeof input.name !== 'string' || input.name.trim().length === 0) {
       throw new Error('Policy name is required');
+    }
+
+    if (input.requestType && !VALID_REQUEST_TYPES.includes(input.requestType)) {
+      throw new Error(`Invalid requestType. Must be one of: ${VALID_REQUEST_TYPES.join(', ')}`);
     }
 
     if (input.slaHours !== undefined && input.slaHours !== null) {
