@@ -703,4 +703,24 @@ PASS
 - No temporary artifacts remain.
 
 ## Known Limitations
-- No biometric, QR, GPS, or predictive attendance algorithms are implemented (kept intentionally lite).\n\n## Prompt G Closure\n- Language foundation implemented.\n- English, Odia, and Hindi local dictionaries added.\n- Fallback mechanisms intact.\n- No DB changes.\n- Verified zero TS/Lint errors and successful build.\n- Prompt H unblocked.\n
+- No biometric, QR, GPS, or predictive attendance algorithms are implemented (kept intentionally lite).
+
+## Prompt G Closure — FINAL
+
+- Status: CLOSED
+- Final implementation/closure commit: `d823d74ffbbd4dd9ad3e7b028dec40789443033a`
+- Languages: English, Hindi, Odia
+- Scope: targeted student-facing UI localization
+- Persistence: `localStorage` key `dormdesk_lang`
+- Fallback: English for invalid language and missing dictionary keys
+- Database/schema impact: none
+- User-generated content: intentionally untranslated
+- Initial audit defect: Hindi/Odia dictionaries contained accidental English clones
+- Resolution: affected dictionary entries corrected
+- Tests: 74/74 PASS
+- TypeScript: PASS
+- ESLint: PASS
+- Build: PASS
+- Browser verification: not independently performed
+- Temporary artifacts: none
+- Prompt H: UNBLOCKED

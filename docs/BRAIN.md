@@ -126,4 +126,49 @@ These files must reflect:
 - the next actionable step
 
 Do not modify canonical planning documents merely to record implementation progress.
-\n\n## Prompt G (Language Foundation)\nImplemented lightweight local-first multilingual UI foundation supporting English, Odia, and Hindi without external dependencies. Added LanguageContext and LanguageSelector.\n
+## Prompt G — Multilingual UI
+
+Status: CLOSED
+
+Final implementation:
+d823d74ffbbd4dd9ad3e7b028dec40789443033a
+
+Supported languages:
+- English
+- Hindi
+- Odia
+
+Translated student-facing surfaces:
+- Student Dashboard
+- Student Navigation / Sidebar
+- Requests
+- Notices
+- Mess Menu
+- Attendance
+- System Status Badges
+
+Behavior:
+- English is the default language.
+- Language preference is stored locally using `dormdesk_lang`.
+- Invalid/corrupt stored language values fall back to English.
+- Missing dictionary keys fall back to English.
+- User-generated/database content is not automatically translated.
+- Stored database/status enum values are unchanged.
+- No external translation API is required.
+- No database schema changes were made.
+
+Closure correction:
+- The initial Prompt G implementation contained accidental English clones in portions of the Hindi and Odia dictionaries.
+- This was detected during closure audit.
+- The affected Hindi/Odia dictionary entries were corrected in the final G closure commit.
+
+Validation:
+- Tests: 74/74 PASS
+- TypeScript: PASS
+- ESLint: PASS
+- Production build: PASS
+- Browser verification: NOT independently performed
+- Temporary artifacts: none
+
+Prompt H:
+UNBLOCKED

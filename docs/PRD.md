@@ -138,4 +138,17 @@ The hackathon demo must deliver one complete vertical slice:
 - **Students:** Can view their attendance summary and percentage across enrolled courses, and see class cancellation notices deterministically.
 - **Faculty:** Can view their assigned courses, record class session attendance (Present/Absent), and cancel sessions. Cancellations trigger automated system alerts for enrolled students.
 - **Scope Limit:** No biometric, QR, GPS, facial, or predictive attendance functionality is included.
-\n\n## Prompt G (Language Foundation)\nImplemented lightweight local-first multilingual UI foundation supporting English, Odia, and Hindi. Translates high-visibility student-facing surfaces with English fallback. User-generated content is strictly untranslated.\n
+### Multilingual UI
+
+DORMDESK supports lightweight local-first multilingual UI for:
+- English
+- Hindi
+- Odia
+
+Selected high-visibility student-facing surfaces provide translated UI labels and system statuses.
+
+User-generated content, database-authored free-form text, comments, complaint bodies, announcement bodies, and similar dynamic content are not automatically translated.
+
+English remains the fallback language.
+
+The implementation is designed so additional languages can be added through the local translation dictionaries without introducing an external translation service.
