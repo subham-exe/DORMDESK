@@ -1,78 +1,182 @@
 import { prisma } from '../db/prisma';
 
 export interface RouteResult {
+  classification: string;
   domain: string;
   department?: string;
   authorityRole?: string;
   authorityUserId?: string;
   reason: string;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'UNRESOLVED';
+  score: number;
+  evidence: string[];
   safeConfidence: boolean;
   manualReviewRequired: boolean;
 }
 
+interface CategoryDictionary {
+  category: string;
+  domain: string;
+  department?: string;
+  authorityRole: string;
+  signals: string[];
+  requestType: string[];
+}
+
+const DICTIONARY: CategoryDictionary[] = [
+  {
+    category: 'Plumbing',
+    domain: 'Facilities',
+    department: 'Plumbing',
+    authorityRole: 'Staff',
+    requestType: ['COMPLAINT'],
+    signals: ['water', 'tap', 'pipe', 'leak', 'drain', 'plumbing', 'washroom', 'toilet', 'flush']
+  },
+  {
+    category: 'Electrical',
+    domain: 'Facilities',
+    department: 'Electrical',
+    authorityRole: 'Staff',
+    requestType: ['COMPLAINT'],
+    signals: ['light', 'fan', 'switch', 'socket', 'plug', 'power', 'electrical', 'wire', 'spark', 'shock', 'ac', 'cooler']
+  },
+  {
+    category: 'Cleanliness',
+    domain: 'Facilities',
+    department: 'Housekeeping',
+    authorityRole: 'Staff',
+    requestType: ['COMPLAINT'],
+    signals: ['clean', 'sweep', 'dust', 'garbage', 'trash', 'smell', 'dirty', 'mop', 'housekeeping', 'corridor']
+  },
+  {
+    category: 'Internet',
+    domain: 'IT',
+    department: 'IT',
+    authorityRole: 'Staff',
+    requestType: ['COMPLAINT'],
+    signals: ['wifi', 'internet', 'network', 'router', 'lan', 'disconnect', 'speed']
+  },
+  {
+    category: 'Leave',
+    domain: 'Hostel Operations',
+    authorityRole: 'Warden',
+    requestType: ['LEAVE'],
+    signals: ['leave', 'home', 'holiday', 'vacation', 'sick', 'outstation']
+  },
+  {
+    category: 'Gate Pass',
+    domain: 'Hostel Operations',
+    authorityRole: 'Warden',
+    requestType: ['GATE_PASS'],
+    signals: ['pass', 'out', 'gate', 'visit']
+  },
+  {
+    category: 'Academic',
+    domain: 'Academic',
+    authorityRole: 'Faculty',
+    requestType: ['CERTIFICATE', 'ACADEMIC', 'SCHOLARSHIP'],
+    signals: ['certificate', 'bonafide', 'scholarship', 'academic', 'marksheet', 'transcript', 'grade']
+  }
+];
+
 export class RoutingEngine {
   static async classifyAndRoute(payload: { requestType: string, category: string, description: string, location?: string }): Promise<RouteResult> {
-    const { requestType, category } = payload;
+    const { requestType, category, description, location } = payload;
     
+    // 1. Scoring Candidate Categories
+    const descLower = description.toLowerCase();
+    const locLower = location?.toLowerCase() || '';
+    const catLower = category.toLowerCase();
+    
+    let bestMatch: CategoryDictionary | null = null;
+    let highestScore = 0;
+    let bestEvidence: string[] = [];
+
+    for (const dict of DICTIONARY) {
+      let score = 0;
+      let evidence: string[] = [];
+
+      if (!dict.requestType.includes(requestType)) {
+        continue; // Hard constraint: must match request type
+      }
+
+      // Exact category match
+      if (dict.category.toLowerCase() === catLower) {
+        score += 50;
+        evidence.push(`Category exactly matched '${dict.category}' (+50)`);
+      }
+
+      // Signal matches in description
+      let signalMatches = 0;
+      for (const signal of dict.signals) {
+        // Regex word boundary matching for whole word match
+        const regex = new RegExp(`\\b${signal}\\b`, 'i');
+        if (regex.test(descLower)) {
+          signalMatches++;
+          score += 15;
+          evidence.push(`Description contained keyword '${signal}' (+15)`);
+        }
+        if (regex.test(locLower)) {
+          score += 5;
+          evidence.push(`Location contained keyword '${signal}' (+5)`);
+        }
+      }
+
+      if (score > highestScore) {
+        highestScore = score;
+        bestMatch = dict;
+        bestEvidence = evidence;
+      }
+    }
+
+    // 2. Resolve Confidence
+    let confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'UNRESOLVED' = 'UNRESOLVED';
+    let safeConfidence = false;
+    let manualReviewRequired = true;
+
+    // Thresholds: Exact category match = 50. 
+    // If user selected "Other" but wrote "water tap broken" = 15+15=30 (Medium confidence -> Auto routes)
+    if (highestScore >= 50) {
+       confidence = 'HIGH';
+       safeConfidence = true;
+       manualReviewRequired = false;
+    } else if (highestScore >= 30) {
+       confidence = 'MEDIUM';
+       safeConfidence = true;
+       manualReviewRequired = false;
+    } else if (highestScore > 0) {
+       confidence = 'LOW';
+       // Low confidence falls back to manual review
+       manualReviewRequired = true;
+    }
+
+    // Additional hard constraint: Academic requests always require manual review for department assignment
+    if (bestMatch && bestMatch.domain === 'Academic') {
+       manualReviewRequired = true;
+       safeConfidence = false;
+       bestEvidence.push('Academic domain hard-constrained to manual review for department assignment.');
+    }
+
     let domain = 'System';
     let department: string | undefined = undefined;
     let authorityRole: string | undefined = undefined;
-    let manualReviewRequired = false;
-    let safeConfidence = true;
-    let reason = 'Default fallback routing.';
+    let classification = category || 'Unknown';
+    let reason = '';
 
-    // Rule 1: Complaint Classification
-    if (requestType === 'COMPLAINT') {
-      if (category === 'Plumbing') {
-         domain = 'Facilities';
-         department = 'Plumbing';
-         authorityRole = 'Staff';
-         reason = 'Mapped Plumbing category to Facilities/Plumbing staff.';
-      } else if (category === 'Electrical') {
-         domain = 'Facilities';
-         department = 'Electrical';
-         authorityRole = 'Staff';
-         reason = 'Mapped Electrical category to Facilities/Electrical staff.';
-      } else if (category === 'Cleanliness' || category === 'Housekeeping') {
-         domain = 'Facilities';
-         department = 'Housekeeping';
-         authorityRole = 'Staff';
-         reason = 'Mapped Cleanliness to Facilities/Housekeeping staff.';
-      } else if (category === 'Internet' || category === 'IT') {
-         domain = 'IT';
-         department = 'IT';
-         authorityRole = 'Staff';
-         reason = 'Mapped Internet to IT staff.';
-      } else {
-         domain = 'Facilities'; // Default complaints domain
-         manualReviewRequired = true;
-         safeConfidence = false;
-         reason = `Unknown complaint category '${category}'. Flagged for manual review.`;
-      }
-    } 
-    // Rule 2: Leave & Gate Pass
-    else if (requestType === 'LEAVE' || requestType === 'GATE_PASS') {
-      domain = 'Hostel Operations';
-      authorityRole = 'Warden';
-      reason = 'Mapped Leave/Gate-Pass to Hostel Warden.';
-    } 
-    // Rule 3: Academic / Certificate / Scholarship
-    else if (requestType === 'CERTIFICATE' || requestType === 'ACADEMIC' || requestType === 'SCHOLARSHIP') {
-      domain = 'Academic';
-      authorityRole = 'Faculty';
-      manualReviewRequired = true;
-      reason = 'Mapped academic request. Requires manual review to assign correct department faculty/staff.';
-    } 
-    // Rule 4: Fallback
-    else {
-      manualReviewRequired = true;
-      safeConfidence = false;
-      reason = `Unknown request type '${requestType}'. Flagged for manual review.`;
+    if (bestMatch && highestScore > 0) {
+       domain = bestMatch.domain;
+       department = bestMatch.department;
+       authorityRole = bestMatch.authorityRole;
+       classification = bestMatch.category;
+       reason = `Classified as ${classification} with ${confidence} confidence (Score: ${highestScore}).`;
+    } else {
+       reason = `Could not deterministically classify request. Score was 0.`;
+       bestEvidence.push('No signals matched any known category.');
     }
 
     let authorityUserId: string | undefined = undefined;
 
-    // Smart Assignment: if deterministically resolvable
+    // 3. Smart Assignment
     if (!manualReviewRequired && authorityRole) {
        const possibleUsers = await prisma.user.findMany({
           where: {
@@ -94,11 +198,15 @@ export class RoutingEngine {
     }
 
     return {
+      classification,
       domain,
       department,
       authorityRole,
       authorityUserId,
       reason,
+      confidence,
+      score: highestScore,
+      evidence: bestEvidence,
       safeConfidence,
       manualReviewRequired
     };

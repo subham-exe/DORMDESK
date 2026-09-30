@@ -1,3 +1,4 @@
+import { PolicyConditionEvaluator } from './policy-evaluator';
 import { prisma } from '../db/prisma';
 import { Request } from '@prisma/client';
 import { PolicyInput, PolicyValidator } from './policy-validator';
@@ -64,21 +65,30 @@ export class PolicyService {
     let autoApproveAllowed = false;
     let autoApproveExplanation = '';
 
-    if (selectedPolicy.autoApproveCondition && context?.request) {
+    if (selectedPolicy.autoApproveCondition) {
       try {
         const condition = JSON.parse(selectedPolicy.autoApproveCondition);
-        if (condition.type === 'LEAVE_DAYS_LESS_THAN_OR_EQUAL' && payload.requestType === 'LEAVE') {
-          const metadata = context.request.metadata ? JSON.parse(context.request.metadata) : {};
-          const leaveDays = metadata.leaveDays;
-          if (typeof leaveDays === 'number' && leaveDays > 0 && leaveDays <= condition.days) {
-            autoApproveAllowed = true;
-            autoApproveExplanation = `Auto-approved because leave duration is ${leaveDays} days or less (<= ${condition.days}).`;
-          } else {
-             autoApproveExplanation = `Not auto-approved because leave duration is invalid or greater than ${condition.days} days.`;
-          }
+        const metadataObj = context?.request?.metadata ? JSON.parse(context.request.metadata) : {};
+        
+        // Build evaluation context securely
+        const evalContext = {
+           requestType: payload.requestType,
+           category: payload.category,
+           domain: payload.domain,
+           ...metadataObj
+        };
+
+        const isApproved = PolicyConditionEvaluator.evaluate(condition, evalContext);
+
+        if (isApproved) {
+           autoApproveAllowed = true;
+           autoApproveExplanation = 'Auto-approved because policy conditions were successfully met.';
+        } else {
+           autoApproveExplanation = 'Not auto-approved because policy conditions were not met.';
         }
       } catch (e) {
-         console.error('Failed to parse autoApproveCondition', e);
+         console.error('Failed to parse or evaluate autoApproveCondition', e);
+         autoApproveExplanation = 'Auto-approval bypassed due to condition evaluation error.';
       }
     }
 
@@ -259,3 +269,4 @@ export class PolicyService {
     }, actorId);
   }
 }
+

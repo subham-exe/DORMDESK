@@ -5,14 +5,15 @@ import { prisma } from '../../db/prisma';
 vi.mock('../../db/prisma', () => ({
   prisma: {
     user: {
-      findMany: vi.fn()
+      findMany: vi.fn().mockResolvedValue([])
     }
   }
 }));
 
 describe('R2 - Smart Routing & Classification', () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
+    vi.mocked(prisma.user.findMany).mockResolvedValue([]);
   });
 
   describe('Classification & Routing', () => {
@@ -42,7 +43,7 @@ describe('R2 - Smart Routing & Classification', () => {
         description: 'Help'
       });
 
-      expect(result.domain).toBe('Facilities');
+      expect(result.domain).toBe('System');
       expect(result.manualReviewRequired).toBe(true);
       expect(result.safeConfidence).toBe(false);
       expect(result.authorityUserId).toBeUndefined();
@@ -93,5 +94,34 @@ describe('R2 - Smart Routing & Classification', () => {
       expect(result.authorityRole).toBe('Faculty');
       expect(result.manualReviewRequired).toBe(true);
     });
+    it('classifies fuzzy natural-language requests effectively', async () => {
+      const result = await RoutingEngine.classifyAndRoute({
+        requestType: 'COMPLAINT',
+        category: 'Other', 
+        description: 'there is no water in block B' 
+      });
+      expect(result.classification).toBe('Plumbing');
+      expect(result.domain).toBe('Facilities');
+      expect(result.manualReviewRequired).toBe(true);
+      expect(result.confidence).toBe('LOW');
+    });
+
+    it('classifies fuzzy natural-language requests effectively (MEDIUM confidence routes)', async () => {
+      vi.mocked(prisma.user.findMany).mockResolvedValueOnce([{ id: 'staff-1', name: 'Plumber Bob' } as any]);
+      const result = await RoutingEngine.classifyAndRoute({
+        requestType: 'COMPLAINT',
+        category: 'Other', 
+        description: 'water tap is broken in washroom' 
+      });
+      expect(result.classification).toBe('Plumbing');
+      expect(result.domain).toBe('Facilities');
+      expect(result.manualReviewRequired).toBe(false); 
+      expect(result.confidence).toBe('MEDIUM');
+    });
   });
 });
+
+
+
+
+

@@ -96,7 +96,7 @@ describe('PolicyService', () => {
         { request: { metadata: JSON.stringify({ leaveDays: 2 }) } }
       );
       expect(result.autoApproveAllowed).toBe(true);
-      expect(result.explanation).toContain('Auto-approved because leave duration is 2 days or less');
+      expect(result.explanation).toContain('Auto-approved because policy conditions were successfully met.');
     });
 
     it('requires approval for leave > 2 days', async () => {
@@ -107,7 +107,7 @@ describe('PolicyService', () => {
       );
       expect(result.autoApproveAllowed).toBe(false);
       expect(result.approvalRequired).toBe(true);
-      expect(result.explanation).toContain('Not auto-approved because leave duration is invalid or greater than 2 days');
+      expect(result.explanation).toContain('Not auto-approved because policy conditions were not met.');
     });
   });
 
@@ -233,3 +233,4 @@ describe('PolicyService', () => {
     });
   });
 });
+

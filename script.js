@@ -1,125 +1,43 @@
 const fs = require('fs');
+let text = fs.readFileSync('src/lib/services/policy.ts', 'utf8');
 
-let content = fs.readFileSync('src/lib/services/request-engine.ts', 'utf8');
+if (!text.includes('PolicyConditionEvaluator')) {
+  text = "import { PolicyConditionEvaluator } from './policy-evaluator';\n" + text;
+}
 
-const targetFunctionStart = content.indexOf('static async createRequest(payload: CreateRequestPayload) {');
-const targetFunctionEnd = content.indexOf('static async updateStatus', targetFunctionStart);
+const targetStart = text.indexOf('if (selectedPolicy.autoApproveCondition && context?.request) {');
+const targetEnd = text.indexOf('let explanation = Policy selected:', targetStart);
 
-const before = content.slice(0, targetFunctionStart);
-const after = content.slice(targetFunctionEnd);
+const before = text.slice(0, targetStart);
+const after = text.slice(targetEnd);
 
-const newFunction = \static async createRequest(payload: CreateRequestPayload) {
-    if (payload.idempotencyKey) {
-      const existing = await prisma.request.findUnique({ where: { idempotencyKey: payload.idempotencyKey } });
-      if (existing) return existing;
-    }
+const newLogic = \if (selectedPolicy.autoApproveCondition) {
+      try {
+        const condition = JSON.parse(selectedPolicy.autoApproveCondition);
+        const metadataObj = context?.request?.metadata ? JSON.parse(context.request.metadata) : {};
+        
+        // Build evaluation context securely
+        const evalContext = {
+           requestType: payload.requestType,
+           category: payload.category,
+           domain: payload.domain,
+           ...metadataObj // Merge safely for things like leaveDays
+        };
 
-    // 1. Classification & Routing
-    const routeResult = await RoutingEngine.classifyAndRoute({
-      requestType: payload.requestType,
-      category: payload.category,
-      description: payload.description,
-      location: payload.location
-    });
+        const isApproved = PolicyConditionEvaluator.evaluate(condition, evalContext);
 
-    // 2. Policy Evaluation
-    const policyResult = await PolicyService.resolvePolicyForRequest(
-      { requestType: payload.requestType, category: payload.category, domain: routeResult.domain },
-      { request: { metadata: payload.metadata ? JSON.stringify(payload.metadata) : null } }
-    );
-
-    const autoApprove = policyResult.autoApproveAllowed;
-    const ticketNumber = \\\\-\\\\;
-    
-    // Determine initial status
-    let initialStatus = 'PENDING';
-    if (autoApprove) {
-       initialStatus = 'APPROVED';
-    } else if (routeResult.authorityUserId) {
-       initialStatus = 'ASSIGNED';
-    }
-
-    try {
-      const request = await prisma.request.create({
-        data: {
-          ticketNumber,
-          requestType: payload.requestType,
-          category: payload.category,
-          requesterId: payload.requesterId,
-          description: payload.description,
-          location: payload.location,
-          priority: payload.priority || 'LOW',
-          status: initialStatus,
-          assignedDepartment: routeResult.department || null,
-          assignedAuthorityId: autoApprove ? null : (routeResult.authorityUserId || null),
-          metadata: payload.metadata ? JSON.stringify(payload.metadata) : null,
-          idempotencyKey: payload.idempotencyKey || null,
-          SLA: policyResult.slaHours,
-          dueAt: policyResult.slaHours ? new Date(Date.now() + policyResult.slaHours * 3600000) : null,
-          policyId: policyResult.policyId || null,
-          requestSla: policyResult.slaHours ? {
-            create: {
-              targetHours: policyResult.slaHours,
-              dueAt: new Date(Date.now() + policyResult.slaHours * 3600000)
-            }
-          } : undefined,
-          statusHistory: {
-            create: {
-              toStatus: initialStatus,
-              actorId: payload.requesterId
-            }
-          },
-          assignmentHistory: (!autoApprove && routeResult.authorityUserId) ? {
-            create: {
-              assigneeId: routeResult.authorityUserId,
-              assignedBy: 'system-router',
-              reason: routeResult.reason
-            }
-          } : undefined
-        },
-      });
-
-      await logAudit(request.id, payload.requesterId, 'CREATED');
-      await triggerNotification(request.id, 'CREATED');
-
-      // Audit Routing
-      await logAudit(request.id, 'system-router', 'ROUTED', {
-         domain: routeResult.domain,
-         department: routeResult.department,
-         reason: routeResult.reason,
-         manualReviewRequired: routeResult.manualReviewRequired
-      });
-
-      // Audit Policy
-      await logAudit(request.id, 'system-policy-engine', 'POLICY_EVALUATED', {
-         policyId: policyResult.policyId,
-         policyName: policyResult.policyName,
-         reason: policyResult.explanation
-      });
-      
-      if (autoApprove) {
-        await logAudit(request.id, payload.requesterId, 'AUTO_APPROVED', { reason: policyResult.explanation, policyId: policyResult.policyId });
-      } else if (routeResult.authorityUserId) {
-        await logAudit(request.id, 'system-router', 'ASSIGNED', { assigneeId: routeResult.authorityUserId, reason: routeResult.reason });
-        await triggerNotification(request.id, 'ASSIGNED', routeResult.authorityUserId);
+        if (isApproved) {
+           autoApproveAllowed = true;
+           autoApproveExplanation = 'Auto-approved because policy conditions were successfully met.';
+        } else {
+           autoApproveExplanation = 'Not auto-approved because policy conditions were not met.';
+        }
+      } catch (e) {
+         console.error('Failed to parse or evaluate autoApproveCondition', e);
+         autoApproveExplanation = 'Auto-approval bypassed due to condition evaluation error.';
       }
-
-      return request;
-    } catch (error: any) {
-      if (
-        error && 
-        typeof error === 'object' && 
-        'code' in error && 
-        error.code === 'P2002' && 
-        payload.idempotencyKey
-      ) {
-        const existing = await prisma.request.findUnique({ where: { idempotencyKey: payload.idempotencyKey } });
-        if (existing) return existing;
-      }
-      throw error;
     }
-  }
 
-  \;
+    \;
 
-fs.writeFileSync('src/lib/services/request-engine.ts', before + newFunction + after);
+fs.writeFileSync('src/lib/services/policy.ts', before + newLogic + after);

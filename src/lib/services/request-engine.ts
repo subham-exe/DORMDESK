@@ -120,9 +120,11 @@ export class RequestEngine {
             }
           } : undefined,
           statusHistory: {
-            create: {
-              toStatus: initialStatus,
-              actorId: payload.requesterId
+            createMany: {
+              data: [
+                { toStatus: 'PENDING', actorId: payload.requesterId },
+                ...(initialStatus !== 'PENDING' ? [{ toStatus: initialStatus, actorId: autoApprove ? null : 'system-router' }] : [])
+              ]
             }
           },
           assignmentHistory: (!autoApprove && routeResult.authorityUserId) ? {
