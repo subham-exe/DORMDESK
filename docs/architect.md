@@ -1672,3 +1672,11 @@ ull).
 - **Service Worker Safety**: Implemented a conservative service worker that only caches static assets. All authenticated API paths, admin routes, and student views are explicitly excluded from cache-first mechanics to ensure private UI states are never served from a stale offline cache to the wrong user.
 
 
+
+ # #   R 2   A d d e n d u m :   S m a r t   R o u t i n g   +   P o l i c y   E n g i n e 
+ -   * * C l a s s i f i c a t i o n   &   S m a r t   R o u t i n g * * :   B u i l t   a   d e t e r m i n i s t i c   R o u t i n g E n g i n e   m a p p i n g   R e q u e s t   T y p e s   a n d   C a t e g o r i e s   ( e . g . ,   P l u m b i n g ,   E l e c t r i c a l ,   I T ,   L e a v e )   t o   e x a c t   D o m a i n ,   D e p a r t m e n t ,   a n d   A u t h o r i t y   R o l e s   ( e . g . ,   F a c i l i t i e s   - >   P l u m b i n g   - >   S t a f f ) .   S a f e   m a n u a l - r e v i e w   f a l l b a c k   p r e v e n t s   g u e s s i n g   i n v a l i d   a s s i g n m e n t s . 
+ -   * * P o l i c y   E v a l u a t i o n * * :   T h e   P o l i c y   E n g i n e   e x t r a c t s   t h e   a s s i g n e d   d o m a i n   t o   l o a d   a c t i v e ,   d e t e r m i n i s t i c   S L A   l i m i t s ,   r e q u i r e d - a p p r o v a l s ,   a n d   a u t o - a p p r o v a l   ( e . g . ,   s h o r t   l e a v e s ) . 
+ -   * * A s s i g n m e n t   P e r s i s t e n c e * * :   A u t h o r i t y   r o u t i n g   a u t o - c r e a t e s   R e q u e s t A s s i g n m e n t   r e l a t i o n s h i p s   t r a c k i n g   a s s i g n e e I d   a n d   s y s t e m - r o u t e r   d e c i s i o n s   w i t h o u t   o v e r w r i t i n g   h i s t o r i c a l   t r a c e s . 
+ -   * * S y s t e m   A u d i t a b i l i t y * * :   A d d e d   p r e c i s e   S y s t e m   A c t o r   a u d i t   r e c o r d s   ( 
+ u l l   a c t o r I d )   p r e s e r v i n g   i m m u t a b l e   d e c i s i o n s   ( R O U T E D ,   P O L I C Y _ E V A L U A T E D ,   A U T O _ A P P R O V E D ,   A S S I G N E D ) .  
+ 

@@ -3,6 +3,7 @@ import { CreateRequestPayload, TransitionRequestPayload, AssignRequestPayload, R
 import { AuditService } from './audit';
 import { NotificationService, NotificationType } from './notification';
 import { PolicyService } from './policy';
+import { RoutingEngine } from './routing-engine';
 
 const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
   PENDING: ['ASSIGNED', 'RESOLVED', 'CANCELLED', 'REJECTED', 'APPROVED'],
@@ -47,7 +48,7 @@ async function triggerNotification(requestId: string, event: string, assigneeId?
   }
 }
 
-async function logAudit(requestId: string, actorId: string, action: string, metadata?: Record<string, unknown>) {
+async function logAudit(requestId: string, actorId: string | null, action: string, metadata?: Record<string, unknown>) {
   try {
     await AuditService.log({
       actorId,
@@ -68,8 +69,17 @@ export class RequestEngine {
       if (existing) return existing;
     }
 
+    // 1. Classification & Routing
+    const routeResult = await RoutingEngine.classifyAndRoute({
+      requestType: payload.requestType,
+      category: payload.category,
+      description: payload.description,
+      location: payload.location
+    });
+
+    // 2. Policy Evaluation
     const policyResult = await PolicyService.resolvePolicyForRequest(
-      { requestType: payload.requestType, category: payload.category },
+      { requestType: payload.requestType, category: payload.category, domain: routeResult.domain },
       { request: { metadata: payload.metadata ? JSON.stringify(payload.metadata) : null } }
     );
 
@@ -77,6 +87,14 @@ export class RequestEngine {
 
     const ticketNumber = `${payload.requestType.substring(0, 3).toUpperCase()}-${Math.floor(Math.random() * 90000 + 10000)}`;
     
+    // Determine initial status
+    let initialStatus = 'PENDING';
+    if (autoApprove) {
+       initialStatus = 'APPROVED';
+    } else if (routeResult.authorityUserId) {
+       initialStatus = 'ASSIGNED';
+    }
+
     try {
       const request = await prisma.request.create({
         data: {
@@ -87,7 +105,9 @@ export class RequestEngine {
           description: payload.description,
           location: payload.location,
           priority: payload.priority || 'LOW',
-          status: autoApprove ? 'APPROVED' : 'PENDING',
+          status: initialStatus,
+          assignedDepartment: routeResult.department || null,
+          assignedAuthorityId: autoApprove ? null : (routeResult.authorityUserId || null),
           metadata: payload.metadata ? JSON.stringify(payload.metadata) : null,
           idempotencyKey: payload.idempotencyKey || null,
           SLA: policyResult.slaHours,
@@ -101,18 +121,43 @@ export class RequestEngine {
           } : undefined,
           statusHistory: {
             create: {
-              toStatus: autoApprove ? 'APPROVED' : 'PENDING',
+              toStatus: initialStatus,
               actorId: payload.requesterId
             }
-          }
+          },
+          assignmentHistory: (!autoApprove && routeResult.authorityUserId) ? {
+            create: {
+              assigneeId: routeResult.authorityUserId,
+              assignedBy: 'system-router',
+              reason: routeResult.reason
+            }
+          } : undefined
         },
       });
 
       await logAudit(request.id, payload.requesterId, 'CREATED');
       await triggerNotification(request.id, 'CREATED');
+
+      // Audit Routing
+      await logAudit(request.id, null, 'ROUTED', {
+         domain: routeResult.domain,
+         department: routeResult.department,
+         reason: routeResult.reason,
+         manualReviewRequired: routeResult.manualReviewRequired
+      });
+
+      // Audit Policy
+      await logAudit(request.id, null, 'POLICY_EVALUATED', {
+         policyId: policyResult.policyId,
+         policyName: policyResult.policyName,
+         reason: policyResult.explanation
+      });
       
       if (autoApprove) {
         await logAudit(request.id, payload.requesterId, 'AUTO_APPROVED', { reason: policyResult.explanation, policyId: policyResult.policyId });
+      } else if (routeResult.authorityUserId) {
+        await logAudit(request.id, null, 'ASSIGNED', { assigneeId: routeResult.authorityUserId, reason: routeResult.reason });
+        await triggerNotification(request.id, 'ASSIGNED', routeResult.authorityUserId);
       }
 
       return request;
@@ -304,3 +349,8 @@ export class RequestEngine {
     }
   }
 }
+
+
+
+
+

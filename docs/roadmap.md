@@ -98,3 +98,4 @@ Offline-first sync · real SMS gateway · more than one non-English language · 
 - Security: IndexedDB cache cleared securely on explicit logout or cross-user login.
 
 
+
