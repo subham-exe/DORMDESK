@@ -117,7 +117,8 @@
 ## [2026-09-30] R1: Mobile PWA + Offline Experience
 - Created valid PWA manifest and SVG icon.
 - Refactored IndexedDB in offline-store to isolate by userId and avoid stale data leakage.
-- Cleared offline DB securely on login and logout endpoints.
+- Cleared offline DB securely on explicit logout or cross-user login to preserve active queues while preventing leaks.
 - Added explicit offline synchronization queue and handled TRANSIENT vs PERMANENT sync errors.
 - All tests passing (137 tests), strict tsc and lint validations passed.
+
 

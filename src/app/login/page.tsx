@@ -35,7 +35,12 @@ export default function StudentLoginPage() {
         return;
       }
 
-      await clearOfflineDB().catch(console.error);
+      const userData = await res.json();
+      const prevUserId = localStorage.getItem('dormdesk_user_id');
+      if (prevUserId !== userData.id) {
+        await clearOfflineDB().catch(console.error);
+      }
+      localStorage.setItem('dormdesk_user_id', userData.id);
 
       router.push("/student");
     } catch (err) {
@@ -117,3 +122,4 @@ export default function StudentLoginPage() {
     </div>
   );
 }
+

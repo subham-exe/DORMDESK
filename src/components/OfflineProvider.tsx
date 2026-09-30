@@ -28,8 +28,6 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
             const data = await res.json();
             currentUserId = data.id;
             localStorage.setItem("dormdesk_user_id", data.id);
-          } else {
-            localStorage.removeItem("dormdesk_user_id");
           }
         } catch {}
       }

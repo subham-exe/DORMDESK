@@ -1667,7 +1667,8 @@ ull).
 
 ## R1 Addendum: Mobile PWA & Offline Experience
 - **Installable PWA**: Configured Next.js manifest generation with responsive maskable icons to ensure full standalone web app installation on mobile devices.
-- **User Cache Isolation**: The IndexedDB store securely enforces userId isolation. Cached data and queued mutations are strictly filtered by the authenticated session, and the entire IndexedDB database is aggressively cleared upon login or explicit logout to prevent cross-session leakage.
+- **User Cache Isolation**: The IndexedDB store securely enforces userId isolation. Cached data and queued mutations are strictly filtered by the authenticated session, and the entire IndexedDB database is cleared upon explicit logout or when a different user logs in, safely preserving the active user's offline queue while preventing cross-session leakage.
 - **Offline Synchronization**: Implemented a robust offline queue. Local request creation generates an idempotency key and pushes to IndexedDB. A background OfflineProvider continually checks network status, attempting to flush the queue when online. Synchronization categorizes failures strictly into transient (queued for retry), permanent (discarded), or authentication errors (halts sync until login).
 - **Service Worker Safety**: Implemented a conservative service worker that only caches static assets. All authenticated API paths, admin routes, and student views are explicitly excluded from cache-first mechanics to ensure private UI states are never served from a stale offline cache to the wrong user.
+
 

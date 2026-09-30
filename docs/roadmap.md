@@ -95,5 +95,6 @@ Offline-first sync · real SMS gateway · more than one non-English language · 
 - IndexedDB cache for offline requests and queueing mutations.
 - Safe offline synchronization using idempotency keys and strict user cache isolation.
 - Background sync via OfflineProvider.
-- Security: IndexedDB cache cleared on login/logout.
+- Security: IndexedDB cache cleared securely on explicit logout or cross-user login.
+
 

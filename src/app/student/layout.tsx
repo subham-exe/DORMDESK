@@ -16,6 +16,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
   const handleLogout = async () => {
     await clearOfflineDB().catch(console.error);
+    localStorage.removeItem("dormdesk_user_id");
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   };
