@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { WifiOff, CloudOff, CloudDrizzle, CloudSun, AlertTriangle, Key } from "lucide-react";
-import { syncOfflineRequests } from "@/lib/services/sync-engine-client";
-import { getOfflineRequests } from "@/lib/services/offline-store";
+import { syncOfflineMutations } from "@/lib/services/sync-engine-client";
+import { getOfflineMutations } from "@/lib/services/offline-store";
 
 export type SyncState = "ONLINE" | "OFFLINE" | "SYNCING" | "PENDING_SYNC" | "SYNC_ERROR" | "AUTH_REQUIRED";
 
@@ -20,7 +20,6 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
   const checkQueue = useCallback(async () => {
     if (syncState === "OFFLINE" || syncState === "SYNCING") return;
     try {
-      // Sync local userId
       let currentUserId = localStorage.getItem("dormdesk_user_id");
       if (navigator.onLine) {
         try {
@@ -35,23 +34,22 @@ export function OfflineProvider({ children }: { children: React.ReactNode }) {
         } catch {}
       }
 
-      const requests = await getOfflineRequests();
-      if (requests.length > 0) {
-        // Enforce user isolation: if any request belongs to a different user, flag as AUTH_REQUIRED
-        const hasCrossUser = requests.some(r => r._requesterId && r._requesterId !== currentUserId);
-        const hasAuthError = requests.some(r => r._status === "AUTH_REQUIRED") || hasCrossUser;
-        const hasPermError = requests.some(r => r._status === "FAILED_PERMANENTLY");
-        const hasSyncError = requests.some(r => r._status === "SYNC_ERROR");
+      if (!currentUserId) return; // Cannot check queue if we don't know who is logged in
+
+      const mutations = await getOfflineMutations(currentUserId);
+      if (mutations.length > 0) {
+        const hasAuthError = mutations.some(r => r.status === "AUTH_REQUIRED");
+        const hasPermError = mutations.some(r => r.status === "FAILED_PERMANENTLY");
+        const hasSyncError = mutations.some(r => r.status === "SYNC_ERROR");
         
         if (hasAuthError) setSyncState("AUTH_REQUIRED");
         else if (hasPermError || hasSyncError) setSyncState("SYNC_ERROR");
         else setSyncState("PENDING_SYNC");
         
-        // Attempt sync if we have pending stuff and we are not in an auth error state (force user intervention)
         if (!hasAuthError && navigator.onLine) {
-           await syncOfflineRequests((status) => {
+           await syncOfflineMutations(currentUserId, (status) => {
              setSyncState(status as SyncState);
-           }, currentUserId || undefined);
+           });
         }
       } else {
         setSyncState(navigator.onLine ? "ONLINE" : "OFFLINE");

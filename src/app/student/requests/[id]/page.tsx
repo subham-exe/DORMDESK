@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { getOfflineRequest } from "@/lib/services/offline-store";
+import { getOfflineMutations } from "@/lib/services/offline-store";
 
 const LIFECYCLE = [
   { status: "PENDING", label: "Submitted" },
@@ -52,16 +52,15 @@ export default function RequestDetailsPage() {
     try {
       const idStr = Array.isArray(id) ? id[0] : id;
       if (idStr?.startsWith("offline-")) {
-        const localId = parseInt(idStr.replace("offline-", ""), 10);
-        const offReq = await getOfflineRequest(localId);
+        const key = idStr.replace("offline-", ""); const mutations = await getOfflineMutations(localStorage.getItem("dormdesk_user_id") || ""); const offReq = mutations.find(m => m.idempotencyKey === key);
         if (offReq) {
           setRequest({
-            ...offReq,
+            ...offReq.payload,
             id: idStr,
-            ticketNumber: `OFFLINE-${localId}`,
+            ticketNumber: `OFFLINE-PENDING`,
             status: "PENDING_SYNC",
-            createdAt: new Date(offReq._timestamp).toISOString(),
-            updatedAt: new Date(offReq._timestamp).toISOString(),
+            createdAt: new Date(offReq.timestamp).toISOString(),
+            updatedAt: new Date(offReq.timestamp).toISOString(),
           });
           setAuditLogs([]);
           return;
@@ -672,4 +671,5 @@ export default function RequestDetailsPage() {
     </div>
   );
 }
+
 

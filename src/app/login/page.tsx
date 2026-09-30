@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { clearOfflineDB } from "@/lib/services/offline-store";
 
 export default function StudentLoginPage() {
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,8 @@ export default function StudentLoginPage() {
         setLoading(false);
         return;
       }
+
+      await clearOfflineDB().catch(console.error);
 
       router.push("/student");
     } catch (err) {

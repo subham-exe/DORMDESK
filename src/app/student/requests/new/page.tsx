@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { saveOfflineRequest } from "@/lib/services/offline-store";
+import { saveOfflineMutation } from "@/lib/services/offline-store";
 import { useToast } from "@/components/ui/use-toast";
 
 function RequestForm() {
@@ -61,7 +61,7 @@ function RequestForm() {
 
     try {
       if (!navigator.onLine) {
-        await saveOfflineRequest({ ...data, _requesterId: localStorage.getItem('dormdesk_user_id') || undefined });
+        await saveOfflineMutation({ idempotencyKey: data.idempotencyKey, userId: localStorage.getItem('dormdesk_user_id') || "", type: "CREATE_REQUEST", payload: data, status: "PENDING_SYNC", timestamp: Date.now() });
         toast({ title: "Offline mode", description: "Request saved locally and will sync when online.", variant: "default" });
         setError("You are offline. Request saved locally and will sync when online. Redirecting...");
         setTimeout(() => router.push("/student"), 2500);
@@ -77,7 +77,7 @@ function RequestForm() {
         });
       } catch {
         // Network error during fetch, treat as offline
-        await saveOfflineRequest({ ...data, _requesterId: localStorage.getItem('dormdesk_user_id') || undefined });
+        await saveOfflineMutation({ idempotencyKey: data.idempotencyKey, userId: localStorage.getItem('dormdesk_user_id') || "", type: "CREATE_REQUEST", payload: data, status: "PENDING_SYNC", timestamp: Date.now() });
         toast({ title: "Offline mode", description: "Connection lost. Request saved locally.", variant: "default" });
         setError("Connection lost. Request saved locally and will sync when online. Redirecting...");
         setTimeout(() => router.push("/student"), 2500);
@@ -269,4 +269,5 @@ export default function CreateRequestPage() {
     </div>
   );
 }
+
 

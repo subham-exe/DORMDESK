@@ -11,7 +11,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { getOfflineRequests, deleteOfflineRequest } from "@/lib/services/offline-store";
+import { getOfflineMutations, deleteOfflineMutation } from "@/lib/services/offline-store";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function StudentDashboard() {
@@ -57,12 +57,13 @@ export default function StudentDashboard() {
         // Get offline pending requests
         let offlineRequests: any[] = [];
         try {
-          offlineRequests = await getOfflineRequests();
+          offlineRequests = await getOfflineMutations(localStorage.getItem("dormdesk_user_id") || "");
         } catch { }
         
         // Merge offline requests
+        const userId = localStorage.getItem("dormdesk_user_id") || "";
         const allRequests = [
-          ...offlineRequests.map(r => ({ ...r, id: `offline-${r.localId}`, title: r.requestType, status: 'PENDING_SYNC' })),
+          ...offlineRequests.filter(r => r.type === "CREATE_REQUEST" && r.userId === userId).map(r => ({ ...r.payload, id: `offline-${r.idempotencyKey}`, title: r.payload.requestType, status: 'PENDING_SYNC' })),
           ...fetchedRequests
         ];
         
@@ -98,7 +99,7 @@ export default function StudentDashboard() {
                   body: JSON.stringify(payload),
                 });
                 if (syncRes.ok) {
-                  await deleteOfflineRequest(localId);
+                  await deleteOfflineMutation(localId);
                 }
               } catch { }
            }
@@ -323,5 +324,6 @@ export default function StudentDashboard() {
     </div>
   );
 }
+
 
 

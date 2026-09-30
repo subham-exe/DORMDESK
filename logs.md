@@ -112,3 +112,12 @@
 - **Fixed**: Hardened \seed.js\ to guarantee RequestSLA creation inline and repaired SQLite file locking problems by avoiding dropping tables mid-run in Vitest.
 - **Result**: The entire Q2 database architecture contract is proven solid end-to-end. Q2.9 Complete.
 
+
+
+## [2026-09-30] R1: Mobile PWA + Offline Experience
+- Created valid PWA manifest and SVG icon.
+- Refactored IndexedDB in offline-store to isolate by userId and avoid stale data leakage.
+- Cleared offline DB securely on login and logout endpoints.
+- Added explicit offline synchronization queue and handled TRANSIENT vs PERMANENT sync errors.
+- All tests passing (137 tests), strict tsc and lint validations passed.
+

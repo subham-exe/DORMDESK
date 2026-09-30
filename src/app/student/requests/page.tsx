@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { StatusIndicator } from "@/components/ui/status-indicator";
-import { getOfflineRequests } from "@/lib/services/offline-store";
+import { getOfflineMutations, getCachedRequests, cacheRequests } from "@/lib/services/offline-store";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function RequestListPage() {
@@ -31,18 +31,18 @@ export default function RequestListPage() {
         try {
           const response = await fetch('/api/requests');
           if (!response.ok) throw new Error("Failed to load requests.");
-          fetchedRequests = await response.json();
+          fetchedRequests = await response.json(); const userId = localStorage.getItem("dormdesk_user_id"); if (userId) { await cacheRequests(userId, fetchedRequests); }
         } catch (e) {
-          networkError = true;
+          networkError = true; const userId = localStorage.getItem("dormdesk_user_id"); if (userId) { fetchedRequests = await getCachedRequests(userId); }
         }
 
         let offlineRequests: any[] = [];
         try {
-          offlineRequests = await getOfflineRequests();
+          const userId = localStorage.getItem("dormdesk_user_id") || ""; if (userId) { offlineRequests = await getOfflineMutations(userId); offlineRequests = offlineRequests.filter(m => m.type === "CREATE_REQUEST").map(m => m.payload); }
         } catch {}
 
         const allRequests = [
-          ...offlineRequests.map(r => ({ ...r, id: "offline-" + r.localId, ticketNumber: "PENDING-SYNC", status: "PENDING_SYNC", createdAt: new Date().toISOString() })),
+          ...offlineRequests.map(r => ({ ...r, id: "offline-" + r.idempotencyKey, ticketNumber: "PENDING-SYNC", status: "PENDING_SYNC", createdAt: new Date().toISOString() })),
           ...fetchedRequests
         ];
 
@@ -174,6 +174,7 @@ export default function RequestListPage() {
     </div>
   );
 }
+
 
 
 

@@ -2,14 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ListTodo, Bell, User, GraduationCap, Utensils, Calendar } from "lucide-react";
+import { Home, ListTodo, Bell, User, GraduationCap, Utensils, Calendar, LogOut } from "lucide-react";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { clearOfflineDB } from "@/lib/services/offline-store";
+import { useRouter } from "next/navigation";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await clearOfflineDB().catch(console.error);
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+  };
 
   const navItems = [
     { label: t("nav.home"), href: "/student", icon: Home },
@@ -48,6 +57,15 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             );
           })}
         </nav>
+        <div className="p-4 border-t border-border">
+          <button 
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 px-3 py-2 rounded-md transition-colors text-error hover:bg-error-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
+          >
+            <LogOut className="w-5 h-5" />
+            Logout
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -69,9 +87,9 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           <div className="flex items-center gap-3">
             <LanguageSelector />
             <NotificationDropdown />
-            <div className="w-8 h-8 bg-info-bg text-info rounded-full flex items-center justify-center font-bold text-sm">
-              ST
-            </div>
+            <button onClick={handleLogout} className="text-error" aria-label="Logout">
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </header>
         

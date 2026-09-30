@@ -86,3 +86,14 @@ Offline-first sync · real SMS gateway · more than one non-English language · 
 - Team structure is locked (Subham/Overseer+Backend, Snigdhaa/Platform, SK/Design, Zoya/Student-UI, Bonisha/Admin-UI).
 - Whether the config-driven module reveal is attempted or dropped, decided at the Week 2 checkpoint based on backend slack
 - Demo slot length and format (live in front of judges vs. screen share) — affects how much of the script needs to be scripted vs. adaptive
+
+
+## R-Phase (Post-Mid-Evaluation)
+
+### R1: Mobile PWA + Offline Experience (COMPLETE)
+- Installable PWA with valid manifest and offline fallback.
+- IndexedDB cache for offline requests and queueing mutations.
+- Safe offline synchronization using idempotency keys and strict user cache isolation.
+- Background sync via OfflineProvider.
+- Security: IndexedDB cache cleared on login/logout.
+
