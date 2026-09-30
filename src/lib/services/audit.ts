@@ -3,6 +3,7 @@ import { Domain } from '@/lib/auth/policies';
 
 export interface AuditEvent {
   actorId?: string | null;
+  actorName?: string;
   action: string;
   domain: Domain | string;
   targetId: string;
@@ -54,7 +55,7 @@ export class AuditService {
 
     const safeMetadata = this.sanitizeMetadata(event.metadata);
 
-    let actorName: string | null = null;
+    let actorName: string | null = event.actorName || null;
     let actorEmail: string | null = null;
     if (event.actorId) {
       const actor = await prisma.user.findUnique({ where: { id: event.actorId } });
@@ -102,3 +103,4 @@ export class AuditService {
 
   // Strictly NO update() or delete() methods are exposed to enforce immutability.
 }
+

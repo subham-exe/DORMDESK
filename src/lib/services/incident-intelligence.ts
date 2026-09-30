@@ -2,6 +2,90 @@ import { prisma } from '../db/prisma';
 import { RequestEngine } from './request-engine';
 
 export class IncidentIntelligenceService {
+  private static matchingLocks = new Set<string>();
+
+  /**
+   * Deterministic matching for a new Request against active incidents.
+   * Runs synchronously or immediately after request creation to preserve accountability.
+   */
+  static async matchAndLinkNewRequest(requestId: string, actorId: string | null = null): Promise<{ linked: boolean, incidentId?: string, reason?: string }> {
+    const request = await prisma.request.findUnique({ where: { id: requestId } });
+    if (!request || request.requestType !== 'COMPLAINT' || !request.location || request.incidentId) {
+      return { linked: false, reason: 'Request not eligible for incident matching.' };
+    }
+
+    const key = `|`;
+    
+    // Concurrency safety (in-memory lock)
+    if (this.matchingLocks.has(key)) {
+      for (let i = 0; i < 5; i++) {
+        if (!this.matchingLocks.has(key)) break;
+        await new Promise(r => setTimeout(r, 100));
+      }
+      if (this.matchingLocks.has(key)) return { linked: false, reason: 'Concurrency lock timeout.' };
+    }
+
+    this.matchingLocks.add(key);
+
+    try {
+      // 1. Exact match active incidents
+      const activeIncident = await prisma.incident.findFirst({
+        where: {
+          category: request.category,
+          location: request.location,
+          status: { in: ['OPEN', 'IN_PROGRESS'] }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (activeIncident) {
+        await RequestEngine.attachToIncident(activeIncident.id, [request.id], actorId);
+        await this.calculateImpact(activeIncident.id);
+        return { linked: true, incidentId: activeIncident.id, reason: 'Matched existing active incident.' };
+      }
+
+      // 2. Check cluster threshold
+      const timeWindow = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const relatedRequests = await prisma.request.findMany({
+        where: {
+          category: request.category,
+          location: request.location,
+          requestType: 'COMPLAINT',
+          incidentId: null,
+          createdAt: { gte: timeWindow },
+          status: { notIn: ['RESOLVED', 'VERIFIED', 'CLOSED', 'REJECTED', 'CANCELLED'] }
+        }
+      });
+
+      if (relatedRequests.length >= 3) {
+        const requestIds = relatedRequests.map(r => r.id);
+        const title = `Multiple issues reported:  at `;
+        const description = `Auto-clustered  requests for  at .`;
+        
+        const inc = await RequestEngine.clusterIntoIncident(
+          requestIds,
+          title,
+          description,
+          request.category,
+          request.location,
+          request.assignedDepartment || 'General',
+          actorId
+        );
+        
+        await prisma.incident.update({
+          where: { id: inc.id },
+          data: { groupingReason: `Grouped  requests sharing category '' and location '' within 24h.` }
+        });
+        await this.calculateImpact(inc.id);
+
+        return { linked: true, incidentId: inc.id, reason: 'Created new incident from threshold of related requests.' };
+      }
+
+      return { linked: false, reason: 'Insufficient evidence to link to or create an incident.' };
+    } finally {
+      this.matchingLocks.delete(key);
+    }
+  }
   /**
    * Deterministic incident impact score.
    * Formula: (requestCount * 2) + (uniqueUserCount * 5) + sum(priorityWeights)
@@ -155,3 +239,5 @@ export class IncidentIntelligenceService {
     return clustersCreated;
   }
 }
+
+

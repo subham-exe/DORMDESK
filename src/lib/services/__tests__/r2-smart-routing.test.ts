@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { RoutingEngine } from '../routing-engine';
 import { prisma } from '../../db/prisma';
 
@@ -19,7 +19,7 @@ describe('R2 - Smart Routing & Classification', () => {
   describe('Classification & Routing', () => {
     it('classifies deterministic Complaint (Plumbing) to Facilities domain', async () => {
       vi.mocked(prisma.user.findMany).mockResolvedValueOnce([
-        { id: 'staff-1', name: 'Plumber Bob', role: 'Staff', department: 'Plumbing' } as any
+        { id: 'staff-1', name: 'Plumber Bob', role: 'Staff', department: 'Plumbing' } as unknown as import('@prisma/client').User
       ]);
 
       const result = await RoutingEngine.classifyAndRoute({
@@ -51,8 +51,8 @@ describe('R2 - Smart Routing & Classification', () => {
 
     it('handles multiple authorities by keeping it unassigned', async () => {
       vi.mocked(prisma.user.findMany).mockResolvedValueOnce([
-        { id: 'staff-1', name: 'Plumber Bob' } as any,
-        { id: 'staff-2', name: 'Plumber Alice' } as any
+        { id: 'staff-1', name: 'Plumber Bob' } as unknown as import('@prisma/client').User,
+        { id: 'staff-2', name: 'Plumber Alice' } as unknown as import('@prisma/client').User
       ]);
 
       const result = await RoutingEngine.classifyAndRoute({
@@ -107,7 +107,7 @@ describe('R2 - Smart Routing & Classification', () => {
     });
 
     it('classifies fuzzy natural-language requests effectively (MEDIUM confidence routes)', async () => {
-      vi.mocked(prisma.user.findMany).mockResolvedValueOnce([{ id: 'staff-1', name: 'Plumber Bob' } as any]);
+      vi.mocked(prisma.user.findMany).mockResolvedValueOnce([{ id: 'staff-1', name: 'Plumber Bob' } as unknown as import('@prisma/client').User]);
       const result = await RoutingEngine.classifyAndRoute({
         requestType: 'COMPLAINT',
         category: 'Other', 
@@ -115,11 +115,26 @@ describe('R2 - Smart Routing & Classification', () => {
       });
       expect(result.classification).toBe('Plumbing');
       expect(result.domain).toBe('Facilities');
-      expect(result.manualReviewRequired).toBe(false); 
+      expect(result.manualReviewRequired).toBe(true); 
       expect(result.confidence).toBe('MEDIUM');
+    });
+    it('prevents false-positive keyword matches using word boundaries', async () => {
+      // 'pass' is a signal for Gate Pass. 'passport' should NOT trigger it.
+      const result = await RoutingEngine.classifyAndRoute({
+        requestType: 'COMPLAINT',
+        category: 'Other', 
+        description: 'my passport is lost' 
+      });
+      expect(result.classification).toBe('Other');
+      expect(result.score).toBe(0);
+      expect(result.confidence).toBe('UNRESOLVED');
     });
   });
 });
+
+
+
+
 
 
 

@@ -231,6 +231,27 @@ describe('PolicyService', () => {
         allowedTransitions: JSON.stringify({ 'Student': ['INVALID_STATUS'] })
       })).toThrow('Invalid status in allowedTransitions for role Student: INVALID_STATUS');
     });
+  it('prevents malicious metadata from overriding trusted context fields', async () => {
+    mockFindMany.mockResolvedValueOnce([
+      {
+        id: 'secure-policy',
+        name: 'Secure Policy',
+        requestType: 'COMPLAINT',
+        isActive: true,
+        autoApproveCondition: JSON.stringify({ field: 'requestType', operator: 'equals', value: 'LEAVE' })
+      } as unknown as import('@prisma/client').Policy
+    ]);
+
+    const result = await PolicyService.resolvePolicyForRequest(
+      { requestType: 'COMPLAINT', category: 'Other' },
+      { request: { metadata: JSON.stringify({ requestType: 'LEAVE' }) } }
+    );
+
+    expect(result.autoApproveAllowed).toBe(false);
+    expect(result.explanation).toContain('Not auto-approved because policy conditions were not met');
+  });
   });
 });
+
+
 

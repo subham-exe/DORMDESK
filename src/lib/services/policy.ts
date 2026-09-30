@@ -72,10 +72,10 @@ export class PolicyService {
         
         // Build evaluation context securely
         const evalContext = {
-           requestType: payload.requestType,
+           ...metadataObj, // Untrusted fields first
+           requestType: payload.requestType, // Trusted fields last to prevent overwrite
            category: payload.category,
-           domain: payload.domain,
-           ...metadataObj
+           domain: payload.domain
         };
 
         const isApproved = PolicyConditionEvaluator.evaluate(condition, evalContext);
@@ -269,4 +269,5 @@ export class PolicyService {
     }, actorId);
   }
 }
+
 

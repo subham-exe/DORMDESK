@@ -94,7 +94,7 @@ export class RoutingEngine {
 
     for (const dict of DICTIONARY) {
       let score = 0;
-      let evidence: string[] = [];
+      const evidence: string[] = [];
 
       if (!dict.requestType.includes(requestType)) {
         continue; // Hard constraint: must match request type
@@ -107,12 +107,10 @@ export class RoutingEngine {
       }
 
       // Signal matches in description
-      let signalMatches = 0;
-      for (const signal of dict.signals) {
+            for (const signal of dict.signals) {
         // Regex word boundary matching for whole word match
         const regex = new RegExp(`\\b${signal}\\b`, 'i');
         if (regex.test(descLower)) {
-          signalMatches++;
           score += 15;
           evidence.push(`Description contained keyword '${signal}' (+15)`);
         }
@@ -142,8 +140,8 @@ export class RoutingEngine {
        manualReviewRequired = false;
     } else if (highestScore >= 30) {
        confidence = 'MEDIUM';
-       safeConfidence = true;
-       manualReviewRequired = false;
+       safeConfidence = false;
+       manualReviewRequired = true;
     } else if (highestScore > 0) {
        confidence = 'LOW';
        // Low confidence falls back to manual review
@@ -212,3 +210,5 @@ export class RoutingEngine {
     };
   }
 }
+
+

@@ -1,7 +1,7 @@
 export interface PolicyCondition {
   field?: string;
   operator?: 'equals' | 'not_equals' | 'lt' | 'lte' | 'gt' | 'gte' | 'in' | 'not_in' | 'exists';
-  value?: any;
+  value?: unknown;
   all?: PolicyCondition[];
   any?: PolicyCondition[];
   not?: PolicyCondition;
@@ -11,7 +11,8 @@ export interface PolicyCondition {
 }
 
 export class PolicyConditionEvaluator {
-  static evaluate(condition: PolicyCondition, context: Record<string, any>): boolean {
+  static evaluate(condition: PolicyCondition, context: Record<string, unknown>, depth: number = 0): boolean {
+    if (depth > 10) return false; // Prevent uncontrolled recursion
     // Legacy support for short-leave auto approval
     if (condition.type === 'LEAVE_DAYS_LESS_THAN_OR_EQUAL') {
       const leaveDays = context.leaveDays;
@@ -19,13 +20,13 @@ export class PolicyConditionEvaluator {
     }
 
     if (condition.all && Array.isArray(condition.all)) {
-      return condition.all.every(c => this.evaluate(c, context));
+      return condition.all.every(c => this.evaluate(c, context, depth + 1));
     }
     if (condition.any && Array.isArray(condition.any)) {
-      return condition.any.some(c => this.evaluate(c, context));
+      return condition.any.some(c => this.evaluate(c, context, depth + 1));
     }
     if (condition.not) {
-      return !this.evaluate(condition.not, context);
+      return !this.evaluate(condition.not, context, depth + 1);
     }
 
     if (condition.field && condition.operator) {
@@ -37,11 +38,11 @@ export class PolicyConditionEvaluator {
     return false;
   }
 
-  private static getNestedValue(obj: any, path: string): any {
-    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+  private static getNestedValue(obj: unknown, path: string): unknown {
+    return path.split('.').reduce((acc: unknown, part) => (acc as Record<string, unknown>)?.[part], obj);
   }
 
-  private static evaluateComparison(fieldValue: any, operator: string, targetValue: any): boolean {
+  private static evaluateComparison(fieldValue: unknown, operator: string, targetValue: unknown): boolean {
     switch (operator) {
       case 'equals':
         return fieldValue === targetValue;
@@ -66,3 +67,6 @@ export class PolicyConditionEvaluator {
     }
   }
 }
+
+
+

@@ -52,6 +52,7 @@ async function logAudit(requestId: string, actorId: string | null, action: strin
   try {
     await AuditService.log({
       actorId,
+      actorName: actorId === null ? 'System Engine' : undefined,
       action,
       domain: 'Request',
       targetId: requestId,
@@ -162,7 +163,10 @@ export class RequestEngine {
         await triggerNotification(request.id, 'ASSIGNED', routeResult.authorityUserId);
       }
 
-      return request;
+      const { IncidentIntelligenceService } = await import('./incident-intelligence');
+      await IncidentIntelligenceService.matchAndLinkNewRequest(request.id, null).catch(console.error);
+      const updatedRequest = await prisma.request.findUnique({ where: { id: request.id } });
+      return updatedRequest || request;
     } catch (error: unknown) {
       if (
         error && 
@@ -299,7 +303,7 @@ export class RequestEngine {
     return updated;
   }
 
-  static async clusterIntoIncident(requestIds: string[], title: string, description: string, category: string, location: string, department: string, actorId: string) {
+  static async clusterIntoIncident(requestIds: string[], title: string, description: string, category: string, location: string, department: string, actorId: string | null) {
     const incident = await prisma.incident.create({
       data: {
         title,
@@ -332,7 +336,7 @@ export class RequestEngine {
     return incident;
   }
 
-  static async attachToIncident(incidentId: string, requestIds: string[], actorId: string) {
+  static async attachToIncident(incidentId: string, requestIds: string[], actorId: string | null) {
     for (const id of requestIds) {
       const request = await prisma.request.findUnique({ where: { id } });
       if (!request) continue;
@@ -351,6 +355,10 @@ export class RequestEngine {
     }
   }
 }
+
+
+
+
 
 
 

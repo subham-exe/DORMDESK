@@ -127,13 +127,13 @@ requests: any[]) => {
 
 export const getCachedRequests = async (userId: string) => {
   const db = await openOfflineDB();
-  return new Promise<any[]>((resolve, reject) => {
+  return new Promise<unknown[]>((resolve, reject) => {
     const tx = db.transaction("cached_requests", "readonly");
     const store = tx.objectStore("cached_requests");
     const index = store.index("userId");
     const req = index.getAll(userId);
     req.onsuccess = () => {
-      const results = req.result.map((r: any) => r.data);
+      const results = req.result.map((r: { data: unknown }) => r.data);
       resolve(results);
     };
     req.onerror = () => reject(req.error);
@@ -157,15 +157,17 @@ notifications: any[]) => {
 
 export const getCachedNotifications = async (userId: string) => {
   const db = await openOfflineDB();
-  return new Promise<any[]>((resolve, reject) => {
+  return new Promise<unknown[]>((resolve, reject) => {
     const tx = db.transaction("cached_notifications", "readonly");
     const store = tx.objectStore("cached_notifications");
     const index = store.index("userId");
     const req = index.getAll(userId);
     req.onsuccess = () => {
-      const results = req.result.map((r: any) => r.data);
+      const results = req.result.map((r: { data: unknown }) => r.data);
       resolve(results);
     };
     req.onerror = () => reject(req.error);
   });
 };
+
+

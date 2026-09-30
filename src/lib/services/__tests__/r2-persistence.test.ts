@@ -4,19 +4,19 @@ import { RequestEngine } from '../request-engine';
 import { PolicyService } from '../policy';
 
 describe('R2 - Request Engine Persistence (Policy & Routing & SLA)', () => {
-  let student: any;
-  let staff: any;
+  let student: import('@prisma/client').User;
+  let staff: import('@prisma/client').User;
 
   beforeAll(async () => {
     // We expect the Q seeds to be present.
-    student = await prisma.user.findFirst({ where: { role: 'Student' } });
+    student = (await prisma.user.findFirst({ where: { role: 'Student' } })) as import('@prisma/client').User;
     if (!student) {
       student = await prisma.user.create({ data: { id: 'test-student-r2', email: 'test-r2@demo.local', password: 'hash', name: 'R2 Student', role: 'Student' } });
     }
     
     // Add a single electrical staff to test deterministic routing
     
-    staff = await prisma.user.findFirst({ where: { department: 'Electrical', role: 'Staff' } });
+    staff = (await prisma.user.findFirst({ where: { department: 'Electrical', role: 'Staff' } })) as import('@prisma/client').User;
     if (!staff) { staff = await prisma.user.create({ data: { id: 'test-staff-elec-r2', email: 'elec-r2@demo.local', password: 'hash', name: 'R2 Electrician', role: 'Staff', department: 'Electrical' } }); }
   });
 
@@ -120,6 +120,9 @@ describe('R2 - Request Engine Persistence (Policy & Routing & SLA)', () => {
     await PolicyService.deletePolicy(policy.id, student.id);
   });
 });
+
+
+
 
 
 
