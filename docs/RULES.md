@@ -56,6 +56,7 @@ Do not create separate incompatible workflow engines for individual modules. New
 - Preserve the agreed request/entity contracts.
 
 ## 8. Database Rules
+- **Seed Destructiveness:** The database seed script (`prisma db seed`) is inherently destructive by design. It initiates a `deleteMany` operation across all tables before recreating deterministic data. It must only be used during local demo setups or explicit resets (`npm run local:reset`), never on production.
 - Prisma is the schema authority.
 - SQLite is the hackathon database.
 - Migrations must remain reproducible.
@@ -143,3 +144,20 @@ Subham is the final integrator. Before merging:
 
 ## 21. Demo Rules
 The final demo should prioritize complete workflows, visible accountability, admin visibility, accessibility, realistic seeded data, and clear cause → request → action → resolution flow. Do not sacrifice working core workflows for additional unfinished features.
+
+## 22. Request Accountability Rules
+- Clients must never directly write history or audit events.
+- Lifecycle mutations (via \RequestEngine\) must natively persist all relevant operational history alongside the primary request transition.
+- Current request state and historical request state must remain conceptually and physically separate in persistence.
+- The UI timeline must always reflect the server-authoritative state explicitly merged on the backend, not via fuzzy frontend parsing.
+
+
+## 23. SLA and Incident Persistence Rules
+- **SLA Authority:** \SLAService\ is the sole calculation authority. It must synchronously update the \RequestSLA\ record to reflect any warnings or breaches. Clients must not evaluate SLA independently.
+- **Incident Grouping:** Incident clustering remains 100% deterministic, based on explicit string matching (category/location) and time-bounding. AI/ML clustering is prohibited. Deletion of an incident must never trigger the cascaded deletion of its underlying operational requests.
+
+
+## 24. Request Idempotency & Retries
+- **Idempotency Final Authority:** Idempotency keys must be enforced strictly via database unique constraints.
+- **Retry Semantics:** Client retries�especially offline queue synchronization packets�must seamlessly resolve to the original Request without producing duplicated side effects (Audit, Notification, History) or uncaught generic \P2002\ exceptions.
+

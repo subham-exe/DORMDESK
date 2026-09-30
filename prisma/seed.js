@@ -15,6 +15,12 @@ async function main() {
   await prisma.announcement.deleteMany();
   await prisma.escalation.deleteMany();
   await prisma.notification.deleteMany();
+  
+  await prisma.requestStatusHistory.deleteMany();
+  await prisma.requestAssignment.deleteMany();
+  await prisma.requestSLA.deleteMany();
+  await prisma.smsOutbox.deleteMany();
+
   await prisma.request.deleteMany();
   await prisma.incident.deleteMany();
   await prisma.scholarship.deleteMany();
@@ -29,16 +35,17 @@ async function main() {
 
   console.log('Seeding Users (Demo Core)...');
   const users = {
-    student: await prisma.user.create({ data: { email: 'student@demo.local', password: hashedPassword, name: 'Student (Judge)', role: 'Student', department: 'Computer Science', year: 2, branch: 'CSE', isResident: true, hostel: 'Hostel A', block: 'North', room: '101' } }),
-    warden: await prisma.user.create({ data: { email: 'warden@demo.local', password: hashedPassword, name: 'Warden', role: 'Warden', hostel: 'Hostel A' } }),
-    staff: await prisma.user.create({ data: { email: 'staff@demo.local', password: hashedPassword, name: 'Staff (Plumbing)', role: 'Staff', department: 'Plumbing' } }),
-    admin: await prisma.user.create({ data: { email: 'admin@demo.local', password: hashedPassword, name: 'Admin (Command Center)', role: 'Admin' } }),
+    student: await prisma.user.create({ data: { id: 'usr-student', email: 'student@demo.local', password: hashedPassword, name: 'Student (Judge)', role: 'Student', department: 'Computer Science', year: 2, branch: 'CSE', isResident: true, hostel: 'Hostel A', block: 'North', room: '101' } }),
+    warden: await prisma.user.create({ data: { id: 'usr-warden', email: 'warden@demo.local', password: hashedPassword, name: 'Warden', role: 'Warden', hostel: 'Hostel A' } }),
+    staff: await prisma.user.create({ data: { id: 'usr-staff', email: 'staff@demo.local', password: hashedPassword, name: 'Staff (Plumbing)', role: 'Staff', department: 'Plumbing' } }),
+    admin: await prisma.user.create({ data: { id: 'usr-admin', email: 'admin@demo.local', password: hashedPassword, name: 'Admin (Command Center)', role: 'Admin' } }),
   };
 
   const extraStudents = [];
   for(let i = 1; i <= 3; i++) {
     extraStudents.push(await prisma.user.create({
       data: {
+        id: `usr-peer-${i}`,
         email: `peer${i}@demo.local`,
         password: hashedPassword,
         name: `Peer Student ${i}`,
@@ -54,6 +61,7 @@ async function main() {
   await prisma.policy.createMany({
     data: [
       {
+        id: 'pol-general',
         name: 'General Complaint SLA',
         description: 'All complaints have a 24-hour target SLA by default',
         requestType: 'COMPLAINT',
@@ -62,6 +70,7 @@ async function main() {
         isActive: true,
       },
       {
+        id: 'pol-plumbing',
         name: 'Plumbing Escalation Policy',
         description: 'Plumbing complaints escalate to Warden if SLA breached',
         requestType: 'COMPLAINT',
@@ -72,6 +81,7 @@ async function main() {
         isActive: true,
       },
       {
+        id: 'pol-fallback',
         name: 'Default Fallback Policy',
         description: 'Catch-all policy',
         approvalRequired: true,
@@ -90,6 +100,7 @@ async function main() {
     const ticketId = ticketCounter++;
     return prisma.request.create({
       data: {
+        id: `req-${ticketPrefix.toLowerCase()}-${ticketId}`,
         ticketNumber: `${ticketPrefix}-${ticketId.toString().padStart(4, '0')}`,
         requestType: type,
         category,
@@ -98,7 +109,14 @@ async function main() {
         location: loc,
         priority: prio,
         status: status,
-        ...extra
+        ...extra,
+        requestSla: extra.SLA ? {
+          create: {
+            targetHours: extra.SLA,
+            dueAt: extra.dueAt || new Date(Date.now() + extra.SLA * 3600000),
+            status: extra.status === 'RESOLVED' ? 'RESOLVED' : (extra.dueAt && extra.dueAt < new Date() ? 'BREACHED' : 'ACTIVE')
+          }
+        } : undefined
       }
     });
   };
@@ -126,6 +144,7 @@ async function main() {
 
   await prisma.escalation.create({
     data: {
+      id: 'esc-1',
       requestId: breached.id,
       level: 1,
       createdAt: new Date(now - 1 * ONE_HOUR)
@@ -142,6 +161,7 @@ async function main() {
   // Notification to Warden about the escalation
   await prisma.notification.create({
     data: {
+      id: 'notif-1',
       recipientId: users.warden.id,
       title: 'Escalation: SLA Breached',
       message: `Request ${breached.ticketNumber} has breached its SLA. Action required.`,
@@ -153,6 +173,7 @@ async function main() {
   // Simulated SMS outbox for the escalation
   await prisma.smsOutbox.create({
     data: {
+      id: 'sms-1',
       recipientId: users.warden.id,
       phoneNumber: '+91-555-WARDEN1',
       message: `DORMDESK ESCALATION: Request ${breached.ticketNumber} breached SLA.`,

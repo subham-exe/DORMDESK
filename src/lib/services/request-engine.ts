@@ -75,32 +75,69 @@ export class RequestEngine {
 
     const autoApprove = policyResult.autoApproveAllowed;
 
-    const ticketNumber = `${payload.requestType.substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+    const ticketNumber = `${payload.requestType.substring(0, 3).toUpperCase()}-${Math.floor(Math.random() * 90000 + 10000)}`;
     
-    const request = await prisma.request.create({
-      data: {
-        ticketNumber,
-        requestType: payload.requestType,
-        category: payload.category,
-        requesterId: payload.requesterId,
-        description: payload.description,
-        location: payload.location,
-        priority: payload.priority || 'LOW',
-        status: autoApprove ? 'APPROVED' : 'PENDING',
-        metadata: payload.metadata ? JSON.stringify(payload.metadata) : null,
-        idempotencyKey: payload.idempotencyKey || null,
-        SLA: policyResult.slaHours,
-      },
-    });
+    try {
+      const request = await prisma.request.create({
+        data: {
+          ticketNumber,
+          requestType: payload.requestType,
+          category: payload.category,
+          requesterId: payload.requesterId,
+          description: payload.description,
+          location: payload.location,
+          priority: payload.priority || 'LOW',
+          status: autoApprove ? 'APPROVED' : 'PENDING',
+          metadata: payload.metadata ? JSON.stringify(payload.metadata) : null,
+          idempotencyKey: payload.idempotencyKey || null,
+          SLA: policyResult.slaHours,
+          dueAt: policyResult.slaHours ? new Date(Date.now() + policyResult.slaHours * 3600000) : null,
+          policyId: policyResult.policyId || null,
+          requestSla: policyResult.slaHours ? {
+            create: {
+              targetHours: policyResult.slaHours,
+              dueAt: new Date(Date.now() + policyResult.slaHours * 3600000)
+            }
+          } : undefined,
+          statusHistory: {
+            create: {
+              toStatus: autoApprove ? 'APPROVED' : 'PENDING',
+              actorId: payload.requesterId
+            }
+          }
+        },
+      });
 
-    await logAudit(request.id, payload.requesterId, 'CREATED');
-    await triggerNotification(request.id, 'CREATED');
-    
-    if (autoApprove) {
-      await logAudit(request.id, payload.requesterId, 'AUTO_APPROVED', { reason: policyResult.explanation, policyId: policyResult.policyId });
+      await logAudit(request.id, payload.requesterId, 'CREATED');
+      await triggerNotification(request.id, 'CREATED');
+      
+      if (autoApprove) {
+        await logAudit(request.id, payload.requesterId, 'AUTO_APPROVED', { reason: policyResult.explanation, policyId: policyResult.policyId });
+      }
+
+      return request;
+    } catch (error: unknown) {
+      if (
+        error && 
+        typeof error === 'object' && 
+        'code' in error && 
+        error.code === 'P2002' && 
+        payload.idempotencyKey
+      ) {
+        // Inspect meta target. In SQLite it usually looks like ['idempotencyKey']
+        // We do a final read to ensure it's specifically the idempotencyKey constraint that failed.
+        const e = error as { meta?: { target?: string[] } };
+        const isIdempotencyConflict = Array.isArray(e.meta?.target) && e.meta?.target.includes('idempotencyKey');
+        const fallbackExisting = await prisma.request.findUnique({ where: { idempotencyKey: payload.idempotencyKey } });
+        
+        if (isIdempotencyConflict && fallbackExisting) {
+          return fallbackExisting;
+        } else if (fallbackExisting) {
+          return fallbackExisting; // If target check is flaky, but we DO have it
+        }
+      }
+      throw error;
     }
-
-    return request;
   }
 
   static async assignRequest(payload: AssignRequestPayload) {
@@ -130,6 +167,19 @@ export class RequestEngine {
         assignedAuthorityId: payload.assigneeId,
         assignedDepartment: payload.department,
         status: 'ASSIGNED',
+        assignmentHistory: {
+          create: {
+            assigneeId: payload.assigneeId,
+            assignedBy: payload.actorId
+          }
+        },
+        statusHistory: request.status !== 'ASSIGNED' ? {
+          create: {
+            fromStatus: request.status,
+            toStatus: 'ASSIGNED',
+            actorId: payload.actorId
+          }
+        } : undefined
       },
     });
 
@@ -175,6 +225,14 @@ export class RequestEngine {
         status: payload.newStatus,
         resolvedAt: isTerminal ? new Date() : (isWIP ? null : undefined),
         updatedAt: new Date(),
+        statusHistory: request.status !== payload.newStatus ? {
+          create: {
+            fromStatus: request.status,
+            toStatus: payload.newStatus,
+            actorId: payload.actorId,
+            reason: payload.notes
+          }
+        } : undefined
       },
     });
 

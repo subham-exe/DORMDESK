@@ -220,24 +220,67 @@ export const AdminAPI = {
       where: { id },
       include: {
         requester: true,
-        assignedAuthority: true
+        assignedAuthority: true,
+        statusHistory: true,
+        assignmentHistory: true
       }
     });
     if (!req) return null;
 
     const auditLogs = await prisma.auditLog.findMany({
       where: { entity: "Request", entityId: id },
-      include: { actor: true },
-      orderBy: { timestamp: 'desc' }
+      orderBy: { timestamp: 'asc' }
     });
 
-    const events: AdminRequestEvent[] = auditLogs.map(log => ({
-      id: log.id,
-      action: log.action,
-      timestamp: log.timestamp.toISOString(),
-      actor: { name: log.actor?.name || 'SYSTEM', id: log.actorId || 'SYSTEM' },
-      metadata: log.metadata ? JSON.parse(log.metadata) : undefined
-    }));
+    const actorIds = new Set<string>();
+    req.statusHistory.forEach(h => { if (h.actorId) actorIds.add(h.actorId); });
+    req.assignmentHistory.forEach(h => { 
+      if (h.assignedBy) actorIds.add(h.assignedBy); 
+      if (h.assigneeId) actorIds.add(h.assigneeId); 
+    });
+    auditLogs.forEach(l => { if (l.actorId) actorIds.add(l.actorId); });
+
+    const actors = await prisma.user.findMany({ where: { id: { in: Array.from(actorIds) } } });
+    const actorMap = new Map(actors.map(a => [a.id, a]));
+
+    const events: AdminRequestEvent[] = [];
+
+    req.statusHistory.forEach(h => {
+      const actor = h.actorId ? actorMap.get(h.actorId) : null;
+      events.push({
+        id: h.id,
+        action: h.fromStatus === null ? "CREATED" : `STATUS_CHANGED_${h.toStatus}`,
+        timestamp: h.createdAt.toISOString(),
+        actor: { name: actor?.name || 'SYSTEM', id: h.actorId || 'SYSTEM' },
+        metadata: h.reason ? { resolutionNotes: h.reason } : undefined
+      });
+    });
+
+    req.assignmentHistory.forEach(h => {
+      const assigner = h.assignedBy ? actorMap.get(h.assignedBy) : null;
+      const assignee = actorMap.get(h.assigneeId);
+      events.push({
+        id: h.id,
+        action: 'ASSIGNED',
+        timestamp: h.assignedAt.toISOString(),
+        actor: { name: assigner?.name || 'SYSTEM', id: h.assignedBy || 'SYSTEM' },
+        metadata: { assignedTo: assignee?.name || h.assigneeId }
+      });
+    });
+
+    auditLogs.forEach(log => {
+      if (log.action !== 'STATUS_CHANGED' && !log.action.startsWith('STATUS_CHANGED_') && log.action !== 'ASSIGNED' && log.action !== 'CREATED') {
+        events.push({
+          id: log.id,
+          action: log.action,
+          timestamp: log.timestamp.toISOString(),
+          actor: { name: log.actorName || (log.actorId ? actorMap.get(log.actorId)?.name || 'SYSTEM' : 'SYSTEM'), id: log.actorId || 'SYSTEM' },
+          metadata: log.metadata ? JSON.parse(log.metadata) : undefined
+        });
+      }
+    });
+
+    events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     return {
       ...mapToAdminRequest(req),

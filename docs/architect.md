@@ -1619,3 +1619,47 @@ ull).
 - **Zero-Touch Auto-Approval:** Leave requests of <= 2 days bypass PENDING directly to APPROVED, logging an AUTO_APPROVED audit event.
 - **Auto-Close:** Transitioning a request to VERIFIED automatically chains a system transition to CLOSED, accompanied by the audit note 'System: Auto-closed after verification'.
 - **Status Change:** Status transitions trigger an audit event STATUS_CHANGED and an in-app notification STATUS_CHANGED_{newStatus} to the requester.
+
+## Q2.3 Addendum: Accountability & Timeline
+- **Request Accountability:** Request lifecycle history is now explicitly modeled via \RequestStatusHistory\ and \RequestAssignment\.
+- **Authoritative Timeline:** The Request timeline exposed via API is generated securely on the backend by chronologically merging explicit history relations and audit log anomalies, guaranteeing UI consistency without client-side fuzzy parsing.
+- **Audit Distinctness:** The \AuditLog\ focuses on immutability (capturing actor identity strings) and system-wide security, while Request-specific histories focus on operational workflow. Both serve complementary, distinct purposes.
+- **Security:** Clients cannot directly write history; all history is securely generated via \RequestEngine\ lifecycle mutations.
+
+
+## Q2.4 Addendum: SLA & Incident Persistence
+- **SLA Persistence Authority:** The \SLAService\ is explicitly authoritative over the \RequestSLA\ database record. Warning and Breach times are now securely and deterministically pushed directly into the model rather than relying solely on ephemeral calculations.
+- **Timestamp Synchronicity:** When a \Request\ is created, its top-level \dueAt\ is strictly locked and synchronized with the newly minted \RequestSLA.dueAt\ to prevent silent target divergence.
+- **Deterministic Incident Groupings:** Incidents strictly group using exact matching (\category\ + \location\ in last 24h) via \IncidentIntelligenceService\. Deleting an incident safely detaches requests without causing a destructive cascade. ML/Embeddings remain strictly prohibited.
+
+
+## Q2.5 Addendum: Idempotency & Database Constraints
+- **Database Authority:** The \@unique\ index on \Request.idempotencyKey\ serves as the absolute authority on preventing duplicated operational records.
+- **Race Condition Resolution:** The system anticipates duplicate concurrent requests (such as a retried offline-queue network packet). If \RequestEngine.createRequest\ encounters a \P2002\ unique violation specific to \idempotencyKey\, it cleanly catches the exception, resolving and returning the initial Request instance natively.
+- **Side Effect Atomicity:** Audit logs and asynchronous Notification events reside downstream of the \prisma.request.create\ step to definitively eliminate side-effect duplication during a concurrency race failure.
+
+
+## Q2.6 Addendum: Query-Driven Database Indexes
+- **Performance Integrity:** Composite database indexes have been surgically added to support the existing production query paths used by `CommandCenterService`, `AdminAPI`, `RequestEngine`, and `AcademicService`.
+- **Targeted Strategies:** 
+  - `Request` model uses dual-column composite indexes (`[status, createdAt]`, `[status, updatedAt]`, `[requesterId, updatedAt]`, `[status, resolvedAt]`) for extremely rapid frontend dashboard filtering and chronological sorting.
+  - `AuditLog` leverages `[entity, entityId, timestamp]` for rapid contextual timeline reconstruction.
+  - `Incident` utilizes `[status, createdAt]` for open-incident fetching.
+  - `Escalation` utilizes `[createdAt]` and `Policy` utilizes `[isActive, updatedAt]` for active monitoring.
+- **Avoidance of Speculation:** No redundant or speculative single-column indexes were added, preserving write-performance and respecting the principle of boring, targeted relational architecture.
+
+## Q2.7 Addendum: Migration & Startup Hardening
+- **Migration Authority:** The application relies completely on `prisma migrate deploy` to evolve the schema. Implicit schema mutation via `prisma db push` during normal startup (`npm run local`) is strictly disabled to prevent destructive data loss and desynchronization.
+- **Startup Safety:** Normal startup (`npm run local` or `npm run dev`) is now purely passive regarding schema state. It verifies the database file exists and halts with an instructive error if not, requiring an explicit database deployment via `npm run db:deploy`.
+- **Destructive Reset Preservation:** Local development retains a functional `npm run local:reset` command utilizing `prisma migrate reset --force --skip-generate --skip-seed && npx prisma db seed`, properly honoring the migration history while completely resetting and seeding the demo environment.
+
+## Q2.8 Addendum: Deterministic Seed & Reset Validation
+- **Seed Contract:** The seed script (`prisma db seed`) explicitly implements a "reset-before-seed" contract internally via `deleteMany()`. This ensures 100% deterministic recreation of demo scenarios without duplication.
+- **Explicit Identifiers:** All core entities generated during seed (Users, Policies, Requests, Escalations, Notifications) now use explicit deterministic UUIDs/strings (e.g., `usr-student`, `pol-general`). This guarantees absolute functional and referential stability across iterative reset/seed cycles.
+- **Preserved Idempotency:** The deterministic seed respects the Q2.5 constraint guarantees and the Q2.6 query indexes while preserving a stable baseline for functional frontend testing.
+
+## Q2.9 Addendum: Full Persistence Regression Suite
+- **Persistence Proven:** A comprehensive, multi-file regression suite strictly validates the real SQLite database behavior. This explicitly moves beyond in-memory API stubs to ensure physical persistence integrity across the Q2.2-Q2.8 architecture changes.
+- **Process Reload Survival:** Tests explicitly instantiate entirely fresh PrismaClient instances to confirm that complex relation graphs (RequestStatusHistory, RequestAssignment, RequestSLA) successfully survive process death and database reconnection without data loss or corruption.
+- **End-to-End Contract Assurance:** The suite conclusively verifies all database contracts, including constraint integrity, complex multi-entity atomic transactions, deterministic seeding, SLA sync loops, and immutable audit logs.
+

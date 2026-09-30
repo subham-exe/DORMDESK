@@ -733,21 +733,34 @@ When something does not fit, stop and coordinate rather than silently creating a
 - Node.js (v18+)
 - npm
 
-## Quick Start (One Command)
+## Database Deployment
+DORMDESK relies strictly on authoritative Prisma migrations. Ordinary startup does **not** mutate the database schema.
+
+To deploy committed migrations to your local database (or a fresh instance), run:
+`powershell
+npm run db:deploy
+`
+If this is a fresh setup, you will also need to seed the database:
+`powershell
+npx prisma db seed
+`
+*(Note: The seed script is inherently destructive and performs a `deleteMany` across all tables. It is designed exclusively for fresh setups and explicit resets, and must never be run against a production database.)*
+
+## Quick Start (Normal Startup)
 DORMDESK is a Next.js full-stack application (frontend and API routes run together in one process). There is NO separate backend server to start.
 
-To easily prepare your local database and start the server, run:
+To start the development server against an already migrated database, run:
 `powershell
 npm run local
 `
-This safely synchronizes the schema, optionally seeds if the database is empty, and starts the development server at http://localhost:3000.
+*(Note: This command explicitly assumes the database exists and has been migrated. It will NOT run `prisma db push`.)*
 
 ## Demo Reset
 If you need to explicitly destroy and recreate the local deterministic demo state, use:
 `powershell
 npm run local:reset
 `
-*WARNING: This will destroy all your local data and reset it back to the deterministic demo state.*
+*WARNING: This will destroy all your local data, redeploy all migrations from scratch, run the deterministic seed, and start the app.*
 
 ## Running Manually
 If you just want to run the server without setup checks:

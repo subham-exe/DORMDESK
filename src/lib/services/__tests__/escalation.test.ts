@@ -5,12 +5,9 @@ import { prisma } from '@/lib/db/prisma';
 
 vi.mock('@/lib/db/prisma', () => ({
   prisma: {
-    escalation: {
-      create: vi.fn(),
-    },
-    user: {
-      findMany: vi.fn(),
-    }
+    escalation: { create: vi.fn() },
+    user: { findMany: vi.fn() },
+    requestSLA: { findUnique: vi.fn().mockResolvedValue({ status: 'ACTIVE', id: 'fake-id' }), update: vi.fn() }
   }
 }));
 

@@ -52,6 +52,7 @@ export class NotificationService {
     }
 
     const safeMetadata = this.sanitizeMetadata(payload.metadata);
+    const requestId = payload.metadata?.requestId as string | undefined;
 
     return await prisma.notification.create({
       data: {
@@ -60,6 +61,7 @@ export class NotificationService {
         message: payload.message,
         type: payload.type,
         metadata: safeMetadata,
+        requestId: requestId || null,
       },
     });
   }

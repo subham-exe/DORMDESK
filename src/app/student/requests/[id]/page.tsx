@@ -154,16 +154,16 @@ export default function RequestDetailsPage() {
     reachedStates.add("PENDING");
     stateTimestamps["PENDING"] = request.createdAt;
     
-    // Check audit logs for transitions
-    auditLogs.forEach(log => {
-      if (log.action === "STATUS_CHANGED" && log.metadata?.newStatus) {
-        reachedStates.add(log.metadata.newStatus);
-        stateTimestamps[log.metadata.newStatus] = log.timestamp;
-      }
-      if (log.action === "CREATED") {
-         stateTimestamps["PENDING"] = log.timestamp;
-      }
-    });
+    // Check statusHistory for transitions
+    if (request.statusHistory) {
+      request.statusHistory.forEach((history: any) => {
+        reachedStates.add(history.toStatus);
+        stateTimestamps[history.toStatus] = history.createdAt;
+        if (history.fromStatus === null && history.toStatus === 'PENDING') {
+          stateTimestamps["PENDING"] = history.createdAt;
+        }
+      });
+    }
 
     reachedStates.add(request.status);
 

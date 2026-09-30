@@ -12,7 +12,7 @@ export class EscalationService {
    * Provides idempotent escalation creation with separately executed side effects.
    */
   static async triggerEscalationIfRequired(request: Request, now: Date) {
-    const evaluation = SLAService.evaluate(request, now);
+    const evaluation = await SLAService.evaluate(request, now);
     if (!evaluation) return;
 
     const policy = await PolicyService.resolvePolicyForRequest({

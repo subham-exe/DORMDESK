@@ -54,6 +54,16 @@ export class AuditService {
 
     const safeMetadata = this.sanitizeMetadata(event.metadata);
 
+    let actorName: string | null = null;
+    let actorEmail: string | null = null;
+    if (event.actorId) {
+      const actor = await prisma.user.findUnique({ where: { id: event.actorId } });
+      if (actor) {
+        actorName = actor.name;
+        actorEmail = actor.email;
+      }
+    }
+
     return await prisma.auditLog.create({
       data: {
         actorId: event.actorId,
@@ -61,6 +71,8 @@ export class AuditService {
         entity: event.domain,
         entityId: event.targetId,
         metadata: safeMetadata,
+        actorName,
+        actorEmail,
       },
     });
   }

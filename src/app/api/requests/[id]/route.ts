@@ -12,7 +12,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       include: {
         requester: true,
         assignedAuthority: true,
-        incident: true
+        incident: true,
+        statusHistory: {
+          orderBy: { createdAt: 'asc' }
+        },
+        assignmentHistory: {
+          orderBy: { assignedAt: 'asc' },
+          include: {
+            assignee: { select: { id: true, name: true, email: true } }
+          }
+        }
       }
     });
 

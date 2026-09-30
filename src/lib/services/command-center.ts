@@ -72,7 +72,7 @@ export class CommandCenterService {
       }
 
       // SLA Check via SLAService
-      const sla = SLAService.evaluate(req, now);
+      const sla = await SLAService.evaluate(req, now);
       if (sla) {
         const policyContext = req.SLA ? ` (${req.SLA}h policy)` : '';
         if (sla.isBreached) {

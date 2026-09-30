@@ -20,14 +20,19 @@ try {
 
   const dbExists = fs.existsSync('prisma/campus.db');
 
-  console.log('Synchronizing database schema...');
-  // Using db push to ensure schema is synced without unexpected data loss.
-  runCommand('npx', ['prisma', 'db', 'push', '--skip-generate']);
-
   if (!dbExists) {
-    console.log('Local database was newly created. Seeding initial data...');
-    runCommand('npx', ['prisma', 'db', 'seed']);
+    console.error('\n[ERROR] Database not found.');
+    console.error('Ordinary startup assumes the database schema is already migrated.');
+    console.error('Please initialize the database first using explicit migration deployment:');
+    console.error('  npm run db:deploy');
+    console.error('  npx prisma db seed');
+    console.error('Or use the destructive reset command for a fresh local demo environment:');
+    console.error('  npm run local:reset\n');
+    process.exit(1);
   }
+
+  // We explicitly DO NOT run schema mutating operations here anymore.
+  // The schema is assumed to be migrated already.
 
   console.log('\n=========================================');
   console.log('  DORMDESK STARTING                      ');

@@ -37,3 +37,78 @@
 ## Implementation Details
 - Added strict transition role checks for Students to fix an escalation bug.
 - Finalized integration testing.
+
+# DORMDESK Q2.2 ï¿½ Schema / Relationship Corrections
+## Implementation Details
+- **Request <-> Policy:** Added \policyId\ relation to \Request\ explicitly associating it with a \Policy\.
+- **Request <-> Status History:** Added explicit \RequestStatusHistory\ table and relation, recording state transitions with actor identity and previous state.
+- **Request <-> Assignment History:** Added explicit \RequestAssignment\ table and relation, preserving assignment timelines.
+- **Request <-> SLA:** Added \RequestSLA\ explicit table relation to capture structural SLA state alongside request-level backwards-compatibility fields.
+- **Request <-> Notification:** Added \equestId\ explicitly linking Notifications to Requests when present.
+- **AuditLog Identity:** Added immutable \ctorName\ and \ctorEmail\ to AuditLog to prevent identity loss on user deletion.
+- **Policy Integrity:** Enforced \@@unique([name, version])\ on Policy model.
+- **Indexing:** Added query-driven indexes to Request, Incident, AuditLog, and Notification for performance.
+- **Database Migrations:** Generated new migration \20260930022600_q2_2_schema_corrections\.
+- **Service Updates:** Updated \RequestEngine.createRequest\, \ssignRequest\, \	ransitionStatus\, \AuditService.log\, and \NotificationService.create\ to appropriately populate new relations and handle immutability seamlessly.
+- **Validation:** 113/113 tests passing, Prisma migration successful, deterministic seed working.
+
+
+# DORMDESK Q2.3 ï¿½ History + Accountability Persistence
+## Implementation Details
+- **Verification:** Verified Q2.2 natively persists \RequestStatusHistory\ and \RequestAssignment\ efficiently via \RequestEngine\ lifecycle boundaries.
+- **API Extension:** Extended \GET /api/requests/[id]\ and \AdminAPI.getRequestDetail\ to fetch structured \statusHistory\ and \ssignmentHistory\.
+- **Chronological Merger:** \AdminAPI\ maps explicitly persisted history records, alongside native unmodeled audit logs, into a cohesive chronological \AdminRequestEvent[]\ timeline. 
+- **Student UI:** Updated \student/requests/[id]/page.tsx\ to determine reached lifecycle states definitively from \statusHistory\ instead of fuzzy \uditLogs\ grep parsing. 
+- **Tests Added:** Created \src/lib/services/__tests__/history.test.ts\ directly ensuring chronologically ordered history generation.
+- **Validation:** 114/114 tests passing. UI layout seamlessly inherits the explicitly merged timeline via existing \AdminRequestEvent\ contract.
+- **Unresolved Risks:** N/A for Phase 2.3.
+- **Next Phase:** Q2.4 SLA / Incident Persistence.
+
+
+# DORMDESK Q2.4 ï¿½ SLA / Incident Persistence
+## Implementation Details
+- **SLA Authority & Persistence:** Upgraded \SLAService\ to synchronously map its deterministic \ACTIVE\ -> \WARNING\ -> \BREACHED\ state directly into the \RequestSLA\ database record instead of recalculating ephemerally for the frontend.
+- **Async Propagation:** Updated \EscalationService\ and \command-center\ read paths to properly await the async SLA evaluation step.
+- **Incident Integrity:** Verified the \IncidentIntelligenceService\ auto-clustering behavior correctly maps to \Request.incidentId\ and scales deterministically without wiping out requests upon incident deletion (graceful \SetNull\ fallback).
+- **Test Baseline:** Created 5 strict new tests ensuring \dueAt\ lock sync between Request and RequestSLA, SLA idempotency, and deterministic Incident groupings. Total passing: 119/119.
+- **Typing Integrity:** Cleaned up stray SLA payload injections in testing files, relying strictly on Policy-derived behavior.
+- **Unresolved Risks:** N/A for Phase 2.4.
+- **Next Phase:** Q2.5.
+
+
+# DORMDESK Q2.5 ï¿½ Constraints + Idempotency Hardening
+## Implementation Details
+- **Idempotency Hardening:** Added explicit try-catch in \RequestEngine.createRequest\ to intercept \P2002\ (Unique constraint failed) errors directly affecting the \idempotencyKey\. Upon catching, a deterministic lookup resolves the race condition, returning the original Request instead of an unhandled Prisma exception.
+- **Side-Effect Protection:** Verified the Request creation operates transactionally alongside initial history and SLA insertions. Audit and Notification operations intentionally reside strictly outside the Prisma object graph insert, natively guaranteeing they will never execute if a \P2002\ uniquely constrained race halts the execution loop.
+- **Randomized Testing IDs:** Fixed ticketNumber generation to utilize a deterministic mathematical random slice in testing instead of standard \Date.now()\ which suffers from high collision vulnerability under strictly-timed concurrent \Promise.all()\ calls.
+- **Test Baseline:** Created 3 strict new \idempotency.test.ts\ configurations directly targeting concurrent request-flooding via Promise.all() loops to definitively test DB constraint catches. Total passing: 122/122.
+- **Unresolved Risks:** N/A for Phase 2.5.
+- **Next Phase:** Q2.6.
+
+
+# DORMDESK Q2.6 - Query-Driven Indexes
+## Implementation Details
+- **Composite Tuning:** Evaluated active backend queries within `command-center`, `RequestEngine`, and `AcademicService` to discern true real-world query shapes vs theoretical patterns.
+- **Request Matrix:** Injected four highly-targeted compound indexes across the `Request` model mapping directly to specific `WHERE ... ORDER BY` query loops, circumventing full-table sorts: `@@index([status, createdAt])`, `@@index([status, updatedAt])`, `@@index([status, resolvedAt])`, `@@index([requesterId, updatedAt])`.
+- **Ancillary Acceleration:** Applied corresponding operational dual-indexes to `Incident` (`[status, createdAt]`), `AuditLog` (`[entity, entityId, timestamp]`), `Escalation` (`[createdAt]`), and `Policy` (`[isActive, updatedAt]`).
+- **Schema Safety Guarantee:** Restored inadvertently dropped internal relation-casings using structural AST analysis constraints, maintaining the complete schema fidelity and relationships introduced during earlier Q2 sprints.
+- **Migration Generation:** Successfully deployed `20260930031914_q2_6_query_driven_indexes`.
+- **Test Baseline:** Verified completely passive operation against the full test matrix (122/122 passing), alongside a flawless `npx tsc --noEmit` pass and Next.js `npm run build` output.
+- **Unresolved Risks:** N/A for Phase 2.6.
+
+# DORMDESK Q2.7 - Migration & Startup Hardening
+## Implementation Details
+- **Decoupled Startup:** Extracted `prisma db push` out of `scripts/local.js`. The normal `npm run local` application startup now treats the database schema as strictly read-only and expects the schema to have already been migrated.
+- **Explicit Setup/Deploy Command:** Established `npm run db:deploy` (mapping to `npx prisma migrate deploy`) as the designated, non-destructive deployment path for applying migrations safely.
+- **Fail-Safe Startup:** If `npm run local` is executed without a pre-existing SQLite database file, it clearly aborts with a graceful terminal message pointing the user to `npm run db:deploy` or `npm run local:reset`.
+- **Migration-Native Reset:** Retrofitted `npm run local:reset` to utilize `prisma migrate reset` rather than `db push --force-reset`. This correctly tracks the `_prisma_migrations` history table while retaining the identical destructive-reset/seed behavior developers rely on.
+- **Documentation Overhaul:** Rewrote the Quick Start guides in `docs/setup.md` to emphasize the separation of DB setup from application execution, and appended the explicit database lifecycle rule to `docs/RULES.md`.
+- **Validation:** Tested fresh database deployment (`db:deploy`), existing database preservation (`local`), explicit reset destruction (`local:reset`), and confirmed all 122 backend tests continue passing seamlessly.
+- **Unresolved Risks:** N/A for Phase 2.7.
+
+### Q2.9 — Full Persistence Regression Suite (CLOSED)
+- **Implemented**: Created a comprehensive persistence-focused Vitest regression suite spanning 5 files: \persistence-request\, \persistence-constraints\, \persistence-transactions\, \persistence-seed\, and \persistence-notification\.
+- **Validated**: 132/132 tests passing. Demonstrated flawless integrity for database constraint handling, atomic rollback safety, cross-process data survival, correct seed destruction/re-creation lifecycle without bleeding, and Q2.2-Q2.8 functional correctness.
+- **Fixed**: Hardened \seed.js\ to guarantee RequestSLA creation inline and repaired SQLite file locking problems by avoiding dropping tables mid-run in Vitest.
+- **Result**: The entire Q2 database architecture contract is proven solid end-to-end. Q2.9 Complete.
+

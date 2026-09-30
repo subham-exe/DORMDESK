@@ -1,69 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "sqlite"
   url      = "file:./campus.db"
 }
 
-generator client {
-  provider = "prisma-client-js"
+model Announcement {
+  id           String                @id @default(uuid())
+  title        String
+  body         String
+  createdById  String
+  targetBranch String?
+  targetYear   Int?
+  targetHostel String?
+  targetBlock  String?
+  requiresAck  Boolean               @default(false)
+  priority     String                @default("LOW")
+  createdAt    DateTime              @default(now())
+  creator User @relation("AnnouncementCreator", fields: [createdById], references: [id])
+  receipts     AnnouncementReceipt[]
 }
 
-// User model for One Identity
-model User {
-  id         String  @id @default(uuid())
-  email      String  @unique
-  password   String?
-  name       String
-  role       String // Student, Warden, Admin, Faculty, Staff
-  department String?
-  year       Int?
-  branch     String?
-  isResident Boolean @default(false)
-  hostel     String?
-  block      String?
-  room       String?
-  phone      String?
+model AnnouncementReceipt {
+  id             String       @id @default(uuid())
+  announcementId String
+  userId         String
+  deliveredAt    DateTime     @default(now())
+  readAt         DateTime?
+  acknowledgedAt DateTime?
+  user User @relation(fields: [userId], references: [id])
+  announcement   Announcement @relation(fields: [announcementId], references: [id])
 
-  // Relationships
-  requestsCreated      Request[]             @relation("RequestCreator")
-  requestsAssigned     Request[]             @relation("RequestAssignee")
-  auditLogs            AuditLog[]
-  scholarship          Scholarship?
-  notifications        Notification[]
-  announcementsCreated Announcement[]        @relation("AnnouncementCreator")
-  smsReceived          SmsOutbox[]
-  announcementReceipts AnnouncementReceipt[]
-  messFeedbacks        MessFeedback[]
-
-  coursesOwned Course[]     @relation("CourseFaculty")
-  enrollments  Enrollment[]
-  attendances  Attendance[]
+  @@unique([announcementId, userId])
+  @@index([userId])
 }
 
-model Request {
-  id                  String       @id @default(uuid())
-  ticketNumber        String       @unique
-  requestType         String // COMPLAINT, LEAVE, CERTIFICATE, etc.
-  category            String
-  requesterId         String
-  requester           User         @relation("RequestCreator", fields: [requesterId], references: [id])
-  description         String
-  location            String?
-  priority            String       @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
-  status              String       @default("PENDING") // PENDING, ASSIGNED, ACKNOWLEDGED, PROCESSING, RESOLVED, VERIFIED, CLOSED, REJECTED
-  assignedDepartment  String?
-  assignedAuthorityId String?
-  assignedAuthority   User?        @relation("RequestAssignee", fields: [assignedAuthorityId], references: [id])
-  SLA                 Int? // Hours
-  dueAt               DateTime?
-  incidentId          String?
-  incident            Incident?    @relation(fields: [incidentId], references: [id])
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
-  resolvedAt          DateTime?
-  exitTime            DateTime? // for leave/gate-pass metadata
-  metadata            String? // JSON string for attachments, custom fields, etc.
-  idempotencyKey      String?      @unique
-  escalations         Escalation[]
+model Attendance {
+  id        String       @id @default(uuid())
+  sessionId String
+  studentId String
+  status    String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  student   User         @relation(fields: [studentId], references: [id])
+  session   ClassSession @relation(fields: [sessionId], references: [id])
+
+  @@unique([sessionId, studentId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  action     String
+  entity     String
+  entityId   String
+  timestamp  DateTime @default(now())
+  metadata   String?
+  actorEmail String?
+  actorName  String?
+  actor      User?    @relation(fields: [actorId], references: [id])
+
+  @@index([timestamp])
+  @@index([entity, entityId, timestamp])
+}
+
+model ClassSession {
+  id                 String       @id @default(uuid())
+  courseId           String
+  scheduledAt        DateTime
+  status             String       @default("SCHEDULED")
+  cancellationReason String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  attendances        Attendance[]
+  course             Course       @relation(fields: [courseId], references: [id])
+}
+
+model Course {
+  id          String         @id @default(uuid())
+  code        String         @unique
+  name        String
+  facultyId   String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  sessions    ClassSession[]
+  user        User           @relation(fields: [facultyId], references: [id])
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  courseId  String
+  studentId String
+  createdAt DateTime @default(now())
+  student   User     @relation(fields: [studentId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([courseId, studentId])
+}
+
+model Escalation {
+  id        String   @id @default(uuid())
+  requestId String
+  level     Int      @default(1)
+  createdAt DateTime @default(now())
+  request   Request  @relation(fields: [requestId], references: [id])
+
+  @@unique([requestId, level])
+  @@index([requestId, createdAt])
+  @@index([createdAt])
 }
 
 model Incident {
@@ -77,197 +124,216 @@ model Incident {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   resolvedAt         DateTime?
-  impactScore        Int?      @default(0)
   groupingReason     String?
+  impactScore        Int?      @default(0)
   requests           Request[]
-}
 
-model Scholarship {
-  id           String   @id @default(uuid())
-  studentId    String   @unique
-  student      User     @relation(fields: [studentId], references: [id])
-  academicYear String
-  status       String // ELIGIBLE, APPLIED, SUBMITTED, UNDER_VERIFICATION, APPROVED, SANCTIONED, DISBURSED, REJECTED, CANCELLED
-  updatedAt    DateTime @updatedAt
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  actorId   String?
-  actor     User?    @relation(fields: [actorId], references: [id])
-  action    String
-  entity    String
-  entityId  String
-  timestamp DateTime @default(now())
-  metadata  String? // JSON string
-}
-
-model Notification {
-  id          String    @id @default(uuid())
-  recipientId String
-  recipient   User      @relation(fields: [recipientId], references: [id])
-  title       String
-  message     String
-  type        String // e.g., 'REQUEST_UPDATE', 'SYSTEM_ALERT'
-  readAt      DateTime? // null indicates unread
-  metadata    String? // JSON string
-  createdAt   DateTime  @default(now())
-
-  @@index([recipientId, createdAt])
-}
-
-model Escalation {
-  id        String   @id @default(uuid())
-  requestId String
-  level     Int      @default(1)
-  createdAt DateTime @default(now())
-
-  request Request @relation(fields: [requestId], references: [id])
-
-  @@unique([requestId, level])
-  @@index([requestId, createdAt])
-}
-
-model Announcement {
-  id           String   @id @default(uuid())
-  title        String
-  body         String
-  createdById  String
-  creator      User     @relation("AnnouncementCreator", fields: [createdById], references: [id])
-  targetBranch String?
-  targetYear   Int?
-  targetHostel String?
-  targetBlock  String?
-  requiresAck  Boolean  @default(false)
-  priority     String   @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
-  createdAt    DateTime @default(now())
-
-  receipts AnnouncementReceipt[]
-}
-
-model AnnouncementReceipt {
-  id             String       @id @default(uuid())
-  announcementId String
-  announcement   Announcement @relation(fields: [announcementId], references: [id])
-  userId         String
-  user           User         @relation(fields: [userId], references: [id])
-  deliveredAt    DateTime     @default(now())
-  readAt         DateTime?
-  acknowledgedAt DateTime?
-
-  @@unique([announcementId, userId])
-  @@index([userId])
-}
-
-model MessMenu {
-  id        String   @id @default(uuid())
-  date      DateTime
-  mealType  String // BREAKFAST, LUNCH, SNACKS, DINNER
-  items     String
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  feedbacks MessFeedback[]
-
-  @@unique([date, mealType])
+  @@index([impactScore])
+  @@index([status])
+  @@index([status, createdAt])
 }
 
 model MessFeedback {
   id        String   @id @default(uuid())
   menuId    String
-  menu      MessMenu @relation(fields: [menuId], references: [id], onDelete: Cascade)
   studentId String
-  student   User     @relation(fields: [studentId], references: [id])
   rating    Int
   comment   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  student   User     @relation(fields: [studentId], references: [id])
+  menu      MessMenu @relation(fields: [menuId], references: [id], onDelete: Cascade)
 
   @@unique([menuId, studentId])
+}
+
+model MessMenu {
+  id        String         @id @default(uuid())
+  date      DateTime
+  mealType  String
+  items     String
+  notes     String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  feedbacks MessFeedback[]
+
+  @@unique([date, mealType])
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  recipientId String
+  title       String
+  message     String
+  type        String
+  readAt      DateTime?
+  metadata    String?
+  createdAt   DateTime  @default(now())
+  requestId   String?
+  request     Request?  @relation(fields: [requestId], references: [id])
+  recipient   User      @relation(fields: [recipientId], references: [id])
+
+  @@index([recipientId, readAt])
+  @@index([recipientId, createdAt])
+}
+
+model Policy {
+  id                   String    @id @default(uuid())
+  name                 String
+  description          String?
+  requestType          String?
+  category             String?
+  domain               String?
+  approvalRequired     Boolean   @default(true)
+  autoApproveCondition String?
+  slaHours             Int?
+  escalationPolicy     String?
+  allowedTransitions   String?
+  isActive             Boolean   @default(true)
+  version              Int       @default(1)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  requests             Request[]
+
+  @@unique([name, version])
+  @@index([isActive, updatedAt])
+}
+
+model Request {
+  id                  String                 @id @default(uuid())
+  ticketNumber        String                 @unique
+  requestType         String
+  category            String
+  requesterId         String
+  description         String
+  location            String?
+  priority            String                 @default("LOW")
+  status              String                 @default("PENDING")
+  assignedDepartment  String?
+  assignedAuthorityId String?
+  SLA                 Int?
+  dueAt               DateTime?
+  incidentId          String?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  resolvedAt          DateTime?
+  exitTime            DateTime?
+  metadata            String?
+  idempotencyKey      String?                @unique
+  policyId            String?
+  escalations Escalation[]
+  notifications       Notification[]
+  policy Policy? @relation(fields: [policyId], references: [id])
+  incident Incident? @relation(fields: [incidentId], references: [id])
+  assignedAuthority   User?                  @relation("RequestAssignee", fields: [assignedAuthorityId], references: [id])
+  requester           User                   @relation("RequestCreator", fields: [requesterId], references: [id])
+  assignmentHistory   RequestAssignment[]
+  requestSla          RequestSLA?
+  statusHistory       RequestStatusHistory[]
+
+  @@index([createdAt])
+  @@index([dueAt, status])
+  @@index([status])
+  @@index([incidentId])
+  @@index([assignedAuthorityId, status])
+  @@index([requesterId, status])
+  @@index([requesterId, updatedAt])
+  @@index([status, createdAt])
+  @@index([status, updatedAt])
+  @@index([status, resolvedAt])
+}
+
+model RequestAssignment {
+  id           String    @id @default(uuid())
+  requestId    String
+  assigneeId   String
+  assignedBy   String?
+  assignedAt   DateTime  @default(now())
+  unassignedAt DateTime?
+  reason       String?
+  assignee     User      @relation(fields: [assigneeId], references: [id], onDelete: Cascade)
+  request      Request   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, assignedAt])
+}
+
+model RequestSLA {
+  id          String    @id @default(uuid())
+  requestId   String    @unique
+  targetHours Int
+  dueAt       DateTime
+  warningAt   DateTime?
+  breachedAt  DateTime?
+  resolvedAt  DateTime?
+  status      String    @default("ACTIVE")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  request     Request   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([status, dueAt])
+}
+
+model RequestStatusHistory {
+  id         String   @id @default(uuid())
+  requestId  String
+  fromStatus String?
+  toStatus   String
+  actorId    String?
+  reason     String?
+  createdAt  DateTime @default(now())
+  request    Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+}
+
+model Scholarship {
+  id           String   @id @default(uuid())
+  studentId    String   @unique
+  academicYear String
+  status       String
+  updatedAt    DateTime @updatedAt
+  student      User     @relation(fields: [studentId], references: [id])
 }
 
 model SmsOutbox {
   id            String    @id @default(uuid())
   recipientId   String?
-  recipient     User?     @relation(fields: [recipientId], references: [id])
   phoneNumber   String
   message       String
-  status        String // QUEUED, SIMULATED_SENT, SIMULATED_FAILED
-  type          String // e.g. "REQUEST_UPDATE", "ANNOUNCEMENT", "GENERAL"
+  status        String
+  type          String
   referenceId   String?
   createdAt     DateTime  @default(now())
   sentAt        DateTime?
   failureReason String?
+  recipient User? @relation(fields: [recipientId], references: [id])
 }
 
-model Course {
-  id        String   @id @default(uuid())
-  code      String   @unique
-  name      String
-  facultyId String
-  faculty   User     @relation("CourseFaculty", fields: [facultyId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  sessions    ClassSession[]
-  enrollments Enrollment[]
-}
-
-model Enrollment {
-  id        String   @id @default(uuid())
-  courseId  String
-  course    Course   @relation(fields: [courseId], references: [id])
-  studentId String
-  student   User     @relation(fields: [studentId], references: [id])
-  createdAt DateTime @default(now())
-
-  @@unique([courseId, studentId])
-}
-
-model ClassSession {
-  id                 String   @id @default(uuid())
-  courseId           String
-  course             Course   @relation(fields: [courseId], references: [id])
-  scheduledAt        DateTime
-  status             String   @default("SCHEDULED") // SCHEDULED, CANCELLED, COMPLETED
-  cancellationReason String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  attendances Attendance[]
-}
-
-model Attendance {
-  id        String       @id @default(uuid())
-  sessionId String
-  session   ClassSession @relation(fields: [sessionId], references: [id])
-  studentId String
-  student   User         @relation(fields: [studentId], references: [id])
-  status    String // PRESENT, ABSENT
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-
-  @@unique([sessionId, studentId])
-}
-
-model Policy {
-  id          String  @id @default(uuid())
-  name        String
-  description String?
-
-  requestType String?
-  category    String?
-  domain      String?
-
-  approvalRequired     Boolean @default(true)
-  autoApproveCondition String? // JSON
-  slaHours             Int?
-  escalationPolicy     String? // JSON
-  allowedTransitions   String? // JSON
-
-  isActive  Boolean  @default(true)
-  version   Int      @default(1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+  id                                        String                @id @default(uuid())
+  email                                     String                @unique
+  name                                      String
+  role                                      String
+  department                                String?
+  year                                      Int?
+  branch                                    String?
+  isResident                                Boolean               @default(false)
+  hostel                                    String?
+  block                                     String?
+  room                                      String?
+  password                                  String?
+  phone                                     String?
+  announcements Announcement[] @relation("AnnouncementCreator")
+  receipts                                  AnnouncementReceipt[]
+  attendances                               Attendance[]
+  auditLogs AuditLog[]
+  courses Course[]
+  enrollments                               Enrollment[]
+  feedbacks                                 MessFeedback[]
+  notifications                             Notification[]
+  requestsAssigned Request[]             @relation("RequestAssignee")
+  requestsCreated Request[]             @relation("RequestCreator")
+  assignmentHistory                         RequestAssignment[]
+  scholarship Scholarship?
+  smsOutboxes SmsOutbox[]
 }
