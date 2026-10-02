@@ -13,8 +13,7 @@ export interface CreateEvidencePayload {
 export class EvidenceService {
   static async addEvidence(payload: CreateEvidencePayload) {
     const request = await prisma.request.findUnique({
-      where: { id: payload.requestId },
-      include: { assignedAuthority: true }
+      where: { id: payload.requestId }
     });
 
     if (!request) {
@@ -77,6 +76,18 @@ export class EvidenceService {
 
     if (actor.role === 'Student' && request.requesterId !== actor.id) {
       throw new Error('Not authorized to view this request evidence');
+    } else if (actor.role !== 'Admin' && actor.role !== 'Student') {
+      let isAllowed = false;
+      if (request.assignedAuthorityId === actor.id) {
+        isAllowed = true;
+      } else if (actor.role === 'Warden' && actor.hostel && request.location && request.location.includes(actor.hostel)) {
+        isAllowed = true;
+      } else if ((actor.role === 'Staff' || actor.role === 'Faculty') && actor.department && request.assignedDepartment === actor.department) {
+        isAllowed = true;
+      }
+      if (!isAllowed) {
+        throw new Error('Not authorized to view this request evidence');
+      }
     }
 
     return prisma.evidence.findMany({

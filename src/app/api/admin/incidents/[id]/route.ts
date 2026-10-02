@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db/prisma";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await verifyAdminAuthority();
+    const user = await verifyAdminAuthority();
     const { id } = await params;
 
     const incident = await prisma.incident.findUnique({
@@ -18,6 +18,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
             priority: true,
             category: true,
             location: true,
+            assignedDepartment: true,
             createdAt: true,
             requester: { select: { id: true, name: true } }
           }
@@ -27,6 +28,18 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     if (!incident) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    if (user.role !== 'Admin') {
+      let isAllowed = false;
+      if (user.role === 'Warden' && user.hostel && incident.location && incident.location.includes(user.hostel)) {
+        isAllowed = true;
+      } else if ((user.role === 'Staff' || user.role === 'Faculty') && user.department) {
+        isAllowed = incident.requests.some(r => r.assignedDepartment === user.department);
+      }
+      if (!isAllowed) {
+        return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+      }
     }
 
     const userIds = new Set(incident.requests.map(r => r.requester.id));

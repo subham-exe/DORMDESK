@@ -6,10 +6,13 @@ import { prisma } from '@/lib/db/prisma';
 
 const getSecretKey = () => {
   const jwtSecretEnv = process.env.JWT_SECRET;
-  if (process.env.NODE_ENV === 'production' && !jwtSecretEnv) {
-    throw new Error('FATAL: JWT_SECRET environment variable is required in production.');
+  if (!jwtSecretEnv) {
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+      return 'super-secret-key-for-local-dev-only';
+    }
+    throw new Error('FATAL: JWT_SECRET environment variable is required in this environment.');
   }
-  return jwtSecretEnv || 'super-secret-key-for-local-dev-only';
+  return jwtSecretEnv;
 };
 
 const getEncodedKey = () => new TextEncoder().encode(getSecretKey());

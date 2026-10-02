@@ -10,8 +10,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const request = await prisma.request.findUnique({
       where: { id: resolvedParams.id },
       include: {
-        requester: true,
-        assignedAuthority: true,
+        requester: { select: { id: true, name: true, email: true, role: true, department: true, hostel: true } },
+        assignedAuthority: { select: { id: true, name: true, email: true, role: true, department: true, hostel: true } },
         incident: true,
         statusHistory: {
           orderBy: { createdAt: 'asc' }
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const auditLogs = await prisma.auditLog.findMany({
       where: { entity: 'Request', entityId: resolvedParams.id },
       orderBy: { timestamp: 'desc' },
-      include: { actor: true }
+      include: { actor: { select: { id: true, name: true, email: true, role: true } } }
     });
 
     return NextResponse.json({ success: true, data: { ...request, auditLogs } });

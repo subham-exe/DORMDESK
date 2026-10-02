@@ -342,9 +342,10 @@ export class RequestEngine {
           records.push({ record, ev });
         }
       }
-
-      const req = await tx.request.update({
-        where: { id: payload.requestId },
+      let req;
+      try {
+        req = await tx.request.update({
+        where: { id: payload.requestId, status: request.status },
         data: {
           status: payload.newStatus,
           resolvedAt: isTerminal ? new Date() : (isWIP ? null : undefined),
@@ -365,6 +366,10 @@ export class RequestEngine {
           } : undefined
         },
       });
+      } catch (e: unknown) {
+        if (e && typeof e === 'object' && 'code' in e && (e as { code?: string }).code === 'P2025') throw new Error('Concurrent state modification detected');
+        throw e;
+      }
 
       if (payload.newStatus === 'VERIFIED') {
          await tx.request.update({

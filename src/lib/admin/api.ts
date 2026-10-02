@@ -206,8 +206,8 @@ export const AdminAPI = {
     const requests = await prisma.request.findMany({
       where,
       include: {
-        requester: true,
-        assignedAuthority: true
+        requester: { select: { id: true, name: true, email: true, role: true, department: true, hostel: true } },
+        assignedAuthority: { select: { id: true, name: true, email: true, role: true, department: true, hostel: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -219,8 +219,8 @@ export const AdminAPI = {
     const req = await prisma.request.findUnique({
       where: { id },
       include: {
-        requester: true,
-        assignedAuthority: true,
+        requester: { select: { id: true, name: true, email: true, role: true, department: true, hostel: true } },
+        assignedAuthority: { select: { id: true, name: true, email: true, role: true, department: true, hostel: true } },
         statusHistory: true,
         assignmentHistory: true
       }
