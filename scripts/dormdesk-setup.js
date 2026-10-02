@@ -1,41 +1,165 @@
 /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars */
-const fs = require('fs');
 const { spawnSync } = require('child_process');
+const readline = require('readline');
+const pc = require('picocolors');
 
-function runCommand(command, args) {
-  const result = spawnSync(command, args, { stdio: 'inherit', shell: true });
-  if (result.error) {
-    console.error(`Failed to execute: ${command} ${args.join(' ')}`);
+function runCommand(command, args, hideOutput = false) {
+  const options = { shell: true };
+  if (!hideOutput) {
+    options.stdio = 'inherit';
+  }
+  const result = spawnSync(command, args, options);
+  return result;
+}
+
+function clearScreen() {
+  process.stdout.write(process.platform === 'win32' ? '\x1B[2J\x1B[0f' : '\x1B[2J\x1B[3J\x1B[H');
+}
+
+function printHeader() {
+  console.log(pc.cyan('=================================================================='));
+  console.log(pc.blue(pc.bold('                         DORMDESK')));
+  console.log(pc.cyan('                 CAMPUS ACCOUNTABILITY PLATFORM'));
+  console.log(pc.cyan('=================================================================='));
+  console.log(pc.cyan('                 <3 MADE WITH LOVE BY 404 <3\n'));
+}
+
+function exitSequence() {
+  console.log('\n' + pc.cyan('=================================================================='));
+  console.log(pc.blue(pc.bold('                         DORMDESK')));
+  console.log(pc.cyan('                       SESSION CLOSING'));
+  console.log(pc.cyan('==================================================================\n'));
+  console.log('  Closing the session ................. ' + pc.green('FINISHED'));
+  console.log('  Signing off ........................ ' + pc.green('FINISHED\n'));
+  console.log(pc.cyan('------------------------------------------------------------------\n'));
+  console.log(pc.cyan('                    See you again.'));
+  console.log(pc.magenta('                       Adios.\n'));
+  console.log(pc.blue('                 <3 MADE WITH LOVE BY 404 <3\n'));
+  console.log(pc.cyan('=================================================================='));
+  process.exit(0);
+}
+
+function initialSetup() {
+  clearScreen();
+  printHeader();
+
+  console.log(pc.white('------------------------------------------------------------------'));
+  console.log(pc.white('  DORMDESK INITIALIZATION'));
+  console.log(pc.white('------------------------------------------------------------------\n'));
+
+  // 1. Prisma Client
+  process.stdout.write('  [1/4] Preparing Prisma ............ ');
+  const res1 = runCommand('npx', ['prisma', 'generate'], true);
+  if (res1.error || res1.status !== 0) {
+    console.log(pc.red('FAILED'));
+    console.error(pc.red('\nError generating Prisma client. Ensure dependencies are installed (npm install).'));
     process.exit(1);
   }
-  if (result.status !== 0) {
-    console.error(`Command failed with exit code ${result.status}: ${command} ${args.join(' ')}`);
-    process.exit(result.status || 1);
+  console.log(pc.green('OK'));
+
+  // 2. Preparing database
+  process.stdout.write('  [2/4] Preparing database .......... ');
+  const res2 = runCommand('npx', ['prisma', 'migrate', 'reset', '--force', '--skip-generate', '--skip-seed'], true);
+  if (res2.error || res2.status !== 0) {
+    console.log(pc.red('FAILED'));
+    console.error(pc.red('\nError resetting database.'));
+    process.exit(1);
   }
+  console.log(pc.green('OK'));
+
+  // 3. Applying migrations
+  process.stdout.write('  [3/4] Applying migrations ......... ');
+  const res3 = runCommand('npx', ['prisma', 'migrate', 'deploy'], true);
+  if (res3.error || res3.status !== 0) {
+    console.log(pc.red('FAILED'));
+    console.error(pc.red('\nError applying migrations.'));
+    process.exit(1);
+  }
+  console.log(pc.green('OK'));
+
+  // 4. Seeding demo data
+  process.stdout.write('  [4/4] Seeding demo data ........... ');
+  const res4 = runCommand('npx', ['prisma', 'db', 'seed'], true);
+  if (res4.error || res4.status !== 0) {
+    console.log(pc.red('FAILED'));
+    console.error(pc.red('\nError seeding database.'));
+    process.exit(1);
+  }
+  console.log(pc.green('OK\n'));
+
+  showCompletionScreen();
 }
 
-try {
-  console.log('\n[1/4] Ensuring dependencies are installed...');
-  console.log('Skipping npm install to avoid script policy issues.'); // runCommand('npm', ['install', '--ignore-scripts']);
+function showCompletionScreen() {
+  console.log(pc.cyan('=================================================================='));
+  console.log(pc.blue(pc.bold('                    DORMDESK IS READY')));
+  console.log(pc.cyan('==================================================================\n'));
 
-  console.log('\n[2/4] Generating Prisma client...');
-  runCommand('npx', ['prisma', 'generate']);
+  console.log(`  Database       ${pc.green('OK')} Ready`);
+  console.log(`  Migrations     ${pc.green('OK')} Current`);
+  console.log(`  Demo accounts  ${pc.green('OK')} Seeded\n`);
 
-  console.log('\n[3/4] Resetting and migrating database to a clean deterministic state...');
-  runCommand('npx', ['prisma', 'migrate', 'reset', '--force', '--skip-generate', '--skip-seed']);
-  runCommand('npx', ['prisma', 'migrate', 'deploy']);
+  console.log('  Demo accounts:');
+  console.log('    Student : student@demo.local');
+  console.log('    Staff   : staff@demo.local');
+  console.log('    Warden  : warden@demo.local');
+  console.log('    Admin   : admin@demo.local\n');
 
-  console.log('\n[4/4] Seeding the database...');
-  runCommand('npx', ['prisma', 'db', 'seed']);
-
-  console.log('\n=========================================');
-  console.log('  DORMDESK SETUP COMPLETE!             ');
-  console.log('  Database is seeded with demo accounts.');
-  console.log('  Run "npm run local" to start the app.');
-  console.log('=========================================\n');
-} catch (error) {
-  console.error('Setup failed:', error.message);
-  process.exit(1);
+  console.log('  Password: dormdesk2026\n');
+  
+  showMenu();
 }
 
+function showMenu() {
+  console.log(pc.white('------------------------------------------------------------------'));
+  console.log(pc.white('  WHAT WOULD YOU LIKE TO DO?'));
+  console.log(pc.white('------------------------------------------------------------------\n'));
+  console.log(pc.yellow('  [1]') + ' Start DORMDESK');
+  console.log(pc.yellow('  [2]') + ' Reset & reseed database');
+  console.log(pc.yellow('  [3]') + ' Check database status');
+  console.log(pc.yellow('  [4]') + ' Exit\n');
 
+  promptMenu();
+}
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+rl.on('SIGINT', () => {
+  exitSequence();
+});
+
+function promptMenu() {
+  rl.question('  Select an option: ', (answer) => {
+    const choice = answer.trim();
+    if (choice === '1') {
+      console.log('\nStarting DORMDESK...\n');
+      runCommand('npm', ['run', 'local']);
+      showMenu();
+    } else if (choice === '2') {
+      console.log('\nResetting and reseeding database...\n');
+      const res = runCommand('npm', ['run', 'local:reset']);
+      if (res.error || res.status !== 0) {
+        console.log(pc.red('\n[ERROR] Database reset failed.\n'));
+      } else {
+        console.log(pc.green('\n[SUCCESS] Database successfully reset and reseeded.\n'));
+      }
+      showMenu();
+    } else if (choice === '3') {
+      console.log('\nChecking database status...\n');
+      runCommand('npx', ['prisma', 'migrate', 'status']);
+      console.log();
+      showMenu();
+    } else if (choice === '4') {
+      exitSequence();
+    } else {
+      console.log(pc.red('  Invalid option. Please choose 1, 2, 3, or 4.\n'));
+      promptMenu();
+    }
+  });
+}
+
+// Start everything
+initialSetup();
