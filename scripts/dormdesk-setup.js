@@ -20,6 +20,14 @@ function clearScreen() {
   process.stdout.write(process.platform === 'win32' ? '\x1B[2J\x1B[0f' : '\x1B[2J\x1B[3J\x1B[H');
 }
 
+function centerText(text, totalWidth) {
+  const visibleLength = text.replace(/\x1b\[[0-9;]*m/g, '').length;
+  const padding = Math.max(0, totalWidth - visibleLength);
+  const leftPad = Math.floor(padding / 2);
+  const rightPad = padding - leftPad;
+  return ' '.repeat(leftPad) + text + ' '.repeat(rightPad);
+}
+
 function isUnicodeSafe() {
   if (process.platform !== 'win32') return true;
   if (process.env.WT_SESSION) return true;
@@ -29,26 +37,49 @@ function isUnicodeSafe() {
 }
 
 function printHeader() {
+  const width = 76;
+  const innerWidth = width - 2;
+
+  const logoLines = [
+    pc.blue(pc.bold('██████╗  ██████╗ ██████╗ ███╗   ███╗██████╗ ███████╗██╗  ██╗')),
+    pc.blue(pc.bold('██╔══██╗██╔═══██╗██╔══██╗████╗ ████║██╔══██╗██╔════╝██║ ██╔╝')),
+    pc.blue(pc.bold('██║  ██║██║   ██║██████╔╝██╔████╔██║██║  ██║█████╗  █████╔╝ ')),
+    pc.blue(pc.bold('██║  ██║██║   ██║██╔══██╗██║╚██╔╝██║██║  ██║██╔══╝  ██╔═██╗ ')),
+    pc.blue(pc.bold('██████╔╝╚██████╔╝██║  ██║██║ ╚═╝ ██║██████╔╝███████╗██║  ██╗')),
+    pc.blue(pc.bold('╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝'))
+  ];
+
+  const subtitle = 'CAMPUS ACCOUNTABILITY PLATFORM';
+
   if (isUnicodeSafe()) {
-    console.log(pc.cyan('╔══════════════════════════════════════════════════════════════╗'));
-    console.log(pc.cyan('║                                                              ║'));
-    console.log(pc.cyan('║   ') + pc.blue(pc.bold('██████╗  ██████╗ ██████╗ ███╗   ███╗██████╗ ███████╗██╗  ██╗')) + pc.cyan('║'));
-    console.log(pc.cyan('║   ') + pc.blue(pc.bold('██╔══██╗██╔═══██╗██╔══██╗████╗ ████║██╔══██╗██╔════╝██║ ██╔╝')) + pc.cyan('║'));
-    console.log(pc.cyan('║   ') + pc.blue(pc.bold('██║  ██║██║   ██║██████╔╝██╔████╔██║██║  ██║█████╗  █████╔╝ ')) + pc.cyan('║'));
-    console.log(pc.cyan('║   ') + pc.blue(pc.bold('██║  ██║██║   ██║██╔══██╗██║╚██╔╝██║██║  ██║██╔══╝  ██╔═██╗ ')) + pc.cyan('║'));
-    console.log(pc.cyan('║   ') + pc.blue(pc.bold('██████╔╝╚██████╔╝██║  ██║██║ ╚═╝ ██║██████╔╝███████╗██║  ██╗')) + pc.cyan('║'));
-    console.log(pc.cyan('║   ') + pc.blue(pc.bold('╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝')) + pc.cyan('║'));
-    console.log(pc.cyan('║                                                              ║'));
-    console.log(pc.cyan('║                 CAMPUS ACCOUNTABILITY PLATFORM              ║'));
-    console.log(pc.cyan('║                                                              ║'));
-    console.log(pc.cyan('╚══════════════════════════════════════════════════════════════╝\n'));
-    console.log(pc.cyan('                    ♥ MADE WITH LOVE BY 404 ♥\n'));
+    console.log(pc.cyan('╔' + '═'.repeat(innerWidth) + '╗'));
+    console.log(pc.cyan('║' + ' '.repeat(innerWidth) + '║'));
+    console.log(pc.cyan('║' + ' '.repeat(innerWidth) + '║'));
+
+    for (const line of logoLines) {
+      console.log(pc.cyan('║') + centerText(line, innerWidth) + pc.cyan('║'));
+    }
+
+    console.log(pc.cyan('║' + ' '.repeat(innerWidth) + '║'));
+    console.log(pc.cyan('║' + ' '.repeat(innerWidth) + '║'));
+    console.log(pc.cyan('║') + centerText(pc.cyan(subtitle), innerWidth) + pc.cyan('║'));
+    console.log(pc.cyan('║' + ' '.repeat(innerWidth) + '║'));
+    console.log(pc.cyan('║' + ' '.repeat(innerWidth) + '║'));
+    console.log(pc.cyan('╚' + '═'.repeat(innerWidth) + '╝\n'));
+
+    console.log(centerText(pc.magenta('♥') + pc.cyan(' MADE WITH LOVE BY 404 ') + pc.magenta('♥'), width) + '\n');
   } else {
-    console.log(pc.cyan('=================================================================='));
-    console.log(pc.blue(pc.bold('                         DORMDESK')));
-    console.log(pc.cyan('                 CAMPUS ACCOUNTABILITY PLATFORM'));
-    console.log(pc.cyan('=================================================================='));
-    console.log(pc.cyan('                 <3 MADE WITH LOVE BY 404 <3\n'));
+    console.log(pc.cyan('='.repeat(width)));
+    console.log('');
+    console.log('');
+    console.log(centerText(pc.blue(pc.bold('DORMDESK')), width));
+    console.log('');
+    console.log('');
+    console.log(centerText(pc.cyan(subtitle), width));
+    console.log('');
+    console.log('');
+    console.log(pc.cyan('='.repeat(width)) + '\n');
+    console.log(centerText(pc.magenta('<3') + pc.cyan(' MADE WITH LOVE BY 404 ') + pc.magenta('<3'), width) + '\n');
   }
 }
 
