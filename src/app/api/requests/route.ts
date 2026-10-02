@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     console.error('Create Request Error:', error);
     const msg = error instanceof Error ? error.message : 'Unknown error';
+    if (msg === 'UNAUTHORIZED' || msg === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     return NextResponse.json({ success: false, error: msg }, { status: 400 });
   }
 }

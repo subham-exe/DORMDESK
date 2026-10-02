@@ -161,6 +161,13 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
                               &quot;{String(event.metadata.resolutionNotes)}&quot;
                             </div>
                           )}
+                          {event.action === 'EVIDENCE_ADDED' && !!event.metadata?.reference && (
+                            <div className="mt-3 text-sm">
+                              <a href={String(event.metadata.reference)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline font-medium bg-primary/5 px-3 py-1.5 rounded-md border border-primary/20">
+                                📎 View Evidence Attached
+                              </a>
+                            </div>
+                          )}
                           {!!event.metadata?.assignedTo && (
                             <div className="mt-2 text-sm font-medium text-info">
                               Assigned to: {String(event.metadata.assignedTo)}

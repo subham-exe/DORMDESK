@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "local": "node scripts/local.js",
-    "local:reset": "npx prisma migrate reset --force --skip-generate --skip-seed && npx prisma db seed && npm run dev",
+    "local:reset": "npx prisma migrate reset --force --skip-generate --skip-seed && npx prisma migrate deploy && npx prisma db seed",
     "db:deploy": "npx prisma migrate deploy"
   },
   "dependencies": {

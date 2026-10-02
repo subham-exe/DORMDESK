@@ -14,26 +14,18 @@ Campus operations are fragmented across paper applications, WhatsApp groups, dis
 DormDesk is a campus-wide operations platform, not just a hostel management app. The architecture revolves around a **Universal Request Engine** where every operational request follows a standardized path of identity, permission, routing, SLA, and audit. Day scholars and hostel residents use the same application, encountering only the services relevant to their context.
 
 ## 4. Current Implementation Status
-**CURRENT STATE:** PARTIAL MVP IMPLEMENTATION.
-**IMPLEMENTED:**
-- **Universal Request Engine:** Core `RequestEngine` service and SQLite schema power the system.
-- **Request Lifecycle/State Machine:** Strict deterministic backend state machine enforces transitions.
-- **Zero-Touch Approval:** Hardcoded leave policy automatically approves short leaves.
+**CURRENT STATE:** FINAL V-FREEZE.
 
-**PROTOTYPE / PARTIAL:**
-- **Student Verification:** The verification state exists in the workflow model, and the student portal allows verifying resolved requests (which triggers auto-close).
-- **SLA Tracking:** SLA targets are calculated and visualized. The system includes an interactive Admin "Run SLA check" capability, though an automated background cron is still planned.
-
-**BACKEND PRIMITIVE / NOT FULLY IMPLEMENTED:**
-- **Incident Clustering:** The `clusterIntoIncident` primitive exists in the service, but automatic detection and UI triggers are not yet implemented.
-
-**PLANNED / NOT IMPLEMENTED:**
-- Automatic Incident Intelligence and "Me Too" UX (Implemented via Prompt I and Prompt K).
-- Automatic SLA escalation (Implemented via Prompt K).
-- Recurring issue detection.
-- Operations Command Center (Admin Dashboard).
-- Configurable workflows.
-- Full offline/PWA behavior and kiosk workflows.
+**IMPLEMENTED & VERIFIED:**
+- **Universal Request Engine:** Core RequestEngine service and SQLite schema power the system.
+- **Request Lifecycle/State Machine:** Strict deterministic backend state machine enforces transitions with rollback support.
+- **Student Verification & Evidence:** Staff must provide resolution evidence, and students verify resolution before closure.
+- **Incident Intelligence:** Requests automatically cluster into incidents based on threshold/time windows.
+- **Recurring Issue Detection:** System detects and aggregates repeating patterns of issues over 30 days.
+- **SLA & Escalation:** SLA targets calculated, tracked, and visually prioritized in the Command Center. Background API /api/internal/cron/sla-tick handles automated breaches.
+- **Smart Routing & Policy:** Deterministic routing based on category/location; configurable evaluation engine.
+- **Offline Reliability:** IndexedDB-backed service worker queues mutations and synchronizes safely using idempotency keys.
+- **Security:** Hardened authorization, scope isolation, offline boundary isolation, idempotency on writes, and offline-sync conflict resolution.
 
 ## 5. Technical Architecture Overview
 (See `architect.md` for full technical details)
@@ -205,3 +197,4 @@ Demo seeded properly with deterministic incidents, SLAs, and escalations. Reset 
 ## Prompt P Status
 Prompt P: CLOSED
 Security audit fixed a student state escalation path. Regression checked. Demo freeze established.
+

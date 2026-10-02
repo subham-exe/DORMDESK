@@ -19,7 +19,7 @@ model Announcement {
   requiresAck  Boolean               @default(false)
   priority     String                @default("LOW")
   createdAt    DateTime              @default(now())
-  creator User @relation("AnnouncementCreator", fields: [createdById], references: [id])
+  creator      User                  @relation("AnnouncementCreator", fields: [createdById], references: [id])
   receipts     AnnouncementReceipt[]
 }
 
@@ -30,7 +30,7 @@ model AnnouncementReceipt {
   deliveredAt    DateTime     @default(now())
   readAt         DateTime?
   acknowledgedAt DateTime?
-  user User @relation(fields: [userId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
   announcement   Announcement @relation(fields: [announcementId], references: [id])
 
   @@unique([announcementId, userId])
@@ -114,6 +114,8 @@ model Escalation {
 }
 
 model Incident {
+  recurringIssueId      String?
+  recurringIssue        RecurringIssue?        @relation(fields: [recurringIssueId], references: [id])
   id                 String    @id @default(uuid())
   title              String
   description        String
@@ -200,6 +202,8 @@ model Policy {
 }
 
 model Request {
+  recurringIssueId      String?
+  recurringIssue        RecurringIssue?        @relation(fields: [recurringIssueId], references: [id])
   id                  String                 @id @default(uuid())
   ticketNumber        String                 @unique
   requestType         String
@@ -221,15 +225,16 @@ model Request {
   metadata            String?
   idempotencyKey      String?                @unique
   policyId            String?
-  escalations Escalation[]
+  escalations         Escalation[]
   notifications       Notification[]
-  policy Policy? @relation(fields: [policyId], references: [id])
-  incident Incident? @relation(fields: [incidentId], references: [id])
+  policy              Policy?                @relation(fields: [policyId], references: [id])
+  incident            Incident?              @relation(fields: [incidentId], references: [id])
   assignedAuthority   User?                  @relation("RequestAssignee", fields: [assignedAuthorityId], references: [id])
   requester           User                   @relation("RequestCreator", fields: [requesterId], references: [id])
   assignmentHistory   RequestAssignment[]
   requestSla          RequestSLA?
   statusHistory       RequestStatusHistory[]
+  evidences           Evidence[]
 
   @@index([createdAt])
   @@index([dueAt, status])
@@ -306,34 +311,68 @@ model SmsOutbox {
   createdAt     DateTime  @default(now())
   sentAt        DateTime?
   failureReason String?
-  recipient User? @relation(fields: [recipientId], references: [id])
+  recipient     User?     @relation(fields: [recipientId], references: [id])
 }
 
 model User {
-  id                                        String                @id @default(uuid())
-  email                                     String                @unique
-  name                                      String
-  role                                      String
-  department                                String?
-  year                                      Int?
-  branch                                    String?
-  isResident                                Boolean               @default(false)
-  hostel                                    String?
-  block                                     String?
-  room                                      String?
-  password                                  String?
-  phone                                     String?
-  announcements Announcement[] @relation("AnnouncementCreator")
-  receipts                                  AnnouncementReceipt[]
-  attendances                               Attendance[]
-  auditLogs AuditLog[]
-  courses Course[]
-  enrollments                               Enrollment[]
-  feedbacks                                 MessFeedback[]
-  notifications                             Notification[]
-  requestsAssigned Request[]             @relation("RequestAssignee")
-  requestsCreated Request[]             @relation("RequestCreator")
-  assignmentHistory                         RequestAssignment[]
-  scholarship Scholarship?
-  smsOutboxes SmsOutbox[]
+  id                String                @id @default(uuid())
+  email             String                @unique
+  name              String
+  role              String
+  department        String?
+  year              Int?
+  branch            String?
+  isResident        Boolean               @default(false)
+  hostel            String?
+  block             String?
+  room              String?
+  password          String?
+  phone             String?
+  announcements     Announcement[]        @relation("AnnouncementCreator")
+  evidences         Evidence[]
+  receipts          AnnouncementReceipt[]
+  attendances       Attendance[]
+  auditLogs         AuditLog[]
+  courses           Course[]
+  enrollments       Enrollment[]
+  feedbacks         MessFeedback[]
+  notifications     Notification[]
+  requestsAssigned  Request[]             @relation("RequestAssignee")
+  requestsCreated   Request[]             @relation("RequestCreator")
+  assignmentHistory RequestAssignment[]
+  scholarship       Scholarship?
+  smsOutboxes       SmsOutbox[]
+}
+
+model Evidence {
+  id          String   @id @default(uuid())
+  requestId   String
+  type        String // "IMAGE", "DOCUMENT", "TEXT_NOTE"
+  description String?
+  reference   String
+  createdAt   DateTime @default(now())
+  createdBy   String?
+  creator     User?    @relation(fields: [createdBy], references: [id])
+  request     Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+}
+
+
+model RecurringIssue {
+  id              String     @id @default(uuid())
+  category        String
+  location        String
+  occurrenceCount Int        @default(1)
+  status          String     @default("ACTIVE")
+  detectionReason String
+  firstDetectedAt DateTime   @default(now())
+  lastDetectedAt  DateTime   @default(now())
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  incidents       Incident[]
+  requests        Request[]
+
+  @@unique([category, location])
+  @@index([status, lastDetectedAt])
 }

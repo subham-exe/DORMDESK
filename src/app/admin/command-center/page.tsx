@@ -36,6 +36,7 @@ export default function CommandCenterPage() {
   const incidents = data?.incidents as Record<string, unknown>[];
   const sla = data?.sla as Record<string, unknown>[];
   const escalations = data?.escalations as Record<string, unknown>[];
+  const recurring = (data?.recurring || []) as Record<string, unknown>[];
   const unassigned = data?.unassigned as Record<string, unknown>[];
   const stale = data?.stale as Record<string, unknown>[];
   const staffWorkload = data?.staffWorkload as Record<string, unknown>[];
@@ -55,12 +56,13 @@ export default function CommandCenterPage() {
       </div>
 
       {/* Summary Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-7 gap-4">
         <SummaryCard title="Active Requests" value={summary.activeRequests} icon={Activity} />
         <SummaryCard title="Critical Issues" value={summary.criticalIssues} icon={ShieldAlert} alert={summary.criticalIssues > 0} />
         <SummaryCard title="Breached SLA" value={summary.breachedSla} icon={XCircle} alert={summary.breachedSla > 0} />
         <SummaryCard title="Unassigned" value={summary.unassigned} icon={User} alert={summary.unassigned > 0} />
         <SummaryCard title="Active Incidents" value={summary.activeIncidents} icon={AlertCircle} alert={summary.activeIncidents > 0} />
+        <SummaryCard title="Recurring" value={summary.activeRecurring || 0} icon={ShieldAlert} alert={(summary.activeRecurring || 0) > 0} />
         <SummaryCard title="Escalations" value={summary.escalations} icon={Users} alert={summary.escalations > 0} />
       </div>
 
@@ -91,6 +93,35 @@ export default function CommandCenterPage() {
                           <span>{inc.requestCount as number} requests</span>
                           <span>{inc.userCount as number} users affected</span>
                           <span>Age: {Math.floor((inc.ageMs as number) / 3600000)}h</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </Section>
+
+          <Section title="Active Recurring Issues" count={recurring.length} alert>
+            {recurring.length === 0 ? <EmptyState msg="No active recurring issues." /> : (
+              <div className="grid gap-3">
+                {recurring.map((ri) => (
+                  <Link key={ri.id as string} href={`/admin/recurring-issues/${ri.id}`} className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl">
+                    <Card className="hover:border-warning border-warning/30 bg-warning/5 transition-colors">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <ShieldAlert className="w-4 h-4 text-warning" />
+                              <span className="font-bold text-warning">{ri.category as string} at {ri.location as string}</span>
+                            </div>
+                            <h4 className="font-semibold text-text-primary">Detected {ri.occurrenceCount as number} Occurrences</h4>
+                            <p className="text-sm text-text-secondary mt-1">Status: {ri.status as string}</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex gap-4 text-xs text-text-secondary">
+                          <span>{ri.relatedIncidentCount as number} related incidents</span>
+                          <span>{ri.relatedRequestCount as number} related requests</span>
                         </div>
                       </CardContent>
                     </Card>

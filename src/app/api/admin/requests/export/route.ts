@@ -9,7 +9,16 @@ export async function GET() {
       return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {};
+    if (user.role === 'Warden' && user.hostel) {
+      where.location = { contains: user.hostel };
+    } else if (user.role === 'Faculty' && user.department) {
+      where.assignedDepartment = user.department;
+    }
+
     const requests = await prisma.request.findMany({
+      where,
       include: {
         assignedAuthority: { select: { name: true } }
       },

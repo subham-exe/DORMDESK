@@ -19,40 +19,44 @@ const VALID_TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
 };
 
 async function triggerNotification(requestId: string, event: string, assigneeId?: string) {
-  const req = await prisma.request.findUnique({ where: { id: requestId }});
-  if (!req) return;
-  
-  if (event === 'ASSIGNED') {
-    await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_ASSIGNED, assigneeId);
-  } else if (event === 'STATUS_CHANGED_RESOLVED') {
-    await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_RESOLVED);
-  } else if (event === 'STATUS_CHANGED_REJECTED') {
-    await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_REJECTED);
-  } else if (event === 'STATUS_CHANGED_VERIFIED') {
-    await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_VERIFIED);
-  } else if (event === 'STATUS_CHANGED_ACKNOWLEDGED') {
-    await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_ACKNOWLEDGED);
-  } else if (event === 'STATUS_CHANGED_PROCESSING' || event === 'STATUS_CHANGED_PENDING') {
-    await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_REOPENED);
-  } else if (event === 'CREATED') {
-    // Keep generic update for creation, or don't spam. The prompt says "Do not spam users with redundant notifications. Do not send notifications merely because a page was opened."
-    // Let's not send notification on CREATED unless needed. We will skip CREATED.
-  } else if (event === 'ATTACHED_TO_INCIDENT') {
-    await NotificationService.create({
-      recipientId: req.requesterId,
-      title: 'Incident Update',
-      message: `Your request ${req.ticketNumber} has been linked to a larger incident.`,
-      type: NotificationType.INCIDENT_HIGH_IMPACT,
-      metadata: { requestId: req.id }
-    });
+  try {
+    const req = await prisma.request.findUnique({ where: { id: requestId }});
+    if (!req) return;
+    
+    if (event === 'ASSIGNED') {
+      await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_ASSIGNED, assigneeId);
+    } else if (event === 'STATUS_CHANGED_RESOLVED') {
+      await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_RESOLVED);
+    } else if (event === 'STATUS_CHANGED_REJECTED') {
+      await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_REJECTED);
+    } else if (event === 'STATUS_CHANGED_VERIFIED') {
+      await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_VERIFIED);
+    } else if (event === 'STATUS_CHANGED_ACKNOWLEDGED') {
+      await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_ACKNOWLEDGED);
+    } else if (event === 'STATUS_CHANGED_PROCESSING' || event === 'STATUS_CHANGED_PENDING') {
+      await NotificationService.notifyRequestLifecycleEvent(req, NotificationType.REQUEST_REOPENED);
+    } else if (event === 'CREATED') {
+      // Keep generic update for creation, or don't spam.
+    } else if (event === 'ATTACHED_TO_INCIDENT') {
+      await NotificationService.create({
+        recipientId: req.requesterId,
+        title: 'Incident Update',
+        message: `Your request ${req.ticketNumber} has been linked to a larger incident.`,
+        type: NotificationType.INCIDENT_HIGH_IMPACT,
+        metadata: { requestId: req.id }
+      });
+    }
+  } catch (error) {
+    console.error('Notification error', error);
   }
 }
 
 async function logAudit(requestId: string, actorId: string | null, action: string, metadata?: Record<string, unknown>) {
   try {
+    const resolvedActorId = actorId === 'system-router' ? null : actorId;
     await AuditService.log({
-      actorId,
-      actorName: actorId === null ? 'System Engine' : undefined,
+      actorId: resolvedActorId,
+      actorName: (actorId === 'system-router' || actorId === null) ? 'System Engine' : undefined,
       action,
       domain: 'Request',
       targetId: requestId,
@@ -65,9 +69,21 @@ async function logAudit(requestId: string, actorId: string | null, action: strin
 
 export class RequestEngine {
   static async createRequest(payload: CreateRequestPayload) {
+    if (!payload.requestType || typeof payload.requestType !== 'string' || !['COMPLAINT', 'LEAVE', 'CERTIFICATE'].includes(payload.requestType)) {
+      throw new Error('Invalid requestType');
+    }
+    if (!payload.category || typeof payload.category !== 'string' || payload.category.trim() === '') {
+      throw new Error('Category is required and must be a string');
+    }
+    if (!payload.description || typeof payload.description !== 'string' || payload.description.trim() === '') {
+      throw new Error('Description is required and must be a string');
+    }
     if (payload.idempotencyKey) {
       const existing = await prisma.request.findUnique({ where: { idempotencyKey: payload.idempotencyKey } });
-      if (existing) return existing;
+      if (existing) {
+         if (existing.requesterId !== payload.requesterId) throw new Error('Idempotency key collision with different user');
+         return existing;
+      }
     }
 
     // 1. Classification & Routing
@@ -164,7 +180,12 @@ export class RequestEngine {
       }
 
       const { IncidentIntelligenceService } = await import('./incident-intelligence');
-      await IncidentIntelligenceService.matchAndLinkNewRequest(request.id, null).catch(console.error);
+      try {
+        await IncidentIntelligenceService.matchAndLinkNewRequest(request.id, null);
+      } catch (e) {
+        console.error(e);
+        await logAudit(request.id, null, 'INCIDENT_INTELLIGENCE_FAILED');
+      }
       const updatedRequest = await prisma.request.findUnique({ where: { id: request.id } });
       return updatedRequest || request;
     } catch (error: unknown) {
@@ -172,7 +193,7 @@ export class RequestEngine {
         error && 
         typeof error === 'object' && 
         'code' in error && 
-        error.code === 'P2002' && 
+        (error as { code?: string }).code === 'P2002' && 
         payload.idempotencyKey
       ) {
         // Inspect meta target. In SQLite it usually looks like ['idempotencyKey']
@@ -182,8 +203,10 @@ export class RequestEngine {
         const fallbackExisting = await prisma.request.findUnique({ where: { idempotencyKey: payload.idempotencyKey } });
         
         if (isIdempotencyConflict && fallbackExisting) {
+          if (fallbackExisting.requesterId !== payload.requesterId) throw new Error('Idempotency key collision with different user');
           return fallbackExisting;
         } else if (fallbackExisting) {
+          if (fallbackExisting.requesterId !== payload.requesterId) throw new Error('Idempotency key collision with different user');
           return fallbackExisting; // If target check is flaky, but we DO have it
         }
       }
@@ -195,12 +218,17 @@ export class RequestEngine {
     const request = await prisma.request.findUnique({ where: { id: payload.requestId } });
     if (!request) throw new Error('Request not found');
 
+    if (['CLOSED', 'CANCELLED', 'REJECTED', 'APPROVED'].includes(request.status)) {
+       throw new Error('Cannot assign a request in terminal state');
+    }
+
     const validNext = VALID_TRANSITIONS[request.status as RequestStatus] || [];
     if (!validNext.includes('ASSIGNED') && request.status !== 'ASSIGNED') {
       throw new Error(`Invalid transition from ${request.status} to ASSIGNED`);
     }
 
-    const actor = await prisma.user.findUnique({ where: { id: payload.actorId } });
+    const actor = payload.actorId === 'system-router' ? null : await prisma.user.findUnique({ where: { id: payload.actorId } });
+
     if (actor) {
        const transitionCheck = await PolicyService.validateTransition(
           request,
@@ -245,14 +273,42 @@ export class RequestEngine {
     if (!request) throw new Error('Request not found');
 
     const validNext = VALID_TRANSITIONS[request.status as RequestStatus] || [];
-    if (!validNext.includes(payload.newStatus) && request.status !== payload.newStatus) {
+    const isSameStatus = request.status === payload.newStatus;
+    
+    if (!validNext.includes(payload.newStatus) && !isSameStatus) {
       throw new Error(`Invalid transition from ${request.status} to ${payload.newStatus}`);
     }
 
-    const actor = await prisma.user.findUnique({ where: { id: payload.actorId } });
+    const currentIsTerminal = ['CLOSED', 'CANCELLED', 'REJECTED', 'APPROVED'].includes(request.status);
+    if (currentIsTerminal && isSameStatus) {
+       throw new Error(`Cannot modify or add evidence to a request in terminal state ${request.status}`);
+    }
+
+    const actor = payload.actorId && payload.actorId !== 'system-router' ? await prisma.user.findUnique({ where: { id: payload.actorId }}) : null;
     if (payload.newStatus === 'REJECTED') {
       if (actor?.role === 'Student') {
         throw new Error('Students cannot reject requests');
+      }
+    }
+    
+    if (payload.newStatus === 'VERIFIED') {
+      if (actor?.role !== 'Student') {
+        throw new Error('Only students can verify requests');
+      }
+      if (request.requesterId !== payload.actorId) {
+        throw new Error('Only the request creator can verify');
+      }
+    }
+
+    const isAuthorityTransition = ['ASSIGNED', 'ACKNOWLEDGED', 'PROCESSING', 'RESOLVED'].includes(payload.newStatus);
+    if (isAuthorityTransition) {
+      if (actor?.role === 'Student') {
+        throw new Error('Students cannot perform authority transitions');
+      }
+      if (['PROCESSING', 'RESOLVED', 'ACKNOWLEDGED'].includes(payload.newStatus)) {
+         if (request.assignedAuthorityId && request.assignedAuthorityId !== payload.actorId && actor?.role !== 'Admin') {
+            throw new Error('Only the assigned authority or an Admin can perform this transition');
+         }
       }
     }
 
@@ -270,35 +326,75 @@ export class RequestEngine {
     const isTerminal = ['RESOLVED', 'APPROVED', 'CANCELLED', 'REJECTED', 'CLOSED'].includes(payload.newStatus);
     const isWIP = ['PROCESSING', 'ASSIGNED', 'ACKNOWLEDGED'].includes(payload.newStatus);
 
-    const updated = await prisma.request.update({
-      where: { id: payload.requestId },
-      data: {
-        status: payload.newStatus,
-        resolvedAt: isTerminal ? new Date() : (isWIP ? null : undefined),
-        updatedAt: new Date(),
-        statusHistory: request.status !== payload.newStatus ? {
-          create: {
-            fromStatus: request.status,
-            toStatus: payload.newStatus,
-            actorId: payload.actorId,
-            reason: payload.notes
-          }
-        } : undefined
-      },
-    });
+    const runTx = async (tx: import('@prisma/client').Prisma.TransactionClient) => {
+      const records = [];
+      if (payload.evidence && payload.evidence.length > 0) {
+        for (const ev of payload.evidence) {
+          const record = await tx.evidence.create({
+            data: {
+              requestId: payload.requestId,
+              type: ev.type,
+              description: ev.description,
+              reference: ev.reference,
+              createdBy: payload.actorId
+            }
+          });
+          records.push({ record, ev });
+        }
+      }
+
+      const req = await tx.request.update({
+        where: { id: payload.requestId },
+        data: {
+          status: payload.newStatus,
+          resolvedAt: isTerminal ? new Date() : (isWIP ? null : undefined),
+          updatedAt: new Date(),
+          requestSla: (isTerminal && request.SLA !== null) ? {
+            update: {
+              status: 'RESOLVED',
+              resolvedAt: new Date()
+            }
+          } : undefined,
+          statusHistory: request.status !== payload.newStatus ? {
+            create: {
+              fromStatus: request.status,
+              toStatus: payload.newStatus,
+              actorId: payload.actorId,
+              reason: payload.notes
+            }
+          } : undefined
+        },
+      });
+
+      if (payload.newStatus === 'VERIFIED') {
+         await tx.request.update({
+            where: { id: payload.requestId },
+            data: {
+               status: 'CLOSED',
+               statusHistory: {
+                  create: {
+                     fromStatus: 'VERIFIED',
+                     toStatus: 'CLOSED',
+                     actorId: payload.actorId
+                  }
+               }
+            }
+         });
+         req.status = 'CLOSED';
+      }
+
+      return { req, records };
+    };
+
+    const txResult = typeof prisma.$transaction === 'function' ? await prisma.$transaction(runTx) : await runTx(prisma);
+
+    for (const { record, ev } of txResult.records) {
+      await logAudit(payload.requestId, payload.actorId, 'EVIDENCE_ADDED', { evidenceId: record.id, reference: ev.reference });
+    }
+    const updated = txResult.req;
 
     await logAudit(updated.id, payload.actorId, 'STATUS_CHANGED', { newStatus: payload.newStatus, notes: payload.notes });
     await triggerNotification(updated.id, `STATUS_CHANGED_${payload.newStatus}`);
-
-    // Auto-transition VERIFIED to CLOSED
-    if (payload.newStatus === 'VERIFIED') {
-      return await RequestEngine.transitionStatus({
-        requestId: payload.requestId,
-        newStatus: 'CLOSED',
-        actorId: payload.actorId,
-        notes: 'System: Auto-closed after verification'
-      });
-    }
 
     return updated;
   }
@@ -355,12 +451,3 @@ export class RequestEngine {
     }
   }
 }
-
-
-
-
-
-
-
-
-

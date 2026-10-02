@@ -10,6 +10,7 @@ describe('History and Accountability Persistence (Q2.3)', () => {
     await prisma.requestSLA.deleteMany();
     await prisma.auditLog.deleteMany();
     await prisma.request.deleteMany();
+    await prisma.user.delete({ where: { id: 'usr-staff' } }).catch(() => {});
   });
 
   it('preserves chronologically ordered status and assignment history', async () => {
@@ -28,9 +29,9 @@ describe('History and Accountability Persistence (Q2.3)', () => {
     // 2. Create Request (creates PENDING history natively)
     const request = await RequestEngine.createRequest({
       requestType: 'COMPLAINT',
-      category: 'PLUMBING',
+      category: 'Cleaning',
       requesterId: student.id,
-      description: 'Leaking pipe',
+      description: 'Dirty room',
       location: 'Room 101'
     });
 

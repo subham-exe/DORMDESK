@@ -6,13 +6,13 @@ If documents conflict, do not silently choose a convenient interpretation. Repor
 1. `BRAIN.md` — canonical project memory / product and architecture decisions
 2. `architect.md` — technical architecture source of truth
 3. `TEAM.md` — ownership and dependency model
-4. `plan.md` / `roadmap.md` — execution sequence and timeline
+4. `roadmap.md` — execution sequence and timeline
 5. Role-specific MDs (`SUBHAM.md`, etc.) — role execution contracts
 6. `PRD.md` — product requirements
 7. `RULES.md` — enforceable engineering/execution rules
 
 ## 2. Planning Document Freeze
-**CRITICAL RULE:** Planning documents are frozen execution contracts during active implementation. Team members must NOT casually modify canonical documents (`BRAIN.md`, `architect.md`, `TEAM.md`, `plan.md`, `roadmap.md`, or role-specific planning MDs) while implementing ordinary tasks.
+**CRITICAL RULE:** Planning documents are frozen execution contracts during active implementation. Team members must NOT casually modify canonical documents (`BRAIN.md`, `architect.md`, `TEAM.md`, `roadmap.md`, or role-specific planning MDs) while implementing ordinary tasks.
 
 If implementation reveals a genuine contradiction, missing requirement, architectural problem, or necessary scope change, report it to Subham. Subham decides whether canonical documentation needs to change and owns that update. Documentation changes should be committed separately from feature implementation whenever practical. Do NOT instruct agents to continuously rewrite their MDs as they work.
 
@@ -160,4 +160,5 @@ The final demo should prioritize complete workflows, visible accountability, adm
 ## 24. Request Idempotency & Retries
 - **Idempotency Final Authority:** Idempotency keys must be enforced strictly via database unique constraints.
 - **Retry Semantics:** Client retries�especially offline queue synchronization packets�must seamlessly resolve to the original Request without producing duplicated side effects (Audit, Notification, History) or uncaught generic \P2002\ exceptions.
+
 

@@ -18,6 +18,7 @@ export interface TransitionRequestPayload {
   newStatus: RequestStatus;
   actorId: string;
   notes?: string;
+  evidence?: { type: string, reference: string, description?: string }[];
 }
 
 export interface AssignRequestPayload {
@@ -26,3 +27,4 @@ export interface AssignRequestPayload {
   department: string;
   actorId: string;
 }
+

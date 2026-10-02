@@ -16,14 +16,14 @@ describe('AcademicService', () => {
     await prisma.classSession.deleteMany();
     await prisma.enrollment.deleteMany();
     await prisma.course.deleteMany();
-    await prisma.user.deleteMany({ where: { email: { contains: '@test.com' } } });
+    await prisma.user.deleteMany({ where: { email: { contains: '@acad-test.local' } } });
 
     // Setup users
-    faculty1 = await prisma.user.create({ data: { email: 'f1@test.com', name: 'F1', role: 'Faculty' } });
-    faculty2 = await prisma.user.create({ data: { email: 'f2@test.com', name: 'F2', role: 'Faculty' } });
-    student1 = await prisma.user.create({ data: { email: 's1@test.com', name: 'S1', role: 'Student' } });
-    await prisma.user.create({ data: { email: 's2@test.com', name: 'S2', role: 'Student' } });
-    warden = await prisma.user.create({ data: { email: 'w1@test.com', name: 'W1', role: 'Warden' } });
+    faculty1 = await prisma.user.create({ data: { email: 'f1@acad-test.local', name: 'F1', role: 'Faculty' } });
+    faculty2 = await prisma.user.create({ data: { email: 'f2@acad-test.local', name: 'F2', role: 'Faculty' } });
+    student1 = await prisma.user.create({ data: { email: 's1@acad-test.local', name: 'S1', role: 'Student' } });
+    await prisma.user.create({ data: { email: 's2@acad-test.local', name: 'S2', role: 'Student' } });
+    warden = await prisma.user.create({ data: { email: 'w1@acad-test.local', name: 'W1', role: 'Warden' } });
 
     // Setup courses
     course1 = await prisma.course.create({ data: { code: 'TEST1', name: 'Test Course 1', facultyId: faculty1.id } });
@@ -46,7 +46,7 @@ describe('AcademicService', () => {
     await prisma.classSession.deleteMany();
     await prisma.enrollment.deleteMany();
     await prisma.course.deleteMany();
-    await prisma.user.deleteMany({ where: { email: { contains: '@test.com' } } });
+    await prisma.user.deleteMany({ where: { email: { contains: '@acad-test.local' } } });
   });
 
   describe('Auth and Access', () => {

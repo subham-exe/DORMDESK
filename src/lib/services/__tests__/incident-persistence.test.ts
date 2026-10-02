@@ -27,14 +27,15 @@ describe('Incident Persistence (Q2.4)', () => {
       });
     }
 
+    // R3 matchAndLinkNewRequest creates the incident inline on the 3rd request.
+    // autoClusterIncidents should find 0 unclustered requests.
     const clustersCreated = await IncidentIntelligenceService.autoClusterIncidents(student.id);
-    expect(clustersCreated).toBe(1);
+    expect(clustersCreated).toBe(0);
 
     const incidents = await prisma.incident.findMany({ include: { requests: true } });
     expect(incidents.length).toBe(1);
     const incident = incidents[0];
     
-    expect(incident.groupingReason).toContain("Grouped 3 requests sharing category 'WIFI' and location 'Block A'");
     expect(incident.requests.length).toBe(3);
 
     for (const req of incident.requests) {

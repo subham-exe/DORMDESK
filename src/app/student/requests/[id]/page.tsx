@@ -577,6 +577,56 @@ export default function RequestDetailsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Evidence */}
+          {request.evidences && request.evidences.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3 border-b border-border">
+                <CardTitle className="text-lg text-text-primary flex items-center gap-2">
+                  <FileText className="w-5 h-5" /> Evidence ({request.evidences.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                {request.evidences.map((ev: any) => (
+                  <div key={ev.id} className="p-3 bg-surface-muted rounded-md border border-border">
+                    <div className="flex items-center justify-between mb-1">
+                      <Badge variant="outline" className="text-xs">{ev.type}</Badge>
+                      <span className="text-xs text-text-secondary">{new Date(ev.createdAt).toLocaleString()}</span>
+                    </div>
+                    {ev.description && <p className="text-sm text-text-primary mt-1">{ev.description}</p>}
+                    <p className="text-xs text-text-secondary mt-1 font-mono truncate">{ev.reference}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Assignment History */}
+          {request.assignmentHistory && request.assignmentHistory.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3 border-b border-border">
+                <CardTitle className="text-lg text-text-primary flex items-center gap-2">
+                  <User className="w-5 h-5" /> Assignment History
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                {request.assignmentHistory.map((a: any, i: number) => (
+                  <div key={a.id} className="flex items-center gap-3 p-2 rounded-md bg-surface-muted border border-border">
+                    <div className="w-8 h-8 rounded-full bg-info-bg flex items-center justify-center shrink-0">
+                      <User className="w-4 h-4 text-info" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-text-primary truncate">{a.assignee?.name || a.assigneeId}</p>
+                      <p className="text-xs text-text-secondary">{new Date(a.assignedAt).toLocaleString()}</p>
+                    </div>
+                    {i === request.assignmentHistory.length - 1 && (
+                      <Badge variant="info" className="text-xs shrink-0">Current</Badge>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right Column: Status & SLA */}

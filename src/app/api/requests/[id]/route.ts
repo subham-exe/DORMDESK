@@ -16,6 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         statusHistory: {
           orderBy: { createdAt: 'asc' }
         },
+        evidences: { orderBy: { createdAt: 'desc' } },
         assignmentHistory: {
           orderBy: { assignedAt: 'asc' },
           include: {
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ success: true, data: { ...request, auditLogs } });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
+    if (msg === 'UNAUTHORIZED' || msg === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     return NextResponse.json({ success: false, error: msg }, { status: 400 });
   }
 }
@@ -49,7 +51,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try {
     const user = await requireAuth();
     const body = await req.json();
-    const { action, assigneeId, department, newStatus, notes } = body;
+    const { action, assigneeId, department, newStatus, notes, evidence } = body;
     const actorId = user.id;
 
     const existingReq = await prisma.request.findUnique({ where: { id: resolvedParams.id } });
@@ -80,7 +82,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         requestId: resolvedParams.id,
         newStatus,
         actorId,
-        notes
+        notes,
+        evidence
       });
     } else {
       return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
@@ -89,6 +92,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ success: true, data: request });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error';
+    if (msg === 'UNAUTHORIZED' || msg === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     return NextResponse.json({ success: false, error: msg }, { status: 400 });
   }
 }

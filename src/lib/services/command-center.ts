@@ -5,6 +5,7 @@ interface CommandSummary {
   activeRequests: number;
   criticalIssues: number;
   activeIncidents: number;
+  activeRecurring: number;
   breachedSla: number;
   unassigned: number;
   escalations: number;
@@ -15,14 +16,60 @@ export class CommandCenterService {
    * Main command center aggregation.
    * Consumes SLAService, Incident Intelligence, and basic queries.
    */
-  static async getDashboard() {
+  static async getDashboard(actor?: { id: string, role: string, department?: string | null, hostel?: string | null }) {
     const now = new Date();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const requestWhere: any = {
+      status: { notIn: ['RESOLVED', 'VERIFIED', 'CLOSED', 'REJECTED', 'APPROVED', 'CANCELLED'] }
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const incidentWhere: any = {
+      status: { notIn: ['RESOLVED', 'CLOSED'] }
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recurringWhere: any = {
+      status: 'ACTIVE'
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const escalationWhere: any = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const resolvedWhere: any = { status: 'RESOLVED' };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const historyWhere: any = {
+      status: { in: ['RESOLVED', 'VERIFIED', 'CLOSED'] },
+      assignedAuthorityId: { not: null },
+      resolvedAt: { gte: new Date(now.getTime() - 7 * 24 * 3600000) }
+    };
+
+    if (actor && actor.role !== 'Admin') {
+      if (actor.role === 'Warden' && actor.hostel) {
+        requestWhere.location = { contains: actor.hostel };
+        resolvedWhere.location = { contains: actor.hostel };
+        historyWhere.location = { contains: actor.hostel };
+        incidentWhere.location = { contains: actor.hostel };
+        recurringWhere.location = { contains: actor.hostel };
+        escalationWhere.request = { location: { contains: actor.hostel } };
+      } else if ((actor.role === 'Faculty' || actor.role === 'Staff') && actor.department) {
+        requestWhere.assignedDepartment = actor.department;
+        resolvedWhere.assignedDepartment = actor.department;
+        historyWhere.assignedDepartment = actor.department;
+        incidentWhere.requests = { some: { assignedDepartment: actor.department } };
+        recurringWhere.requests = { some: { assignedDepartment: actor.department } };
+        escalationWhere.request = { assignedDepartment: actor.department };
+      } else {
+        requestWhere.id = 'NO_ACCESS';
+        resolvedWhere.id = 'NO_ACCESS';
+        historyWhere.id = 'NO_ACCESS';
+        incidentWhere.id = 'NO_ACCESS';
+        recurringWhere.id = 'NO_ACCESS';
+        escalationWhere.id = 'NO_ACCESS';
+      }
+    }
 
     // Fetch active requests
     const activeRequests = await prisma.request.findMany({
-      where: {
-        status: { notIn: ['RESOLVED', 'VERIFIED', 'CLOSED', 'REJECTED', 'APPROVED', 'CANCELLED'] }
-      },
+      where: requestWhere,
       include: {
         requester: { select: { name: true, id: true } },
         assignedAuthority: { select: { name: true, id: true } }
@@ -40,7 +87,7 @@ export class CommandCenterService {
       PROCESSING: 0,
       UNASSIGNED: 0,
       BREACHED: 0,
-      RESOLVED_AWAITING_VERIFICATION: await prisma.request.count({ where: { status: 'RESOLVED' } }),
+      RESOLVED_AWAITING_VERIFICATION: await prisma.request.count({ where: resolvedWhere }),
     };
 
     const staffMap: Record<string, { id: string, name: string, active: number, overdue: number, recentlyResolved: number }> = {};
@@ -71,8 +118,8 @@ export class CommandCenterService {
         staffMap[sid].active++;
       }
 
-      // SLA Check via SLAService
-      const sla = await SLAService.evaluate(req, now);
+      // SLA Check via SLAService in memory (prevents N+1 database queries)
+      const sla = SLAService.calculate(req, now);
       if (sla) {
         const policyContext = req.SLA ? ` (${req.SLA}h policy)` : '';
         if (sla.isBreached) {
@@ -99,6 +146,7 @@ export class CommandCenterService {
 
     // Escalations
     const activeEscalations = await prisma.escalation.findMany({
+      where: escalationWhere,
       include: {
         request: { select: { ticketNumber: true, description: true, priority: true } }
       },
@@ -116,9 +164,32 @@ export class CommandCenterService {
       priority: e.request.priority
     }));
 
+    // Recurring Issues
+    const activeRecurringRecs = await prisma.recurringIssue.findMany({
+      where: recurringWhere,
+      orderBy: { occurrenceCount: 'desc' },
+      take: 20,
+      include: {
+        incidents: { select: { id: true } },
+        requests: { select: { id: true } }
+      }
+    });
+
+    const recurring = activeRecurringRecs.map(ri => ({
+      id: ri.id,
+      category: ri.category,
+      location: ri.location,
+      occurrenceCount: ri.occurrenceCount,
+      firstDetectedAt: ri.firstDetectedAt,
+      lastDetectedAt: ri.lastDetectedAt,
+      status: ri.status,
+      relatedIncidentCount: ri.incidents.length,
+      relatedRequestCount: ri.requests.length
+    }));
+
     // Incidents
     const activeIncidentsRecs = await prisma.incident.findMany({
-      where: { status: { notIn: ['RESOLVED', 'CLOSED'] } },
+      where: incidentWhere,
       include: {
         requests: { select: { id: true, requesterId: true } }
       }
@@ -144,11 +215,7 @@ export class CommandCenterService {
 
     // Workload History (Resolved in last 7 days)
     const recentResolved = await prisma.request.findMany({
-      where: {
-        status: { in: ['RESOLVED', 'VERIFIED', 'CLOSED'] },
-        assignedAuthorityId: { not: null },
-        resolvedAt: { gte: new Date(now.getTime() - 7 * 24 * 3600000) }
-      },
+      where: historyWhere,
       select: { assignedAuthorityId: true }
     });
     for (const rr of recentResolved) {
@@ -178,6 +245,7 @@ export class CommandCenterService {
       activeRequests: activeRequests.length,
       criticalIssues: incidents.filter(i => i.priority === 'CRITICAL').length + slaIssues.filter(s => s.severity === 'BREACH').length,
       activeIncidents: incidents.length,
+      activeRecurring: recurring.length,
       breachedSla: workload.BREACHED,
       unassigned: workload.UNASSIGNED,
       escalations: escalations.length
@@ -187,6 +255,7 @@ export class CommandCenterService {
       summary,
       sla: slaIssues,
       incidents,
+      recurring,
       unassigned,
       stale,
       escalations,

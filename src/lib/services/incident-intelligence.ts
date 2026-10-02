@@ -14,7 +14,7 @@ export class IncidentIntelligenceService {
       return { linked: false, reason: 'Request not eligible for incident matching.' };
     }
 
-    const key = `|`;
+    const key = `${request.category}|${request.location}`;
     
     // Concurrency safety (in-memory lock)
     if (this.matchingLocks.has(key)) {
@@ -28,12 +28,14 @@ export class IncidentIntelligenceService {
     this.matchingLocks.add(key);
 
     try {
+      const timeWindow = new Date(Date.now() - 24 * 60 * 60 * 1000);
       // 1. Exact match active incidents
       const activeIncident = await prisma.incident.findFirst({
         where: {
           category: request.category,
           location: request.location,
-          status: { in: ['OPEN', 'IN_PROGRESS'] }
+          status: { in: ['OPEN', 'IN_PROGRESS'] },
+          createdAt: { gte: timeWindow }
         },
         orderBy: { createdAt: 'desc' }
       });
@@ -45,7 +47,6 @@ export class IncidentIntelligenceService {
       }
 
       // 2. Check cluster threshold
-      const timeWindow = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const relatedRequests = await prisma.request.findMany({
         where: {
           category: request.category,
@@ -59,8 +60,8 @@ export class IncidentIntelligenceService {
 
       if (relatedRequests.length >= 3) {
         const requestIds = relatedRequests.map(r => r.id);
-        const title = `Multiple issues reported:  at `;
-        const description = `Auto-clustered  requests for  at .`;
+        const title = `Multiple issues reported: ${request.category} at ${request.location}`;
+        const description = `Auto-clustered ${requestIds.length} requests for ${request.category} at ${request.location}.`;
         
         const inc = await RequestEngine.clusterIntoIncident(
           requestIds,
@@ -74,7 +75,7 @@ export class IncidentIntelligenceService {
         
         await prisma.incident.update({
           where: { id: inc.id },
-          data: { groupingReason: `Grouped  requests sharing category '' and location '' within 24h.` }
+          data: { groupingReason: `Grouped ${requestIds.length} requests sharing category '${request.category}' and location '${request.location}' within 24h.` }
         });
         await this.calculateImpact(inc.id);
 
@@ -230,6 +231,8 @@ export class IncidentIntelligenceService {
             await this.calculateImpact(inc.id);
             clustersCreated++;
           }
+          const { RecurringIssueService } = await import('./recurring-issue');
+          await RecurringIssueService.detectRecurring(category, location, actorId).catch(e => console.error(e));
         } finally {
           this.clusteringLocks.delete(key);
         }

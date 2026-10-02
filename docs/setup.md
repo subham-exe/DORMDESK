@@ -10,7 +10,6 @@ It does NOT replace:
 - `PRD.md`
 - `RULES.md`
 - `TEAM.md`
-- `plan.md`
 - `roadmap.md`
 - role-specific files
 
@@ -774,7 +773,7 @@ The database is seeded with deterministic, fictional local accounts. The passwor
 - **Student:** student@demo.local
 - **Staff:** staff@demo.local
 - **Warden:** warden@demo.local
-- **Admin:** dmin@demo.local
+- **Admin:** admin@demo.local
 
 ## Testing
 The repository uses Vitest for deterministic backend/service testing.
@@ -782,3 +781,5 @@ Run the test suite:
 `powershell
 npm test
 `
+
+

@@ -10,22 +10,17 @@ DormDesk is an intelligent campus operations platform built around a **Universal
 
 Campus systems can digitize individual workflows, but operational problems often remain fragmented across requests, departments, and people. Once requests are digital, the system can understand relationships between them. DormDesk turns individual requests into operational intelligence.
 
-### Current Working Flow (IMPLEMENTED / PROTOTYPE)
+### Final Implementation Features
 
-*   **Universal Request Engine [IMPLEMENTED]:** A unified `RequestEngine` service and schema powering Complaints and Leaves.
-*   **Request Lifecycle & State Machine [IMPLEMENTED]:** Strict backend state machine enforcing valid transitions (e.g., PENDING -> ASSIGNED).
-*   **Zero-Touch Approval [IMPLEMENTED]:** Hardcoded deterministic rule bypasses human intervention (Leave <= 2 days -> Auto approve).
-*   **Student Verification [PROTOTYPE]:** The verification state exists in the workflow model, and UI mockups exist in the student portal, but the backend transition API is pending.
-*   **SLA Tracking [PROTOTYPE]:** SLAs are assigned upon request creation (e.g., 24h for complaints) and visualized in the UI timeline, but automatic escalation policies are not yet implemented.
-
-### Target Hackathon Hero Flow (PLANNED)
-
-*   **Incident Intelligence [BACKEND PRIMITIVE ONLY]:** The `clusterIntoIncident` primitive exists, but automatic detection of related requests (e.g., 12 students reporting "no water") is planned.
-*   **"Me Too" / Incident Joining [PLANNED]:** Prompting students to join an existing incident rather than creating duplicate complaints.
-*   **SLA & Explainable Escalation [PLANNED]:** Automatic escalation via a simulated demo clock and explainable pending reasons.
-*   **Recurring Issue Detection [PLANNED]:** Analyzing historical incidents to identify recurring operational infrastructure problems.
-*   **Operations Command Center [PLANNED]:** An action-oriented admin dashboard for staff/wardens.
-*   **Configurable Workflows [PLANNED]:** Moving from hardcoded transition rules to dynamic workflow configurations.
+*   **Universal Request Engine:** A unified service powering Complaints, Leaves, Certificates, and offline workflows.
+*   **Request Lifecycle & State Machine:** Strict backend state machine enforcing valid transitions with rollback resilience.
+*   **Zero-Touch Approval:** Deterministic policy engine bypasses human intervention (e.g. Leave <= 2 days).
+*   **Student Verification & Evidence:** Staff must submit evidence of resolution; students explicitly verify resolution before closure.
+*   **SLA Tracking & Escalation:** SLAs are tracked, prioritized in the Command Center, and automatically escalated upon breach.
+*   **Incident Intelligence:** Automatic detection of related requests (e.g., multiple students reporting the same issue) and clustering them into a single Incident.
+*   **Recurring Issue Detection:** Identifies persistent infrastructure problems by analyzing incident frequency over time.
+*   **Operations Command Center:** An action-oriented admin dashboard surfacing SLA risks, incidents, and recurring patterns.
+*   **Offline Experience & Sync:** Full PWA offline capability using IndexedDB, request idempotency, and background synchronization.
 
 ## Architecture Concept
 
@@ -72,3 +67,4 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+

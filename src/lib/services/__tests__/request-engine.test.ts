@@ -19,8 +19,16 @@ vi.mock('../../db/prisma', () => ({
       create: vi.fn(),
       update: vi.fn(),
     },
+    requestSLA: {
+      updateMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
     user: {
-      findUnique: vi.fn().mockResolvedValue({ id: 'admin1', role: 'Admin' })
+      findUnique: vi.fn().mockImplementation(({ where }: { where: { id: string } }) => {
+        if (where.id === 'student1') return Promise.resolve({ id: 'student1', role: 'Student' });
+        return Promise.resolve({ id: where.id, role: 'Admin' });
+      })
     },
     policy: {
       findMany: vi.fn().mockResolvedValue([])
@@ -101,10 +109,11 @@ describe('RequestEngine', () => {
     validScenarios.forEach(({ from, to }) => {
       it(`allows transition from ${from} to ${to}`, async () => {
         setupRequest(from);
+        const actorId = to === 'VERIFIED' ? 'student1' : 'admin1';
         await RequestEngine.transitionStatus({
           requestId: 'req1',
-          newStatus: to as 'CLOSED', // Using a valid status type cast to satisfy TS
-          actorId: 'admin1',
+          newStatus: to as 'CLOSED',
+          actorId,
         });
         
         // Note: VERIFIED auto-transitions to CLOSED, so the final status might be CLOSED

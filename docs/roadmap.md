@@ -99,3 +99,29 @@ Offline-first sync · real SMS gateway · more than one non-English language · 
 
 
 
+
+### R2: Smart Routing + Policy Engine (COMPLETE)
+- Deterministic routing engine with category/location-based matching.
+- Policy evaluation with safe metadata context ordering.
+- Assignment persistence with audit trail.
+
+### R3: Incident Intelligence (COMPLETE)
+- Threshold-based incident clustering (3+ related complaints within 24h).
+- Time-window enforcement prevents stale incident absorption.
+- Request-first accountability preserved.
+
+### R4: Accountability + Evidence (IMPLEMENTED)
+- Evidence model added to Prisma schema (migration: r4_evidence).
+- EvidenceService with authorization (creator, assignee, admin).
+- Student-only verification enforcement on RequestEngine.
+- Evidence attached during resolution via transitionStatus.
+- Dedicated evidence API (GET/POST /api/requests/[id]/evidence).
+- Student request detail page shows evidence and assignment history.
+- 19 R4-specific tests covering evidence, assignment history, status transitions, resolution vs verification, audit integrity, and security.
+- 182/182 total tests passing.
+
+### R5: Recurring Issue Detection (IMPLEMENTED)\n- Deterministic detection based on pattern (category + location).\n- Threshold-based clustering: >= 3 occurrences within 30 days.\n- Persistent RecurringIssue model spanning Requests and Incidents.\n- Admin UI and API for viewing patterns.\n
+- [x] S VERIFIED — Reliability & Full-System Regression Hardening
+- [x] T VERIFIED - Demo / Judge Experience Validation
+- [x] U VERIFIED - Independent Security & Regression
+- [x] V VERIFIED - Final Cleanup, Documentation Sync & Freeze
