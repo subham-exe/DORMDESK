@@ -4,11 +4,15 @@ const readline = require('readline');
 const pc = require('picocolors');
 
 function runCommand(command, args, hideOutput = false) {
-  const options = { shell: true };
+  const isWin = process.platform === 'win32';
+  const execCmd = isWin ? 'cmd.exe' : command;
+  const execArgs = isWin ? ['/c', command, ...args] : args;
+
+  const options = {};
   if (!hideOutput) {
     options.stdio = 'inherit';
   }
-  const result = spawnSync(command, args, options);
+  const result = spawnSync(execCmd, execArgs, options);
   return result;
 }
 
@@ -16,12 +20,36 @@ function clearScreen() {
   process.stdout.write(process.platform === 'win32' ? '\x1B[2J\x1B[0f' : '\x1B[2J\x1B[3J\x1B[H');
 }
 
+function isUnicodeSafe() {
+  if (process.platform !== 'win32') return true;
+  if (process.env.WT_SESSION) return true;
+  if (process.env.TERM_PROGRAM === 'vscode') return true;
+  if (process.env.CI) return true;
+  return false;
+}
+
 function printHeader() {
-  console.log(pc.cyan('=================================================================='));
-  console.log(pc.blue(pc.bold('                         DORMDESK')));
-  console.log(pc.cyan('                 CAMPUS ACCOUNTABILITY PLATFORM'));
-  console.log(pc.cyan('=================================================================='));
-  console.log(pc.cyan('                 <3 MADE WITH LOVE BY 404 <3\n'));
+  if (isUnicodeSafe()) {
+    console.log(pc.cyan('╔══════════════════════════════════════════════════════════════╗'));
+    console.log(pc.cyan('║                                                              ║'));
+    console.log(pc.cyan('║   ') + pc.blue(pc.bold('██████╗  ██████╗ ██████╗ ███╗   ███╗██████╗ ███████╗██╗  ██╗')) + pc.cyan('║'));
+    console.log(pc.cyan('║   ') + pc.blue(pc.bold('██╔══██╗██╔═══██╗██╔══██╗████╗ ████║██╔══██╗██╔════╝██║ ██╔╝')) + pc.cyan('║'));
+    console.log(pc.cyan('║   ') + pc.blue(pc.bold('██║  ██║██║   ██║██████╔╝██╔████╔██║██║  ██║█████╗  █████╔╝ ')) + pc.cyan('║'));
+    console.log(pc.cyan('║   ') + pc.blue(pc.bold('██║  ██║██║   ██║██╔══██╗██║╚██╔╝██║██║  ██║██╔══╝  ██╔═██╗ ')) + pc.cyan('║'));
+    console.log(pc.cyan('║   ') + pc.blue(pc.bold('██████╔╝╚██████╔╝██║  ██║██║ ╚═╝ ██║██████╔╝███████╗██║  ██╗')) + pc.cyan('║'));
+    console.log(pc.cyan('║   ') + pc.blue(pc.bold('╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝')) + pc.cyan('║'));
+    console.log(pc.cyan('║                                                              ║'));
+    console.log(pc.cyan('║                 CAMPUS ACCOUNTABILITY PLATFORM              ║'));
+    console.log(pc.cyan('║                                                              ║'));
+    console.log(pc.cyan('╚══════════════════════════════════════════════════════════════╝\n'));
+    console.log(pc.cyan('                    ♥ MADE WITH LOVE BY 404 ♥\n'));
+  } else {
+    console.log(pc.cyan('=================================================================='));
+    console.log(pc.blue(pc.bold('                         DORMDESK')));
+    console.log(pc.cyan('                 CAMPUS ACCOUNTABILITY PLATFORM'));
+    console.log(pc.cyan('=================================================================='));
+    console.log(pc.cyan('                 <3 MADE WITH LOVE BY 404 <3\n'));
+  }
 }
 
 function exitSequence() {
