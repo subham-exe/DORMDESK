@@ -114,20 +114,20 @@ model Escalation {
 }
 
 model Incident {
-  recurringIssueId      String?
-  recurringIssue        RecurringIssue?        @relation(fields: [recurringIssueId], references: [id])
-  id                 String    @id @default(uuid())
+  recurringIssueId   String?
+  recurringIssue     RecurringIssue? @relation(fields: [recurringIssueId], references: [id])
+  id                 String          @id @default(uuid())
   title              String
   description        String
   category           String
   location           String
-  status             String    @default("OPEN")
+  status             String          @default("OPEN")
   assignedDepartment String
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
   resolvedAt         DateTime?
   groupingReason     String?
-  impactScore        Int?      @default(0)
+  impactScore        Int?            @default(0)
   requests           Request[]
 
   @@index([impactScore])
@@ -202,8 +202,8 @@ model Policy {
 }
 
 model Request {
-  recurringIssueId      String?
-  recurringIssue        RecurringIssue?        @relation(fields: [recurringIssueId], references: [id])
+  recurringIssueId    String?
+  recurringIssue      RecurringIssue?        @relation(fields: [recurringIssueId], references: [id])
   id                  String                 @id @default(uuid())
   ticketNumber        String                 @unique
   requestType         String
@@ -315,19 +315,33 @@ model SmsOutbox {
 }
 
 model User {
-  id                String                @id @default(uuid())
-  email             String                @unique
-  name              String
-  role              String
-  department        String?
-  year              Int?
-  branch            String?
-  isResident        Boolean               @default(false)
-  hostel            String?
-  block             String?
-  room              String?
-  password          String?
-  phone             String?
+  id         String  @id @default(uuid())
+  email      String  @unique
+  name       String
+  role       String
+  department String?
+  year       Int?
+  branch     String?
+  isResident Boolean @default(false)
+  hostel     String?
+  block      String?
+  room       String?
+  password   String?
+  phone      String?
+
+  authorityId String?
+  authority   AuthorityLevel? @relation(fields: [authorityId], references: [id])
+
+  collegeId String?
+  college   College? @relation(fields: [collegeId], references: [id])
+
+  departmentRefId String?
+  departmentRef   Department? @relation(fields: [departmentRefId], references: [id])
+
+  hostelRefId String?
+  hostelRef   Hostel? @relation(fields: [hostelRefId], references: [id])
+
+  accountStatus     String                @default("ACTIVE")
   announcements     Announcement[]        @relation("AnnouncementCreator")
   evidences         Evidence[]
   receipts          AnnouncementReceipt[]
@@ -358,7 +372,6 @@ model Evidence {
   @@index([requestId, createdAt])
 }
 
-
 model RecurringIssue {
   id              String     @id @default(uuid())
   category        String
@@ -375,4 +388,42 @@ model RecurringIssue {
 
   @@unique([category, location])
   @@index([status, lastDetectedAt])
+}
+
+model College {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  departments Department[]
+  hostels     Hostel[]
+  users       User[]
+  createdAt   DateTime     @default(now())
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String
+  collegeId String
+  college   College  @relation(fields: [collegeId], references: [id])
+  users     User[]
+  createdAt DateTime @default(now())
+
+  @@unique([name, collegeId])
+}
+
+model Hostel {
+  id        String   @id @default(uuid())
+  name      String
+  collegeId String
+  college   College  @relation(fields: [collegeId], references: [id])
+  users     User[]
+  createdAt DateTime @default(now())
+
+  @@unique([name, collegeId])
+}
+
+model AuthorityLevel {
+  id          String @id @default(uuid())
+  name        String @unique
+  levelNumber Int    @unique
+  users       User[]
 }

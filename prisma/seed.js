@@ -9,6 +9,28 @@ async function main() {
   const password = process.env.SEED_PASSWORD || 'dormdesk2026';
   const hashedPassword = await bcrypt.hash(password, 10);
 
+
+  console.log('Seeding Authority Levels...');
+  const authorities = [
+    { name: 'OWNER_001', levelNumber: 100 },
+    { name: 'ADMIN', levelNumber: 90 },
+    { name: 'PRINCIPAL', levelNumber: 80 },
+    { name: 'HOD', levelNumber: 70 },
+    { name: 'FACULTY', levelNumber: 60 },
+    { name: 'WARDEN', levelNumber: 50 },
+    { name: 'STAFF', levelNumber: 40 },
+    { name: 'STUDENT', levelNumber: 10 }
+  ];
+  const authorityMap = {};
+  for (const auth of authorities) {
+    const record = await prisma.authorityLevel.upsert({
+      where: { name: auth.name },
+      update: { levelNumber: auth.levelNumber },
+      create: auth
+    });
+    authorityMap[auth.name] = record.id;
+  }
+
   console.log('Clearing database...');
   await prisma.auditLog.deleteMany();
   await prisma.announcementReceipt.deleteMany();
@@ -35,9 +57,9 @@ async function main() {
 
   console.log('Seeding Users (Demo Core)...');
   const users = {
-    student: await prisma.user.create({ data: { id: 'usr-student', email: 'student@demo.local', password: hashedPassword, name: 'Student (Judge)', role: 'Student', department: 'Computer Science', year: 2, branch: 'CSE', isResident: true, hostel: 'Hostel A', block: 'North', room: '101' } }),
-    warden: await prisma.user.create({ data: { id: 'usr-warden', email: 'warden@demo.local', password: hashedPassword, name: 'Warden', role: 'Warden', hostel: 'Hostel A' } }),
-    staff: await prisma.user.create({ data: { id: 'usr-staff', email: 'staff@demo.local', password: hashedPassword, name: 'Staff (Plumbing)', role: 'Staff', department: 'Plumbing' } }),
+    student: await prisma.user.create({ data: { id: 'usr-student', email: 'student@demo.local', password: hashedPassword, name: 'Student (Judge)', role: 'Student', authorityId: authorityMap['STUDENT'], department: 'Computer Science', year: 2, branch: 'CSE', isResident: true, hostel: 'Hostel A', block: 'North', room: '101' } }),
+    warden: await prisma.user.create({ data: { id: 'usr-warden', email: 'warden@demo.local', password: hashedPassword, name: 'Warden', role: 'Warden', authorityId: authorityMap['WARDEN'], hostel: 'Hostel A' } }),
+    staff: await prisma.user.create({ data: { id: 'usr-staff', email: 'staff@demo.local', password: hashedPassword, name: 'Staff (Plumbing)', role: 'Staff', authorityId: authorityMap['STAFF'], department: 'Plumbing' } }),
     admin: await prisma.user.create({ data: { id: 'usr-admin', email: 'admin@demo.local', password: hashedPassword, name: 'Admin (Command Center)', role: 'Admin' } }),
   };
 
@@ -49,7 +71,7 @@ async function main() {
         email: `peer${i}@demo.local`,
         password: hashedPassword,
         name: `Peer Student ${i}`,
-        role: 'Student',
+        role: 'Student', authorityId: authorityMap['STUDENT'],
         isResident: true,
         hostel: 'Hostel A',
         block: 'North',

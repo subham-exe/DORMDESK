@@ -8,6 +8,9 @@ vi.mock('@/lib/db/prisma', () => ({
     user: {
       findUnique: vi.fn(),
       create: vi.fn(),
+    },
+    authorityLevel: {
+      findUnique: vi.fn().mockResolvedValue({ id: 'auth_student_id', name: 'STUDENT', levelNumber: 10 }),
     }
   }
 }));

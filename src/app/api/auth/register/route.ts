@@ -39,12 +39,19 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const studentAuth = await prisma.authorityLevel.findUnique({ where: { name: 'STUDENT' } });
+    if (!studentAuth) {
+      return NextResponse.json({ error: 'System uninitialized' }, { status: 500 });
+    }
+
     const newUser = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         name,
         role: 'Student',
+        authorityId: studentAuth.id,
+        accountStatus: 'ACTIVE',
         department,
         year: year ? parseInt(year.toString()) : null,
         branch,

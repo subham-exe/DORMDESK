@@ -72,6 +72,9 @@ export async function getCurrentUser() {
       where: { id: session.userId as string },
     });
     if (!user) return null;
+    if (user.accountStatus !== 'ACTIVE') {
+      throw new Error('Account is suspended or disabled');
+    }
     
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user;
