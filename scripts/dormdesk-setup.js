@@ -49,7 +49,7 @@ function printHeader() {
     pc.blue(pc.bold('╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝'))
   ];
 
-  const subtitle = 'CAMPUS ACCOUNTABILITY PLATFORM';
+  const subtitle = 'ONE CAMPUS, ONE PLATFORM';
 
   if (isUnicodeSafe()) {
     console.log(pc.cyan('╔' + '═'.repeat(innerWidth) + '╗'));
