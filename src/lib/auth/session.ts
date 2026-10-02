@@ -3,6 +3,7 @@ import { authorize } from './rbac';
 import { Domain, Permission } from './policies';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/prisma';
+import { getAuthorityName, deriveLegacyRole } from './authority';
 
 const getSecretKey = () => {
   const jwtSecretEnv = process.env.JWT_SECRET;
@@ -69,12 +70,14 @@ export async function getCurrentUser() {
   
   try {
     const user = await prisma.user.findUnique({
-      where: { id: session.userId as string },
+      where: { id: session.userId as string }, include: { authority: true }
     });
     if (!user) return null;
     if (user.accountStatus !== 'ACTIVE') {
       throw new Error('Account is suspended or disabled');
     }
+    
+    user.role = deriveLegacyRole(getAuthorityName(user));
     
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user;

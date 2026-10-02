@@ -12,8 +12,7 @@ async function main() {
 
   console.log('Seeding Authority Levels...');
   const authorities = [
-    { name: 'OWNER_001', levelNumber: 100 },
-    { name: 'ADMIN', levelNumber: 90 },
+    { name: 'SYSTEM_ADMIN', levelNumber: 100 },
     { name: 'PRINCIPAL', levelNumber: 80 },
     { name: 'HOD', levelNumber: 70 },
     { name: 'FACULTY', levelNumber: 60 },

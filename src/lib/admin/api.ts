@@ -2,6 +2,7 @@ import { RequestStatus, RequestPriority, RequestType } from "../types/request";
 import { prisma } from "../db/prisma";
 import { RequestEngine } from "../services/request-engine";
 import { requireAuth } from "../auth/session";
+import { getAuthorityName } from "../auth/authority";
 
 export interface AdminRequest {
   id: string;
@@ -184,7 +185,7 @@ function mapToAdminRequest(req: any): AdminRequest {
 // Helper for hackathon basic RBAC logic
 export async function verifyAdminAuthority() {
   const user = await requireAuth();
-  if (!user || !['Admin', 'Warden', 'Staff', 'Faculty'].includes(user.role)) {
+  if (!['SystemAdmin', 'Admin', 'Warden', 'Staff', 'Faculty'].includes(user.role)) {
     throw new Error("Unauthorized: Actor is not an admin or staff");
   }
   return user;

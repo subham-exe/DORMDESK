@@ -235,6 +235,10 @@ model Request {
   requestSla          RequestSLA?
   statusHistory       RequestStatusHistory[]
   evidences           Evidence[]
+  isSerious               Boolean @default(false)
+  seriousCategory         String?
+  seriousDowngradeReason  String?
+  seriousDowngradeActorId String?
 
   @@index([createdAt])
   @@index([dueAt, status])
@@ -391,12 +395,13 @@ model RecurringIssue {
 }
 
 model College {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  departments Department[]
-  hostels     Hostel[]
-  users       User[]
-  createdAt   DateTime     @default(now())
+  id              String           @id @default(uuid())
+  name            String           @unique
+  departments     Department[]
+  hostels         Hostel[]
+  users           User[]
+  authorityLevels AuthorityLevel[]
+  createdAt       DateTime         @default(now())
 }
 
 model Department {
@@ -422,8 +427,11 @@ model Hostel {
 }
 
 model AuthorityLevel {
-  id          String @id @default(uuid())
-  name        String @unique
-  levelNumber Int    @unique
-  users       User[]
+  id           String   @id @default(uuid())
+  name         String   @unique
+  levelNumber  Int?
+  capabilities String?
+  collegeId    String?
+  college      College? @relation(fields: [collegeId], references: [id])
+  users        User[]
 }

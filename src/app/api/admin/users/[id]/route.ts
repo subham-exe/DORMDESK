@@ -15,7 +15,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     // Owner protection
-    if (targetUser.authority.name === "OWNER_001") {
+    if (targetUser.authority.name === "SYSTEM_ADMIN") {
       return NextResponse.json({ error: "Owner cannot be modified through this API" }, { status: 403 });
     }
 
@@ -31,8 +31,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const newDepartmentRefId = body.departmentRefId !== undefined ? body.departmentRefId : targetUser.departmentRefId;
     const newHostelRefId = body.hostelRefId !== undefined ? body.hostelRefId : targetUser.hostelRefId;
 
-    if (newRoleName === "OWNER_001") {
-      return NextResponse.json({ error: "Cannot assign OWNER_001 role" }, { status: 403 });
+    if (newRoleName === "SYSTEM_ADMIN") {
+      return NextResponse.json({ error: "Cannot assign SYSTEM_ADMIN role" }, { status: 403 });
     }
 
     if (newRoleName !== targetUser.authority.name || newCollegeId !== targetUser.collegeId || newDepartmentRefId !== targetUser.departmentRefId || newHostelRefId !== targetUser.hostelRefId) {

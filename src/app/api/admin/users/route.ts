@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import bcrypt from "bcryptjs";
 import { requireAuth } from "@/lib/auth/session";
 import { canManageTarget } from "@/lib/auth/hierarchy";
+import { deriveLegacyRole } from "@/lib/auth/authority";
 
 export async function POST(req: Request) {
   try {
@@ -23,12 +24,7 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Map legacy role name for compatibility
-    let legacyRole = "Student";
-    if (["ADMIN", "PRINCIPAL", "HOD"].includes(roleName) || roleName === "OWNER_001") legacyRole = "Admin";
-    else if (roleName === "FACULTY") legacyRole = "Faculty";
-    else if (roleName === "WARDEN") legacyRole = "Warden";
-    else if (roleName === "STAFF") legacyRole = "Staff";
+    const legacyRole = deriveLegacyRole(roleName);
 
     const user = await prisma.user.create({
       data: {

@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid bootstrap token" }, { status: 403 });
     }
 
-    const ownerAuthority = await prisma.authorityLevel.findUnique({ where: { name: "OWNER_001" } });
+    const ownerAuthority = await prisma.authorityLevel.findUnique({ where: { name: "SYSTEM_ADMIN" } });
     if (!ownerAuthority) {
       return NextResponse.json({ error: "System uninitialized" }, { status: 500 });
     }
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       data: {
         email,
         name: name || "System Owner",
-        role: "OWNER_001", // Legacy fallback if checked
+        role: "SYSTEM_ADMIN", // Legacy fallback if checked
         password: hashedPassword,
         isResident: false,
         authorityId: ownerAuthority.id,

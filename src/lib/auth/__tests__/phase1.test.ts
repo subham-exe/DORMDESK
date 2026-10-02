@@ -7,73 +7,87 @@ describe('Phase 1 Identity & Account Foundation', () => {
   beforeAll(async () => {
     // Ensure authorities exist
     const authorities = [
-      { name: 'OWNER_001', levelNumber: 100 },
-      { name: 'ADMIN', levelNumber: 90 },
-      { name: 'PRINCIPAL', levelNumber: 80 },
-      { name: 'HOD', levelNumber: 70 },
-      { name: 'FACULTY', levelNumber: 60 },
-      { name: 'WARDEN', levelNumber: 50 },
-      { name: 'STAFF', levelNumber: 40 },
-      { name: 'STUDENT', levelNumber: 10 }
+      { name: 'SYSTEM_ADMIN' },
+      { name: 'PRINCIPAL' },
+      { name: 'HOD' },
+      { name: 'FACULTY' },
+      { name: 'WARDEN' },
+      { name: 'STAFF' },
+      { name: 'STUDENT' }
     ];
     for (const auth of authorities) {
       await prisma.authorityLevel.upsert({
         where: { name: auth.name },
-        update: { levelNumber: auth.levelNumber },
+        update: {},
         create: auth
       });
     }
   });
 
-  it('Owner uniqueness and bootstrap', async () => {
-    const ownerAuth = await prisma.authorityLevel.findUnique({ where: { name: 'OWNER_001' } });
+  it('System Admin uniqueness and bootstrap', async () => {
+    const sysAuth = await prisma.authorityLevel.findUnique({ where: { name: 'SYSTEM_ADMIN' } });
     
-    // Create Owner
-    const owner = await prisma.user.create({
+    // Create System Admin
+    const sysAdmin = await prisma.user.create({
       data: {
-        email: 'owner@test.local',
-        name: 'Owner',
-        role: 'Admin',
+        email: 'sysadmin@test.local',
+        name: 'System Admin',
+        role: 'SystemAdmin',
         password: 'hash',
         isResident: false,
-        authorityId: ownerAuth!.id,
+        authorityId: sysAuth!.id,
         accountStatus: 'ACTIVE'
       }
     });
 
-    const existingOwner = await prisma.user.findFirst({ where: { authorityId: ownerAuth!.id } });
-    expect(existingOwner?.id).toBe(owner.id);
+    const existingSysAdmin = await prisma.user.findFirst({ where: { authorityId: sysAuth!.id } });
+    expect(existingSysAdmin?.id).toBe(sysAdmin.id);
 
-    await prisma.user.delete({ where: { id: owner.id } });
+    // Verify trigger blocks duplicate (DB singularity)
+    await expect(
+      prisma.user.create({
+        data: {
+          email: 'sysadmin2@test.local',
+          name: 'System Admin 2',
+          role: 'SystemAdmin',
+          password: 'hash',
+          isResident: false,
+          authorityId: sysAuth!.id,
+          accountStatus: 'ACTIVE'
+        }
+      })
+    ).rejects.toThrow();
+
+    await prisma.user.delete({ where: { id: sysAdmin.id } });
   });
 
   it('Hierarchy authorization checks', async () => {
-    await prisma.user.deleteMany({ where: { email: { in: ['admin1@t.com', 'p1@t.com'] } } });
+    await prisma.user.deleteMany({ where: { email: { in: ['sysadmin1@t.com', 'p1@t.com'] } } });
     await prisma.college.deleteMany({ where: { name: 'COLLEGE_A' } });
-    const admin = await prisma.user.create({
-      data: { email: 'admin1@t.com', name: 'A', role: 'Admin', password: 'h', isResident: false, authorityId: (await prisma.authorityLevel.findUnique({ where: { name: 'ADMIN'} }))!.id }
+    const sysadmin = await prisma.user.create({
+      data: { email: 'sysadmin1@t.com', name: 'A', role: 'SystemAdmin', password: 'h', isResident: false, authorityId: (await prisma.authorityLevel.findUnique({ where: { name: 'SYSTEM_ADMIN'} }))!.id }
     });
     
-    // Admin cannot create Owner
-    expect(await canManageTarget(admin.id, 'OWNER_001')).toBe(false);
-    // Admin cannot create Admin
-    expect(await canManageTarget(admin.id, 'ADMIN')).toBe(false);
-    // Admin can create Principal
-    expect(await canManageTarget(admin.id, 'PRINCIPAL')).toBe(true);
+    // SYSTEM_ADMIN cannot create another SYSTEM_ADMIN
+    expect(await canManageTarget(sysadmin.id, 'SYSTEM_ADMIN')).toBe(false);
+    // SYSTEM_ADMIN can create Principal
+    expect(await canManageTarget(sysadmin.id, 'PRINCIPAL')).toBe(true);
 
     const col = await prisma.college.create({ data: { name: 'COLLEGE_A' } });
     const principal = await prisma.user.create({
       data: { email: 'p1@t.com', name: 'P', role: 'Admin', password: 'h', isResident: false, collegeId: col.id, authorityId: (await prisma.authorityLevel.findUnique({ where: { name: 'PRINCIPAL'} }))!.id }
     });
 
-    // Principal cannot create Admin
-    expect(await canManageTarget(principal.id, 'ADMIN')).toBe(false);
-    // Principal can create HOD in own college
+    // Principal cannot create SYSTEM_ADMIN
+    expect(await canManageTarget(principal.id, 'SYSTEM_ADMIN')).toBe(false);
+    // Principal cannot create another PRINCIPAL
+    expect(await canManageTarget(principal.id, 'PRINCIPAL')).toBe(false);
+    // Principal can create authorities in own college
     expect(await canManageTarget(principal.id, 'HOD', col.id)).toBe(true);
-    // Principal cannot create HOD in other college
+    // Principal cannot create authorities in other college
     expect(await canManageTarget(principal.id, 'HOD', 'COLLEGE_B')).toBe(false);
 
-    await prisma.user.deleteMany({ where: { email: { in: ['admin1@t.com', 'p1@t.com'] } } });
+    await prisma.user.deleteMany({ where: { email: { in: ['sysadmin1@t.com', 'p1@t.com'] } } });
   });
 
   it('Account lifecycle restriction', async () => {
