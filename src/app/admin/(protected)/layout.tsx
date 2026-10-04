@@ -8,7 +8,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) redirect("/admin/login");
   
   const authName = getAuthorityName(user);
-  if (authName !== "SYSTEM_ADMIN" && user.role !== "Admin" && user.role !== "SYSTEM_ADMIN") {
+  if (authName !== "SYSTEM_ADMIN") {
     redirect("/admin/login");
   }
   return <AdminLayoutClient>{children}</AdminLayoutClient>;

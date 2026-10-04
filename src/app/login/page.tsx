@@ -54,8 +54,8 @@ export default function StudentLoginPage() {
         router.push("/hod");
       } else if (authName === "PRINCIPAL") {
         router.push("/principal");
-      } else if (authName === "SYSTEM_ADMIN" || userRole === "SYSTEM_ADMIN") {
-        router.push("/admin");
+      } else if (authName === "SYSTEM_ADMIN") {
+        router.push("/admin/command-center");
       } else {
         router.push("/login");
       }

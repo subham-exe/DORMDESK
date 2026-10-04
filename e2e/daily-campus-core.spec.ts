@@ -20,7 +20,7 @@ test.describe('Daily Campus Core UI Validation', () => {
     });
 
     test('Logged-out protected /admin redirects to /admin/login', async ({ page }) => {
-      await page.goto('/admin');
+      await page.goto('/admin/command-center');
       await expect(page).toHaveURL(/\/admin\/login/);
       // Ensure /admin/login is accessible
       await page.goto('/admin/login');
@@ -61,6 +61,10 @@ test.describe('Daily Campus Core UI Validation', () => {
       // Try to access faculty domain (should be blocked and redirected)
       await page.goto('/faculty');
       await expect(page).toHaveURL(/\/login/);
+
+      // Try to access admin domain (should be blocked and redirected)
+      await page.goto('/admin/command-center');
+      await expect(page).toHaveURL(/\/admin\/login/);
       
       await page.goto('/student');
       await expect(page.locator('text=Active Requests').first()).toBeVisible();
@@ -116,7 +120,7 @@ test.describe('Daily Campus Core UI Validation', () => {
       await page.fill('#password', 'dormdesk2026');
       await page.locator('button:has-text("Sign In")').click();
 
-      await expect(page).toHaveURL(/\/admin/);
+      await expect(page).toHaveURL(/\/admin\/command-center/);
       await expect(page.locator('text=Command Center').first()).toBeVisible();
     });
   });
