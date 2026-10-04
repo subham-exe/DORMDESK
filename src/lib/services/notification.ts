@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
+import { EmailService } from './email/email-service';
+import { ConsentLedgerService } from './consent-ledger';
 
 export enum NotificationType {
   REQUEST_ASSIGNED = 'REQUEST_ASSIGNED',
@@ -23,6 +25,32 @@ export interface CreateNotificationPayload {
 }
 
 export class NotificationService {
+
+  static async _trySendEmail(recipientId: string, type: string, subject: string, message: string, requestId?: string) {
+    try {
+console.log('Sending email for', recipientId, type);
+      const user = await prisma.user.findUnique({ where: { id: recipientId }});
+      console.log('User:', user?.id, 'emailVerified:', user?.emailVerified); if (!user || !user.emailVerified) return;
+      
+      const purpose = type === NotificationType.ANNOUNCEMENT ? 'EMAIL_CAMPUS_ANNOUNCEMENTS' : 
+                      (type.startsWith('SLA_') || type === 'ESCALATION' ? 'EMAIL_SLA_NOTIFICATIONS' : 'EMAIL_REQUEST_NOTIFICATIONS');
+      
+      const hasConsent = await ConsentLedgerService.hasCurrentConsent(recipientId, purpose);
+      console.log('Has consent:', hasConsent); if (!hasConsent) return;
+      
+      await EmailService.sendEmail({
+        to: user.email,
+        recipientId,
+        purpose,
+        subject: `[DORMDESK] ${subject}`,
+        text: message,
+        idempotencyKey: requestId ? `${type}_${requestId}` : undefined
+      });
+    } catch (e) {
+      console.error('Failed to send operational email', e);
+    }
+  }
+
   /**
    * Sanitizes metadata to remove sensitive credentials.
    */
@@ -54,7 +82,7 @@ export class NotificationService {
     const safeMetadata = this.sanitizeMetadata(payload.metadata);
     const requestId = payload.metadata?.requestId as string | undefined;
 
-    return await prisma.notification.create({
+    const notif = await prisma.notification.create({
       data: {
         recipientId: payload.recipientId,
         title: payload.title,
@@ -64,6 +92,9 @@ export class NotificationService {
         requestId: requestId || null,
       },
     });
+    
+    await this._trySendEmail(payload.recipientId, payload.type, payload.title, payload.message, requestId);
+    return notif;
   }
 
   static async list(recipientId: string) {

@@ -9,15 +9,32 @@ describe('Persistence: Audit & Notification (Q2.9)', () => {
 
   beforeEach(async () => {
     prisma = new PrismaClient();
-    await prisma.notification.deleteMany();
-    await prisma.auditLog.deleteMany();
-    await prisma.requestAssignment.deleteMany();
-    await prisma.requestStatusHistory.deleteMany();
-    await prisma.requestSLA.deleteMany();
-    await prisma.request.deleteMany();
-    await prisma.policy.deleteMany();
-    await prisma.smsOutbox.deleteMany();
-    await prisma.user.deleteMany();
+
+    try {
+      await prisma.emailDeliveryLog.deleteMany();
+      await prisma.smsOutbox.deleteMany();
+      await prisma.escalation.deleteMany();
+      await prisma.requestSLA.deleteMany();
+      await prisma.notification.deleteMany();
+      await prisma.auditLog.deleteMany();
+      await prisma.requestStatusHistory.deleteMany();
+      await prisma.requestAssignment.deleteMany();
+      await prisma.request.deleteMany();
+      await prisma.consentRecord.deleteMany();
+      await prisma.policy.deleteMany();
+      await prisma.user.deleteMany({
+        where: {
+          OR: [
+            { email: { startsWith: 'req-tester' } },
+            { email: { startsWith: 'staff-' } },
+            { email: { startsWith: 'notif@' } },
+            { email: { startsWith: 'staff-elec' } },
+            { email: { startsWith: 'test-r2' } }
+          ]
+        }
+      });
+    } catch (e) {}
+
   });
 
   afterEach(async () => {

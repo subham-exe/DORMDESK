@@ -1,1 +1,1 @@
-export { canManageTarget } from './authority';
+﻿export { canManageTarget } from './authority';

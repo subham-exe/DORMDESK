@@ -41,8 +41,24 @@ export default function StudentLoginPage() {
         await clearOfflineDB().catch(console.error);
       }
       localStorage.setItem('dormdesk_user_id', userData.id);
-
-      router.push("/student");
+      const authName = userData.authority?.name;
+      const userRole = userData.role;
+      
+      if (authName === "STUDENT") {
+        router.push("/student");
+      } else if (authName === "FACULTY") {
+        router.push("/faculty");
+      } else if (authName === "WARDEN" || authName === "STAFF") {
+        router.push("/warden");
+      } else if (authName === "HOD") {
+        router.push("/hod");
+      } else if (authName === "PRINCIPAL") {
+        router.push("/principal");
+      } else if (authName === "SYSTEM_ADMIN" || userRole === "SYSTEM_ADMIN") {
+        router.push("/admin");
+      } else {
+        router.push("/login");
+      }
     } catch (err) {
       console.error(err);
       setError("An error occurred during login.");

@@ -1,4 +1,5 @@
 import { prisma } from '../db/prisma';
+import { requireCollegeScope } from '../auth/authority';
 import { CreateRequestPayload, TransitionRequestPayload, AssignRequestPayload, RequestStatus } from '../types/request';
 import { AuditService } from './audit';
 import { NotificationService, NotificationType } from './notification';
@@ -215,8 +216,10 @@ export class RequestEngine {
   }
 
   static async assignRequest(payload: AssignRequestPayload) {
-    const request = await prisma.request.findUnique({ where: { id: payload.requestId } });
+    const request = await prisma.request.findUnique({ where: { id: payload.requestId }, include: { requester: true } });
     if (!request) throw new Error('Request not found');
+    const scopeActor = await prisma.user.findUnique({ where: { id: payload.actorId }, include: { authority: true } });
+    requireCollegeScope(scopeActor, request.requester ? request.requester.collegeId : undefined);
 
     if (['CLOSED', 'CANCELLED', 'REJECTED', 'APPROVED'].includes(request.status)) {
        throw new Error('Cannot assign a request in terminal state');
@@ -269,8 +272,10 @@ export class RequestEngine {
   }
 
   static async transitionStatus(payload: TransitionRequestPayload): Promise<unknown> {
-    const request = await prisma.request.findUnique({ where: { id: payload.requestId } });
+    const request = await prisma.request.findUnique({ where: { id: payload.requestId }, include: { requester: true } });
     if (!request) throw new Error('Request not found');
+    const scopeActor = await prisma.user.findUnique({ where: { id: payload.actorId }, include: { authority: true } });
+    requireCollegeScope(scopeActor, request.requester ? request.requester.collegeId : undefined);
 
     const validNext = VALID_TRANSITIONS[request.status as RequestStatus] || [];
     const isSameStatus = request.status === payload.newStatus;

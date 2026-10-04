@@ -11,7 +11,8 @@
     "test": "vitest run",
     "local": "node scripts/local.js",
     "local:reset": "node scripts/safe-reset.js",
-    "db:deploy": "npx prisma migrate deploy"
+    "db:deploy": "npx prisma migrate deploy",
+    "seed:demo": "npx tsx scripts/seed-demo.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -19,15 +20,20 @@
     "jose": "^6.2.12",
     "lucide-react": "^1.47.0",
     "next": "16.3.5",
+    "nodemailer": "^10.0.14",
     "picocolors": "^1.1.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "react-qr-code": "^2.2.0"
+    "react-qr-code": "^2.2.0",
+    "resend": "^6.32.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

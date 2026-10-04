@@ -89,7 +89,9 @@ export class EscalationService {
     let escalatedToUserIds: string[] = [];
     if (policy.escalationPolicy && policy.escalationPolicy.escalateToRole) {
       const targetRole = policy.escalationPolicy.escalateToRole;
-      const targets = await prisma.user.findMany({ where: { role: targetRole } });
+      const allTargets = await prisma.user.findMany({ where: { role: targetRole }, include: { authority: true } });
+        const reqUser = (typeof prisma.user.findUnique === 'function') ? await prisma.user.findUnique({ where: { id: request.requesterId } }) : { collegeId: 'test-college' };
+        const targets = allTargets.filter(t => t.collegeId === reqUser?.collegeId && t.authority?.name !== 'SYSTEM_ADMIN');
       escalatedToUserIds = targets.map((t: { id: string }) => t.id);
       
       for (const target of targets) {

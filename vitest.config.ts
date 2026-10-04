@@ -8,6 +8,7 @@ export default defineConfig({
     },
   },
   test: {
-    fileParallelism: false
+    fileParallelism: false,
+    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'e2e/**/*']
   }
 });

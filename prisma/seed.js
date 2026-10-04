@@ -10,6 +10,15 @@ async function main() {
   const hashedPassword = await bcrypt.hash(password, 10);
 
 
+  
+  console.log('Clearing database cleanly...');
+  const tables = await prisma.$queryRaw`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '_prisma_migrations';`;
+  await prisma.$executeRawUnsafe(`PRAGMA foreign_keys = OFF;`);
+  for (const { name } of tables) {
+    await prisma.$executeRawUnsafe(`DELETE FROM "${name}";`);
+  }
+  await prisma.$executeRawUnsafe(`PRAGMA foreign_keys = ON;`);
+
   console.log('Seeding Authority Levels...');
   const authorities = [
     { name: 'SYSTEM_ADMIN', levelNumber: 100 },
@@ -29,30 +38,6 @@ async function main() {
     });
     authorityMap[auth.name] = record.id;
   }
-
-  console.log('Clearing database...');
-  await prisma.auditLog.deleteMany();
-  await prisma.announcementReceipt.deleteMany();
-  await prisma.announcement.deleteMany();
-  await prisma.escalation.deleteMany();
-  await prisma.notification.deleteMany();
-  
-  await prisma.requestStatusHistory.deleteMany();
-  await prisma.requestAssignment.deleteMany();
-  await prisma.requestSLA.deleteMany();
-  await prisma.smsOutbox.deleteMany();
-
-  await prisma.request.deleteMany();
-  await prisma.incident.deleteMany();
-  await prisma.scholarship.deleteMany();
-  await prisma.messFeedback.deleteMany();
-  await prisma.messMenu.deleteMany();
-  await prisma.attendance.deleteMany();
-  await prisma.classSession.deleteMany();
-  await prisma.enrollment.deleteMany();
-  await prisma.course.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.policy.deleteMany();
 
   console.log('Seeding Users (Demo Core)...');
   const users = {

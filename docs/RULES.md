@@ -66,6 +66,10 @@ Do not create separate incompatible workflow engines for individual modules. New
 ## 9. RBAC and Security Rules
 Use `Role + Domain + Scope + Permission`.
 Do NOT implement a simplistic linear approval hierarchy (Principal → HOD → Professor → Warden) unless explicitly required by a workflow. Authorization must be enforced server-side. Students are service/request users.
+- **Canonical Authority**: Always use `getAuthorityName(user)` and the canonical authority relations rather than `any` casts or legacy string checks.
+- **Server-Side Routing Guards**: Protected application layouts must enforce authorization via Server Components, not just client-side `useEffect` redirects. Route Groups (e.g. `(protected)`) should be used to protect layout shells while leaving public login routes accessible.
+- **Domain Strictness**: Dashboards must actively reject authenticated users requesting a scope outside their assigned authority.
+- **Platform Authority**: `SYSTEM_ADMIN` (`001`) is a unique platform-level authority and must not be treated as a standard college role.
 
 ## 10. Audit Rules
 Important state changes must be auditable. Audit events should preserve:
@@ -131,6 +135,9 @@ Before a feature is considered complete:
 - Relevant audit events and notifications exist where required.
 - UI handles loading/empty/error/success states.
 - Integration with existing modules is verified.
+- **Auth E2E Coverage**: E2E suites for routing must deterministically cover logged-out redirects, cross-domain blocking, and successful domain landing.
+- **Seed Data Integrity**: Demo seed scripts must fully populate the canonical authority relationships (e.g., `authorityId`, `departmentRefId`) required by production logic.
+- **Assertion Integrity**: Never weaken security assertions or change expected application behavior merely to make a test pass. Verify against architectural intent first.
 
 ## 19. Definition of Done
 A feature is not done merely because its UI exists. A feature is done when implementation exists, required backend/API behavior works, authorization works, persistence works, audit/notifications exist where required, relevant UI states work, the branch is clean enough for integration, and integration does not break existing flows.

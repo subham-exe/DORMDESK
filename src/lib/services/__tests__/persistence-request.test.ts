@@ -11,16 +11,28 @@ describe('Persistence: Request Lifecycle (Q2.9)', () => {
 
   beforeEach(async () => {
     mainPrisma = new PrismaClient();
-    await mainPrisma.notification.deleteMany();
-    await mainPrisma.auditLog.deleteMany();
-    await mainPrisma.requestAssignment.deleteMany();
-    await mainPrisma.requestStatusHistory.deleteMany();
-    await mainPrisma.requestSLA.deleteMany();
-    await mainPrisma.request.deleteMany();
-    await mainPrisma.policy.deleteMany();
-    await mainPrisma.smsOutbox.deleteMany();
-    await mainPrisma.user.deleteMany();
-    
+    try {
+      await mainPrisma.emailDeliveryLog.deleteMany();
+      await mainPrisma.smsOutbox.deleteMany();
+      await mainPrisma.escalation.deleteMany();
+      await mainPrisma.requestSLA.deleteMany();
+      await mainPrisma.notification.deleteMany();
+      await mainPrisma.auditLog.deleteMany();
+      await mainPrisma.requestStatusHistory.deleteMany();
+      await mainPrisma.requestAssignment.deleteMany();
+      await mainPrisma.request.deleteMany();
+      await mainPrisma.consentRecord.deleteMany();
+      await mainPrisma.policy.deleteMany();
+      await mainPrisma.user.deleteMany({
+        where: {
+          OR: [
+            { email: { startsWith: 'req-tester' } },
+            { email: { startsWith: 'req-staff' } }
+          ]
+        }
+      });
+    } catch (e) {}
+
     const user = await mainPrisma.user.create({
       data: { id: 'usr-pers-req', email: 'req-tester@demo.local', name: 'Tester', role: 'Student' }
     });

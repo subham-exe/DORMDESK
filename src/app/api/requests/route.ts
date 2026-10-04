@@ -4,7 +4,7 @@ import { IncidentIntelligenceService } from '@/lib/services/incident-intelligenc
 import { prisma } from '@/lib/db/prisma';
 import { requireAuth } from '@/lib/auth/session';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const user = await requireAuth();
 

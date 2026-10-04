@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { prisma } from '@/lib/db/prisma';
 import bcrypt from 'bcryptjs';
 import { canManageTarget } from '../hierarchy';
@@ -28,17 +28,20 @@ describe('Phase 1 Identity & Account Foundation', () => {
     const sysAuth = await prisma.authorityLevel.findUnique({ where: { name: 'SYSTEM_ADMIN' } });
     
     // Create System Admin
-    const sysAdmin = await prisma.user.create({
-      data: {
-        email: 'sysadmin@test.local',
-        name: 'System Admin',
-        role: 'SystemAdmin',
-        password: 'hash',
-        isResident: false,
-        authorityId: sysAuth!.id,
-        accountStatus: 'ACTIVE'
-      }
-    });
+    let sysAdmin = await prisma.user.findFirst({ where: { authorityId: sysAuth!.id } });
+    if (!sysAdmin) {
+      sysAdmin = await prisma.user.create({
+        data: {
+          email: 'sysadmin@test.local',
+          name: 'System Admin',
+          role: 'SystemAdmin',
+          password: 'hash',
+          isResident: false,
+          authorityId: sysAuth!.id,
+          accountStatus: 'ACTIVE'
+        }
+      });
+    }
 
     const existingSysAdmin = await prisma.user.findFirst({ where: { authorityId: sysAuth!.id } });
     expect(existingSysAdmin?.id).toBe(sysAdmin.id);
@@ -64,9 +67,12 @@ describe('Phase 1 Identity & Account Foundation', () => {
   it('Hierarchy authorization checks', async () => {
     await prisma.user.deleteMany({ where: { email: { in: ['sysadmin1@t.com', 'p1@t.com'] } } });
     await prisma.college.deleteMany({ where: { name: 'COLLEGE_A' } });
-    const sysadmin = await prisma.user.create({
-      data: { email: 'sysadmin1@t.com', name: 'A', role: 'SystemAdmin', password: 'h', isResident: false, authorityId: (await prisma.authorityLevel.findUnique({ where: { name: 'SYSTEM_ADMIN'} }))!.id }
-    });
+    let sysadmin = await prisma.user.findFirst({ where: { authorityId: (await prisma.authorityLevel.findUnique({ where: { name: 'SYSTEM_ADMIN'} }))!.id } });
+    if (!sysadmin) {
+      sysadmin = await prisma.user.create({
+        data: { email: 'sysadmin1@t.com', name: 'A', role: 'SystemAdmin', password: 'h', isResident: false, authorityId: (await prisma.authorityLevel.findUnique({ where: { name: 'SYSTEM_ADMIN'} }))!.id }
+      });
+    }
     
     // SYSTEM_ADMIN cannot create another SYSTEM_ADMIN
     expect(await canManageTarget(sysadmin.id, 'SYSTEM_ADMIN')).toBe(false);
