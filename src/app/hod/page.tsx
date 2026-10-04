@@ -1,15 +1,15 @@
 import { getCurrentUser } from '@/lib/auth/session';
+import { getAuthorityName } from '@/lib/auth/authority';
 import { prisma } from '@/lib/db/prisma';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users } from 'lucide-react';
 import { MentorService } from '@/lib/services/mentor';
 import { revalidatePath } from 'next/cache';
 
 export default async function HodDashboard() {
   const user = await getCurrentUser();
-  if (!user || (user as any).authority?.name !== 'HOD') redirect('/login');
+  if (!user || getAuthorityName(user) !== 'HOD') redirect('/login');
 
   const departmentId = user.departmentRefId;
   const collegeId = user.collegeId;

@@ -9,7 +9,7 @@ import { EmailTemplates } from "@/lib/services/email/templates";
  * Request: authenticated user requests email verification for themselves.
  * Response: success (token is sent via email, never in response body).
  */
-export async function POST(req: Request) {
+export async function POST() {
   try {
     const actor = await requireAuth(); // Allow even if mustChangePassword
 
@@ -34,18 +34,17 @@ export async function POST(req: Request) {
       message: "Verification email sent",
       expiresAt: expiresAt.toISOString()
     }, { status: 200 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error) {
-    if (((error as any)?.message || 'Unknown error') === "UNAUTHORIZED") {
+    if (((error as Error)?.message || 'Unknown error') === "UNAUTHORIZED") {
       return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
     }
-    if (((error as any)?.message || 'Unknown error') === "MUST_CHANGE_PASSWORD") {
+    if (((error as Error)?.message || 'Unknown error') === "MUST_CHANGE_PASSWORD") {
       return NextResponse.json({ error: "MUST_CHANGE_PASSWORD" }, { status: 403 });
     }
-    if (((error as any)?.message || 'Unknown error') === "Email already verified") {
+    if (((error as Error)?.message || 'Unknown error') === "Email already verified") {
       return NextResponse.json({ error: "Email already verified" }, { status: 409 });
     }
-    if (((error as any)?.message || 'Unknown error') === "Account is not active") {
+    if (((error as Error)?.message || 'Unknown error') === "Account is not active") {
       return NextResponse.json({ error: "Account is not active" }, { status: 403 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -69,15 +68,14 @@ export async function GET(req: Request) {
     await EmailVerificationService.verifyEmail(token, userId);
 
     return NextResponse.json({ message: "Email verified successfully" }, { status: 200 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error) {
-    if (((error as any)?.message || 'Unknown error') === "INVALID_TOKEN") {
+    if (((error as Error)?.message || 'Unknown error') === "INVALID_TOKEN") {
       return NextResponse.json({ error: "Invalid or expired token" }, { status: 400 });
     }
-    if (((error as any)?.message || 'Unknown error') === "TOKEN_ALREADY_USED") {
+    if (((error as Error)?.message || 'Unknown error') === "TOKEN_ALREADY_USED") {
       return NextResponse.json({ error: "Token has already been used" }, { status: 400 });
     }
-    if (((error as any)?.message || 'Unknown error') === "TOKEN_EXPIRED") {
+    if (((error as Error)?.message || 'Unknown error') === "TOKEN_EXPIRED") {
       return NextResponse.json({ error: "Token has expired" }, { status: 400 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

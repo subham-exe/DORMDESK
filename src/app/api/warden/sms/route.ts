@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/session';
 import { SmsService } from '@/lib/services/sms';
 
-export async function GET(_req?: Request) {
+export async function GET() {
   try {
     const user = await requireAuth();
     if (user.role !== 'Warden') {

@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/lib/auth/session';
+import { getAuthorityName } from '@/lib/auth/authority';
 import { prisma } from '@/lib/db/prisma';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +7,7 @@ import { Building, Users, BookOpen } from 'lucide-react';
 
 export default async function PrincipalDashboard() {
   const user = await getCurrentUser();
-  if (!user || (user as any).authority?.name !== 'PRINCIPAL') redirect('/login');
+  if (!user || getAuthorityName(user) !== 'PRINCIPAL') redirect('/login');
 
   const collegeId = user.collegeId;
   if (!collegeId) throw new Error('Principal must be bound to a college');

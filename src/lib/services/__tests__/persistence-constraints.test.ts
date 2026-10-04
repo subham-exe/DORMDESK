@@ -30,7 +30,7 @@ describe('Persistence: Constraints (Q2.9)', () => {
           ]
         }
       });
-    } catch (e) {}
+    } catch {}
 
   });
 

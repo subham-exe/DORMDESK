@@ -42,8 +42,6 @@ export default function StudentLoginPage() {
       }
       localStorage.setItem('dormdesk_user_id', userData.id);
       const authName = userData.authority?.name;
-      const userRole = userData.role;
-      
       if (authName === "STUDENT") {
         router.push("/student");
       } else if (authName === "FACULTY") {

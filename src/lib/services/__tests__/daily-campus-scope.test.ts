@@ -5,7 +5,9 @@ import { CourseService } from '../course';
 import { randomUUID } from 'crypto';
 
 describe('Daily Campus Core - Scope and Security', () => {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   let hod: any, mentor1: any, mentor2: any, student1: any, student2: any, college: any, dept1: any, dept2: any, course: any;
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
   beforeAll(async () => {
     await prisma.college.upsert({ where: { id: 'test-college' }, update: {}, create: { id: 'test-college', name: 'Test College', status: 'ACTIVE' } });

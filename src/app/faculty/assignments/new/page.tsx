@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/lib/auth/session';
+import { getAuthorityName } from '@/lib/auth/authority';
 import { CourseService } from '@/lib/services/course';
 import { prisma } from '@/lib/db/prisma';
 import { redirect } from 'next/navigation';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 
 export default async function NewAssignmentPage({ searchParams }: { searchParams: { courseId?: string } }) {
   const user = await getCurrentUser();
-  if (!user || (user as any).authority?.name !== 'FACULTY') redirect('/login');
+  if (!user || getAuthorityName(user) !== 'FACULTY') redirect('/login');
 
   const courses = await prisma.course.findMany({ where: { facultyId: user.id } });
 

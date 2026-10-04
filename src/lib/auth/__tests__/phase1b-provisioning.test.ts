@@ -15,8 +15,8 @@ describe('Phase 1 Part B Provisioning & Access Controls', () => {
     const authSys = await prisma.authorityLevel.upsert({ where: { name: 'SYSTEM_ADMIN' }, update: {}, create: { name: 'SYSTEM_ADMIN' } });
     const authPrin = await prisma.authorityLevel.upsert({ where: { name: 'PRINCIPAL' }, update: {}, create: { name: 'PRINCIPAL' } });
     const authHod = await prisma.authorityLevel.upsert({ where: { name: 'HOD' }, update: {}, create: { name: 'HOD' } });
-    const _authFac = await prisma.authorityLevel.upsert({ where: { name: 'FACULTY' }, update: {}, create: { name: 'FACULTY' } });
-    const _authStudent = await prisma.authorityLevel.upsert({ where: { name: 'STUDENT' }, update: {}, create: { name: 'STUDENT' } });
+    // const _authFac = await prisma.authorityLevel.upsert({ where: { name: 'FACULTY' }, update: {}, create: { name: 'FACULTY' } });
+    // const _authStudent = await prisma.authorityLevel.upsert({ where: { name: 'STUDENT' }, update: {}, create: { name: 'STUDENT' } });
 
     collegeA = await prisma.college.upsert({ where: { name: 'College A' }, update: {}, create: { name: 'College A' } });
     collegeB = await prisma.college.upsert({ where: { name: 'College B' }, update: {}, create: { name: 'College B' } });

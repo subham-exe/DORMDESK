@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 describe('Instrumentation (SLA Scheduler)', () => {
-  let register: any;
+  let register: () => Promise<void>;
 
   beforeEach(async () => {
     vi.resetModules();

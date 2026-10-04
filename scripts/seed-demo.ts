@@ -187,41 +187,41 @@ async function main() {
   }
 
   // Mixed Requests
-  const r1 = await createDemoReq('1', 'COMPLAINT', 'Electrical', 'demo-stu-1', 'Ceiling fan in Room A-101 is not working.', 'PENDING', {
+  await createDemoReq('1', 'COMPLAINT', 'Electrical', 'demo-stu-1', 'Ceiling fan in Room A-101 is not working.', 'PENDING', {
     location: 'Block A, 101', timestamp: new Date(now - 2 * ONE_HOUR), slaHours: 24
   });
   
-  const r2 = await createDemoReq('2', 'COMPLAINT', 'Internet', 'demo-stu-2', 'Hostel Wi-Fi has been unavailable since yesterday evening.', 'ASSIGNED', {
+  await createDemoReq('2', 'COMPLAINT', 'Internet', 'demo-stu-2', 'Hostel Wi-Fi has been unavailable since yesterday evening.', 'ASSIGNED', {
     location: 'Block B, 205', assignedAuthorityId: warden.id, timestamp: new Date(now - 12 * ONE_HOUR), slaHours: 24, priority: 'MEDIUM'
   });
   
-  const r3 = await createDemoReq('3', 'COMPLAINT', 'Plumbing', 'demo-stu-3', 'Water leakage near the second-floor washroom.', 'RESOLVED', {
+  await createDemoReq('3', 'COMPLAINT', 'Plumbing', 'demo-stu-3', 'Water leakage near the second-floor washroom.', 'RESOLVED', {
     location: 'Block A, 2nd Floor', assignedAuthorityId: staff.id, timestamp: new Date(now - 48 * ONE_HOUR), slaHours: 12
   });
 
-  const r4 = await createDemoReq('4', 'CERTIFICATE', 'Academic', 'demo-stu-4', 'Request for bonafide certificate for education loan.', 'ACKNOWLEDGED', {
+  await createDemoReq('4', 'CERTIFICATE', 'Academic', 'demo-stu-4', 'Request for bonafide certificate for education loan.', 'ACKNOWLEDGED', {
     assignedAuthorityId: hod.id, timestamp: new Date(now - 5 * ONE_HOUR), slaHours: 48
   });
   
-  const r5 = await createDemoReq('5', 'LEAVE', 'GatePass', 'demo-stu-5', 'Need gate-pass approval for weekend travel.', 'PROCESSING', {
+  await createDemoReq('5', 'LEAVE', 'GatePass', 'demo-stu-5', 'Need gate-pass approval for weekend travel.', 'PROCESSING', {
     assignedAuthorityId: warden.id, timestamp: new Date(now - 8 * ONE_HOUR), slaHours: 24, priority: 'MEDIUM'
   });
 
-  const r6 = await createDemoReq('6', 'COMPLAINT', 'Mess', 'demo-stu-6', 'Mess dinner menu was not followed today.', 'PENDING', {
+  await createDemoReq('6', 'COMPLAINT', 'Mess', 'demo-stu-6', 'Mess dinner menu was not followed today.', 'PENDING', {
     timestamp: new Date(now - 1 * ONE_HOUR), slaHours: 24
   });
 
-  const r7 = await createDemoReq('7', 'COMPLAINT', 'Facility', 'demo-stu-7', 'Classroom projector is not displaying HDMI input.', 'ASSIGNED', {
+  await createDemoReq('7', 'COMPLAINT', 'Facility', 'demo-stu-7', 'Classroom projector is not displaying HDMI input.', 'ASSIGNED', {
     assignedAuthorityId: faculty.id, location: 'Room 302', timestamp: new Date(now - 3 * ONE_HOUR), slaHours: 24
   });
 
   // SLA Ageing / Overdue / Warning
-  const r8_warning = await createDemoReq('8', 'COMPLAINT', 'Plumbing', 'demo-stu-8', 'Shower head broken in washroom.', 'ASSIGNED', {
+  await createDemoReq('8', 'COMPLAINT', 'Plumbing', 'demo-stu-8', 'Shower head broken in washroom.', 'ASSIGNED', {
     assignedAuthorityId: staff.id, location: 'Block C', timestamp: new Date(now - 22 * ONE_HOUR), 
     slaHours: 24, dueAt: new Date(now + 2 * ONE_HOUR), slaStatus: 'WARNING', priority: 'HIGH'
   });
   
-  const r9_breach = await createDemoReq('9', 'COMPLAINT', 'Electrical', 'demo-stu-9', 'No power in the room.', 'ASSIGNED', {
+  await createDemoReq('9', 'COMPLAINT', 'Electrical', 'demo-stu-9', 'No power in the room.', 'ASSIGNED', {
     assignedAuthorityId: staff.id, location: 'Block B, 215', timestamp: new Date(now - 26 * ONE_HOUR), 
     slaHours: 24, dueAt: new Date(now - 2 * ONE_HOUR), slaStatus: 'BREACHED', priority: 'HIGH'
   });

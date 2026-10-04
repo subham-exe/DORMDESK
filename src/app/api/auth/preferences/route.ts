@@ -3,7 +3,7 @@ import { requireAuth } from '@/lib/auth/session';
 import { NotificationPreferencesService } from '@/lib/services/notification-preferences';
 import { ConsentLedgerService, ConsentPurpose } from '@/lib/services/consent-ledger';
 
-export async function GET(_req?: Request) {
+export async function GET() {
   try {
     const user = await requireAuth();
     const preferences = await NotificationPreferencesService.getPreferences(user.id);

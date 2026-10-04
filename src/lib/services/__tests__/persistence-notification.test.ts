@@ -33,7 +33,7 @@ describe('Persistence: Audit & Notification (Q2.9)', () => {
           ]
         }
       });
-    } catch (e) {}
+    } catch {}
 
   });
 

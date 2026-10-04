@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true }, { status: 200 });
     } catch (error) {
-    if (((error as any)?.message || 'Unknown error') === "UNAUTHORIZED") {
+    if (((error as Error)?.message || 'Unknown error') === "UNAUTHORIZED") {
       return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

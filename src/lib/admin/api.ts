@@ -2,7 +2,6 @@ import { RequestStatus, RequestPriority, RequestType } from "../types/request";
 import { prisma } from "../db/prisma";
 import { RequestEngine } from "../services/request-engine";
 import { requireAuth } from "../auth/session";
-import { getAuthorityName } from "../auth/authority";
 
 export interface AdminRequest {
   id: string;

@@ -41,7 +41,8 @@ export async function getAuthority(userId: string): Promise<AuthorityInfo | null
 }
 
 export async function requireAuthority(
-  user: { id: string; authorityId?: string | null, authority?: any, collegeId?: string | null },
+  user: { id: string; authorityId?: string | null, /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    authority?: any, collegeId?: string | null },
   allowedAuthorities: string[]
 ): Promise<AuthorityInfo> {
   let authority: AuthorityInfo | null = null;
@@ -75,7 +76,8 @@ export function isSystemAdmin(actor: { authority?: { name: string } | null } | n
 }
 
 export function requireCollegeScope(
-  actor: { authority?: { name: string } | null, collegeId?: string | null } | null | undefined,
+  actor: { /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    authority?: any, collegeId?: string | null } | null | undefined,
   targetCollegeId: string | null | undefined
 ): void {
   if (isSystemAdmin(actor)) return;
@@ -93,8 +95,8 @@ export async function canManageTarget(
   actorId: string,
   targetAuthorityName: string,
   targetCollegeId?: string | null,
-  targetDepartmentId?: string | null,
-  targetHostelId?: string | null
+  _targetDepartmentId?: string | null,
+  _targetHostelId?: string | null
 ): Promise<boolean> {
   const actor = await prisma.user.findUnique({
     where: { id: actorId },
@@ -133,7 +135,8 @@ export function deriveLegacyRole(authorityName: string): string {
   }
 }
 
-export function getAuthorityName(user: { authority?: { name: string } | null, role?: string }): string {
+export function getAuthorityName(user: { /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    authority?: any, role?: string }): string {
   if (user.authority?.name) return user.authority.name;
   return 'STUDENT';
 }

@@ -24,7 +24,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
     return NextResponse.json(college, { status: 200 });
   } catch (error) {
-    if (((error as any)?.message || 'Unknown error') === "UNAUTHORIZED") {
+    if (((error as Error)?.message || 'Unknown error') === "UNAUTHORIZED") {
       return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -41,7 +41,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const { id } = await params;
     const { status, name } = await req.json();
 
-    const updateData: any = {};
+    const updateData: Record<string, string> = {};
     if (status) updateData.status = status;
     if (name) updateData.name = name;
 
@@ -62,9 +62,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     return NextResponse.json(college, { status: 200 });
   } catch (error) {
-    if (((error as any)?.message || 'Unknown error') === "UNAUTHORIZED") {
+    if (((error as Error)?.message || 'Unknown error') === "UNAUTHORIZED") {
       return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
     }
-    return NextResponse.json({ error: ((error as any)?.message || 'Unknown error') }, { status: 400 });
+    return NextResponse.json({ error: ((error as Error)?.message || 'Unknown error') }, { status: 400 });
   }
 }

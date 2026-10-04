@@ -31,7 +31,7 @@ describe('Persistence: Request Lifecycle (Q2.9)', () => {
           ]
         }
       });
-    } catch (e) {}
+    } catch {}
 
     const user = await mainPrisma.user.create({
       data: { id: 'usr-pers-req', email: 'req-tester@demo.local', name: 'Tester', role: 'Student' }

@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { prisma } from '@/lib/db/prisma';
-import bcrypt from 'bcryptjs';
 import { canManageTarget } from '../hierarchy';
 
 describe('Phase 1 Identity & Account Foundation', () => {
