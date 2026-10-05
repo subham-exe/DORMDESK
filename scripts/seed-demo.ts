@@ -1,4 +1,4 @@
-﻿import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -62,38 +62,47 @@ async function main() {
   }
   console.log('? Authority levels verified.');
 
+  // Helper to safely upsert users without triggering SQLite unique insert constraints during conflict resolution
+  async function safeUserUpsert(args: { where: Prisma.UserWhereInput, update: Prisma.UserUncheckedUpdateInput, create: Prisma.UserUncheckedCreateInput }) {
+    const existing = await prisma.user.findFirst({ where: args.where });
+    if (existing) {
+      return prisma.user.update({ where: { id: existing.id }, data: args.update });
+    }
+    return prisma.user.create({ data: args.create });
+  }
+
   // 3. Demo Authorities
-  const systemAdmin = await prisma.user.upsert({
+  const systemAdmin = await safeUserUpsert({
     where: { id: '001' },
     update: { email: 'system@dormdesk.test', authorityId: authMap['SYSTEM_ADMIN'] },
     create: { id: '001', name: 'System Admin', email: 'system@dormdesk.test', role: 'SystemAdmin', authorityId: authMap['SYSTEM_ADMIN'], password: hashedPass }
   });
 
-  const principal = await prisma.user.upsert({
+  const principal = await safeUserUpsert({
     where: { email: 'principal.demo@dormdesk.local' },
     update: { collegeId: college.id, password: hashedPass },
     create: { id: 'demo-principal', name: 'Dr. Principal', email: 'principal.demo@dormdesk.local', role: 'Admin', authorityId: authMap['PRINCIPAL'], collegeId: college.id, password: hashedPass }
   });
   
-  const hod = await prisma.user.upsert({
+  const hod = await safeUserUpsert({
     where: { email: 'hod.cse.demo@dormdesk.local' },
     update: { collegeId: college.id, password: hashedPass },
     create: { id: 'demo-hod', name: 'HOD CSE', email: 'hod.cse.demo@dormdesk.local', role: 'Admin', authorityId: authMap['HOD'], department: 'CSE', departmentRefId: cseDept.id, collegeId: college.id, password: hashedPass }
   });
 
-  const faculty = await prisma.user.upsert({
+  const faculty = await safeUserUpsert({
     where: { email: 'faculty.demo@dormdesk.local' },
     update: { collegeId: college.id, password: hashedPass },
     create: { id: 'demo-faculty', name: 'Prof. Demo', email: 'faculty.demo@dormdesk.local', role: 'Faculty', authorityId: authMap['FACULTY'], department: 'CSE', departmentRefId: cseDept.id, collegeId: college.id, password: hashedPass }
   });
 
-  const warden = await prisma.user.upsert({
+  const warden = await safeUserUpsert({
     where: { email: 'warden.demo@dormdesk.local' },
     update: { collegeId: college.id, password: hashedPass },
     create: { id: 'demo-warden', name: 'Warden Demo', email: 'warden.demo@dormdesk.local', role: 'Warden', authorityId: authMap['WARDEN'], hostel: 'Block A', collegeId: college.id, password: hashedPass }
   });
 
-  const staff = await prisma.user.upsert({
+  const staff = await safeUserUpsert({
     where: { email: 'staff.demo@dormdesk.local' },
     update: { collegeId: college.id, password: hashedPass },
     create: { id: 'demo-staff', name: 'Maintenance Staff', email: 'staff.demo@dormdesk.local', role: 'Staff', authorityId: authMap['STAFF'], department: 'Plumbing', collegeId: college.id, password: hashedPass }
@@ -102,7 +111,7 @@ async function main() {
 
   // 4. Students
   for (const stu of STUDENTS) {
-    await prisma.user.upsert({
+    await safeUserUpsert({
       where: { email: stu.email },
       update: { collegeId: college.id, password: hashedPass },
       create: {
@@ -292,7 +301,7 @@ async function main() {
     });
     await prisma.announcement.create({
       data: {
-        id: 'demo-ann-2', title: 'Hostel Maintenance Inspection ï¿½ Block B', body: 'Routine maintenance check tomorrow at 10 AM.', 
+        id: 'demo-ann-2', title: 'Hostel Maintenance Inspection � Block B', body: 'Routine maintenance check tomorrow at 10 AM.', 
         targetHostel: 'Block B', priority: 'MEDIUM', createdById: warden.id 
       }
     });
@@ -321,3 +330,7 @@ async function main() {
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());
+
+
+
+
