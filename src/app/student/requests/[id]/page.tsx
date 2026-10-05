@@ -69,7 +69,7 @@ export default function RequestDetailsPage() {
         }
       }
 
-      const res = await fetch(`/api/requests/${id}`);
+      const res = await fetch(`/api/requests/${id}`, { cache: 'no-store' });
       if (!res.ok) throw new Error("Failed to load request details");
       
       const resData = await res.json();

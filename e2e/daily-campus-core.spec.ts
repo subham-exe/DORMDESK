@@ -31,9 +31,9 @@ test.describe('Daily Campus Core UI Validation', () => {
   test.describe('Authenticated Workflows & Domain Separation', () => {
     test('Student E2E Workflow & Offline', async ({ page, context }) => {
       await page.goto('/login');
-      await page.fill('#email', 'aarav.demo@dormdesk.local');
-      await page.fill('#password', 'dormdesk2026');
-      await page.locator('button:has-text("Sign In")').click();
+      await page.fill('input[id="email"]', 'aarav.demo@dormdesk.local');
+      await page.fill('input[id="password"]', 'dormdesk2026');
+      await page.click('button[type="submit"]');
 
       await expect(page).toHaveURL(/\/student/);
       
@@ -76,9 +76,9 @@ test.describe('Daily Campus Core UI Validation', () => {
 
     test('Faculty Workflow', async ({ page }) => {
       await page.goto('/login');
-      await page.fill('#email', 'faculty.demo@dormdesk.local');
-      await page.fill('#password', 'dormdesk2026');
-      await page.locator('button:has-text("Sign In")').click();
+      await page.fill('input[id="email"]', 'faculty.demo@dormdesk.local');
+      await page.fill('input[id="password"]', 'dormdesk2026');
+      await page.click('button[type="submit"]');
 
       await expect(page).toHaveURL(/\/faculty/);
       await expect(page.locator('text=Faculty Attendance & Sessions').first()).toBeVisible();
@@ -86,9 +86,9 @@ test.describe('Daily Campus Core UI Validation', () => {
 
     test('HOD Workflow', async ({ page }) => {
       await page.goto('/login');
-      await page.fill('#email', 'hod.cse.demo@dormdesk.local');
-      await page.fill('#password', 'dormdesk2026');
-      await page.locator('button:has-text("Sign In")').click();
+      await page.fill('input[id="email"]', 'hod.cse.demo@dormdesk.local');
+      await page.fill('input[id="password"]', 'dormdesk2026');
+      await page.click('button[type="submit"]');
 
       await expect(page).toHaveURL(/\/hod/);
       await expect(page.locator('text=HOD Dashboard').first()).toBeVisible();
@@ -96,9 +96,9 @@ test.describe('Daily Campus Core UI Validation', () => {
 
     test('Principal Workflow', async ({ page }) => {
       await page.goto('/login');
-      await page.fill('#email', 'principal.demo@dormdesk.local');
-      await page.fill('#password', 'dormdesk2026');
-      await page.locator('button:has-text("Sign In")').click();
+      await page.fill('input[id="email"]', 'principal.demo@dormdesk.local');
+      await page.fill('input[id="password"]', 'dormdesk2026');
+      await page.click('button[type="submit"]');
 
       await expect(page).toHaveURL(/\/principal/);
       await expect(page.locator('text=Principal Dashboard').first()).toBeVisible();
@@ -106,9 +106,9 @@ test.describe('Daily Campus Core UI Validation', () => {
 
     test('Warden Workflow', async ({ page }) => {
       await page.goto('/login');
-      await page.fill('#email', 'warden.demo@dormdesk.local');
-      await page.fill('#password', 'dormdesk2026');
-      await page.locator('button:has-text("Sign In")').click();
+      await page.fill('input[id="email"]', 'warden.demo@dormdesk.local');
+      await page.fill('input[id="password"]', 'dormdesk2026');
+      await page.click('button[type="submit"]');
 
       await expect(page).toHaveURL(/\/warden/);
       await expect(page.locator('text=Warden Desk').first()).toBeVisible();
@@ -116,9 +116,9 @@ test.describe('Daily Campus Core UI Validation', () => {
 
     test('SYSTEM_ADMIN Workflow', async ({ page }) => {
       await page.goto('/login');
-      await page.fill('#email', 'system@dormdesk.test');
-      await page.fill('#password', 'dormdesk2026');
-      await page.locator('button:has-text("Sign In")').click();
+      await page.fill('input[id="email"]', 'system@dormdesk.test');
+      await page.fill('input[id="password"]', 'dormdesk2026');
+      await page.click('button[type="submit"]');
 
       await expect(page).toHaveURL(/\/admin\/command-center/);
       await expect(page.locator('text=Command Center').first()).toBeVisible();

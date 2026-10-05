@@ -40,6 +40,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({ success: true, data: { ...request, auditLogs } });
   } catch (error: unknown) {
+    console.error("API ROUTE ERROR:", error);
     const msg = error instanceof Error ? error.message : 'Unknown error';
     if (msg === 'UNAUTHORIZED' || msg === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     return NextResponse.json({ success: false, error: msg }, { status: 400 });
@@ -91,6 +92,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     return NextResponse.json({ success: true, data: request });
   } catch (error: unknown) {
+    console.error("API ROUTE ERROR:", error);
     const msg = error instanceof Error ? error.message : 'Unknown error';
     if (msg === 'UNAUTHORIZED' || msg === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     return NextResponse.json({ success: false, error: msg }, { status: 400 });

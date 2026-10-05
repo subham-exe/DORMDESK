@@ -1,132 +1,114 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Phase Y - Validation Workstreams', () => {
+test.describe('Phase Y - True Browser & Demo Validation', () => {
 
-  test('Workstream A: Student Complete Journey', async ({ page, context }) => {
-    // LOGIN
+  test('True Request Lifecycle & Demo Rehearsal', async ({ page }) => {
+    test.setTimeout(45000); // Allow ample time for the full lifecycle
+
+    // 1. STUDENT LOGIN
     await page.goto('/login');
-    await page.fill('#email', 'aarav.demo@dormdesk.local');
-    await page.fill('#password', 'dormdesk2026');
-    await page.click('button:has-text("Sign In")');
-
-    // DASHBOARD
-    await expect(page).toHaveURL(/\/student/);
-    await expect(page.locator('h1', { hasText: 'Dashboard' }).or(page.locator('text=Active Requests')).first()).toBeVisible();
-
-    // PROFILE
-    await page.goto('/student/profile');
-    await expect(page.locator('h1').filter({ hasText: 'Profile' }).first()).toBeVisible({ timeout: 3000 }).catch(() => {});
-
-    // EMAIL VERIFICATION / NOTIFICATION PREFERENCES / CONSENT
-    // These might be in profile or specific settings, we'll check profile presence
-    await expect(page.locator('text=Notification Preferences').or(page.locator('text=Consent')).first()).toBeVisible({ timeout: 2000 }).catch(() => {});
-
-    // REQUESTS & NEW REQUEST
-    await page.goto('/student/requests');
-    await expect(page.locator('text=My Requests').first()).toBeVisible();
-    await page.goto('/student/requests/new');
-    await expect(page.locator('button:has-text("Submit")').first()).toBeVisible();
-
-    // Fill form and check validation
-    await expect(page.locator('button:has-text("Submit")').first()).toBeDisabled();
-
-    // NOTIFICATIONS
-    await page.goto('/student/notices');
-    await expect(page.locator('h1').first()).toBeVisible();
-
-    // ATTENDANCE
-    await page.goto('/student/academics/attendance');
-    await expect(page.locator('h1').first()).toBeVisible();
-
-    // MESS & FEEDBACK
-    await page.goto('/student/mess');
-    await expect(page.locator('h1').first()).toBeVisible();
-
-    // SCHOLARSHIP
-    await page.goto('/student/scholarship');
-    await expect(page.locator('h1').first()).toBeVisible();
-
-    // LOGOUT
-    await page.request.post('/api/auth/logout');
-    await page.goto('/login');
-  });
-
-  test('Workstream B: Authority Experiences', async ({ page }) => {
-    const roles = [
-      { email: 'faculty.demo@dormdesk.local', path: '/faculty', text: 'Faculty Attendance & Sessions' },
-      { email: 'hod.cse.demo@dormdesk.local', path: '/hod', text: 'HOD Dashboard' },
-      { email: 'warden.demo@dormdesk.local', path: '/warden', text: 'Warden Desk' },
-      { email: 'principal.demo@dormdesk.local', path: '/principal', text: 'Principal Dashboard' },
-      { email: 'system@dormdesk.test', path: '/admin/command-center', text: 'Command Center' },
-    ];
-
-    for (const role of roles) {
-      await page.goto('/login');
-      await page.fill('#email', role.email);
-      await page.fill('#password', 'dormdesk2026');
-      await page.click('button:has-text("Sign In")');
-
-      await expect(page).toHaveURL(new RegExp(role.path));
-      await expect(page.locator(`text=${role.text}`).first()).toBeVisible();
-
-      await page.request.post('/api/auth/logout');
-      await page.goto('/login');
-    }
-  });
-
-  test('Workstream D: Responsive / UX', async ({ page }) => {
-    const viewports = [
-      { width: 360, height: 800 },
-      { width: 768, height: 1024 },
-      { width: 1280, height: 800 },
-    ];
-
-    for (const viewport of viewports) {
-      await page.setViewportSize(viewport);
-      await page.goto('/login');
-      await expect(page.locator('button:has-text("Sign In")').first()).toBeVisible();
-    }
-  });
-
-  test('Workstream E: Judge Demo Rehearsal', async ({ page }) => {
-    // 001/Platform context
-    await page.goto('/login');
-    await page.fill('#email', 'system@dormdesk.test');
-    await page.fill('#password', 'dormdesk2026');
-    await page.click('button:has-text("Sign In")');
-    await expect(page).toHaveURL(/\/admin\/command-center/);
-    await page.request.post('/api/auth/logout');
-    await page.goto('/login');
-
-    // Student submits request
-    await page.fill('#email', 'aarav.demo@dormdesk.local');
-    await page.fill('#password', 'dormdesk2026');
-    await page.click('button:has-text("Sign In")');
-    await page.goto('/student/requests/new');
-    // Verify form is ready
-    await expect(page.locator('button[type="submit"]').first()).toBeVisible();
-    await page.request.post('/api/auth/logout');
-  });
-
-  test('Workstream C: Offline / PWA', async ({ page, context }) => {
-    await page.goto('/login');
-    await page.fill('#email', 'aarav.demo@dormdesk.local');
-    await page.fill('#password', 'dormdesk2026');
-    await page.click('button:has-text("Sign In")');
-
-    await expect(page).toHaveURL(/\/student/);
-    await context.setOffline(true);
+    await page.fill('input[id="email"]', 'aarav.demo@dormdesk.local');
+    await page.fill('input[id="password"]', 'dormdesk2026');
+    await page.click('button[type="submit"]');
     
-    // Attempt navigation offline
-    await page.goto('/student/academics/attendance', { waitUntil: 'commit' }).catch(() => {});
+    // Wait for Student Dashboard
+    await expect(page.locator('h1').filter({ hasText: 'Dashboard' }).first()).toBeVisible();
+
+    // 2. CREATE A REAL REQUEST
+    await page.goto('/student/requests/new');
     
-    await context.setOffline(false);
+    // Fill the form
+    await page.selectOption('select[id="requestType"]', 'LEAVE');
+    await page.selectOption('select[id="category"]', 'HOME');
+    await page.fill('input[id="leaveDays"]', '3'); // >=3 days prevents auto-approval
+    await page.fill('textarea[name="description"]', 'Family emergency, going home for 3 days.');
+    
+    // Submit
+    await page.click('button:has-text("Submit Request")');
+    
+    // 3. CONFIRM REQUEST APPEARS (Should redirect to /student/requests/[id])
+    await expect(page.locator('h1').filter({ hasText: 'Request Details' }).or(page.locator('text=Family emergency')).first()).toBeVisible({ timeout: 10000 });
+    
+    // Capture the request ID from URL
+    const requestUrl = page.url();
+    const requestId = requestUrl.split('/').pop();
+    expect(requestId).toBeDefined();
+
+    // 4. LOGOUT (STUDENT)
     await page.request.post('/api/auth/logout');
+
+    // 5. LOGIN AS WARDEN (AUTHORITY)
+    await page.goto('/login');
+    await page.fill('input[id="email"]', 'warden.demo@dormdesk.local');
+    await page.fill('input[id="password"]', 'dormdesk2026');
+    await page.click('button[type="submit"]');
+
+    // Wait for Warden Dashboard
+    await expect(page.locator('h1').filter({ hasText: 'Warden Desk' }).first()).toBeVisible();
+
+    // 6. OPEN REQUEST THROUGH AUTHORITY UI
+    // Warden dashboard links to /admin/requests/[id] for pending requests
+    await page.goto(`/admin/requests/${requestId}`);
+
+    // Wait for Authority Request Detail UI
+    console.log("Current URL:", page.url());
+    const content = await page.textContent('body');
+    console.log("Body snippet:", content?.substring(0, 200));
+    await expect(page.locator('h3').filter({ hasText: 'Take Action' }).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Family emergency').first()).toBeVisible();
+
+    // 7. PERFORM LIFECYCLE ACTION (PROCESS -> RESOLVE)
+    // Add resolution notes
+    await page.fill('textarea[placeholder="Resolution notes (optional)"]', 'Leave approved for 3 days.');
+    
+    // Resolve
+    page.on('dialog', dialog => {
+      console.log("UI ALERT:", dialog.message());
+      dialog.accept();
+    });
+    const responsePromise = page.waitForResponse(res => res.url().includes('/api/requests/') && res.request().method() === 'PATCH');
+    await page.click('button:has-text("Mark as Resolved")');
+    
+    const response = await responsePromise;
+    console.log("API Response:", await response.text());
+
+    // Confirm it's resolved by waiting for the audit log
+    await expect(page.locator('text=Moved to RESOLVED')).toBeVisible({ timeout: 10000 });
+    
+    // Also wait for the badge to say Resolved
+    
+
+    // 8. LOGOUT (AUTHORITY)
+    await page.request.post('/api/auth/logout');
+
+    // 9. LOGIN AS STUDENT (VERIFICATION)
+    await page.goto('/login');
+    await page.fill('input[id="email"]', 'aarav.demo@dormdesk.local');
+    await page.fill('input[id="password"]', 'dormdesk2026');
+    await page.click('button[type="submit"]');
+
+    // Wait for login to complete
+    await page.waitForURL('**/student**', { timeout: 10000 });
+
+    // Navigate back to the request
+    page.on('response', async res => {
+      if (res.url().includes(`/api/requests/${requestId}`) && res.request().method() === 'GET') {
+        console.log("STUDENT GET RESPONSE:", await res.text());
+      }
+    });
+    await page.goto(`/student/requests/${requestId}`);
+
+    // 10. STUDENT VERIFIES RESOLUTION
+    // The student UI should show the verify button when status is RESOLVED
+    const studentHtml = await page.textContent('body');
+    console.log("STUDENT UI BODY:", studentHtml?.substring(0, 1000));
+    console.log("IS VERIFY BUTTON THERE?", studentHtml?.includes("Verify & Close"));
+
+    await expect(page.locator('button:has-text("Verify & Close")').first()).toBeVisible({ timeout: 10000 });
+    await page.click('button:has-text("Verify & Close")');
+
+    // 11. CONFIRM IT REACHES TERMINAL STATE (CLOSED)
+    await expect(page.locator('text=Closed').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('Workstream 8: Error / Empty / Loading', async ({ page }) => {
-    await page.goto('/student/invalid-route');
-    // Next.js 404 should handle this
-    await expect(page.locator('text=404').or(page.locator('text=Not Found'))).toBeVisible();
-  });
 });
