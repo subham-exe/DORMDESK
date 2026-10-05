@@ -1,4 +1,5 @@
 import { getCurrentUser } from "@/lib/auth/session";
+import { getAuthorityName } from "@/lib/auth/authority";
 import { prisma } from "@/lib/db/prisma";
 import { notFound, redirect } from "next/navigation";
 import AuthorityRequestDetailClient from "./AuthorityRequestDetailClient";
@@ -20,8 +21,9 @@ export default async function AuthorityRequestPage({ params }: { params: any }) 
   if (!request) notFound();
 
   // Scope check - if you're not SYSTEM_ADMIN, it must be in your college
-  console.log("Checking scope. user role:", user.role, "user college:", user.collegeId, "requester college:", request.requester.collegeId);
-  if (user.role !== "SYSTEM_ADMIN" && request.requester.collegeId !== user.collegeId) {
+  const authName = getAuthorityName(user);
+  console.log("Checking scope. user authName:", authName, "user college:", user.collegeId, "requester college:", request.requester.collegeId);
+  if (authName !== "SYSTEM_ADMIN" && request.requester.collegeId !== user.collegeId) {
     console.log("Scope check failed, redirecting...");
     redirect("/admin/login");
   }
