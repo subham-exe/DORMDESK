@@ -70,6 +70,11 @@ Do NOT implement a simplistic linear approval hierarchy (Principal → HOD → P
 - **Server-Side Routing Guards**: Protected application layouts must enforce authorization via Server Components, not just client-side `useEffect` redirects. Route Groups (e.g. `(protected)`) should be used to protect layout shells while leaving public login routes accessible.
 - **Domain Strictness**: Dashboards must actively reject authenticated users requesting a scope outside their assigned authority.
 - **Platform Authority**: `SYSTEM_ADMIN` (`001`) is a unique platform-level authority and must not be treated as a standard college role.
+- **Route Namespace ≠ Authority**: `/admin/*` must never itself imply `SYSTEM_ADMIN` privileges. Route accessibility and authority authorization are separate concerns.
+- **Legacy Role Prohibition**: Strict prohibition of legacy `user.role` authorization checks. Authorization must resolve through `getAuthorityName(user)` / canonical authority data.
+- **Server-Side Gating**: Domain routes must enforce authority server-side. UI visibility is not authorization.
+- **Request Scoping**: Request detail access and mutations must enforce persisted request college scope. Cross-college access must remain forbidden.
+- **Architectural Auditing**: Architectural invariants must be audited independently of functional/E2E success. A green implementation must still be rejected if it violates canonical architecture, such as using `user.role` instead of canonical authority. Surgical fixes are preferred over broad authorization refactors during late phases.
 
 ## 10. Audit Rules
 Important state changes must be auditable. Audit events should preserve:
@@ -123,6 +128,7 @@ Do not add features merely because they sound impressive. Before adding a featur
 3. Does it fit the current architecture?
 4. Does it threaten the core demo workflows?
 If it threatens the core demo, it should not be added without Subham's decision.
+- **Final Freeze Discipline**: Once a validation phase (e.g., Y) is green, feature development stops. The subsequent phase (Z) is strictly a preservation and release-validation phase, not another feature-development cycle.
 
 ## 17. AI Rules
 AI is supportive, not foundational. Core workflows must function without proprietary AI APIs. Rules-first / deterministic behavior is preferred where sufficient. AI should not be used merely as a decorative chatbot.
@@ -138,6 +144,8 @@ Before a feature is considered complete:
 - **Auth E2E Coverage**: E2E suites for routing must deterministically cover logged-out redirects, cross-domain blocking, and successful domain landing.
 - **Seed Data Integrity**: Demo seed scripts must fully populate the canonical authority relationships (e.g., `authorityId`, `departmentRefId`) required by production logic.
 - **Assertion Integrity**: Never weaken security assertions or change expected application behavior merely to make a test pass. Verify against architectural intent first.
+- **True E2E Validation**: A request workflow is not validated merely by page navigation or button rendering. The browser test must exercise real persistence and the actual lifecycle: CREATE → ROUTE → ASSIGN → RESOLVE → VERIFY → CLOSE.
+- **Test Integrity**: A green test is meaningful only when it proves the real production path. Do not weaken assertions or replace production behavior with test-only shortcuts to obtain green.
 
 ## 19. Definition of Done
 A feature is not done merely because its UI exists. A feature is done when implementation exists, required backend/API behavior works, authorization works, persistence works, audit/notifications exist where required, relevant UI states work, the branch is clean enough for integration, and integration does not break existing flows.
@@ -169,3 +177,7 @@ The final demo should prioritize complete workflows, visible accountability, adm
 - **Retry Semantics:** Client retries�especially offline queue synchronization packets�must seamlessly resolve to the original Request without producing duplicated side effects (Audit, Notification, History) or uncaught generic \P2002\ exceptions.
 
 
+
+
+## 25. Prototype Offline/PWA Scope
+DORMDESK currently provides PWA/offline resilience for previously available state and graceful network-failure handling. Network-dependent mutations require connectivity. Full offline mutation queuing/background synchronization is intentionally outside the current prototype scope.
