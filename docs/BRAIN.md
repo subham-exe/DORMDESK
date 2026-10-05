@@ -24,8 +24,8 @@ DormDesk is a campus-wide operations platform, not just a hostel management app.
 - **Recurring Issue Detection:** System detects and aggregates repeating patterns of issues over 30 days.
 - **SLA & Escalation:** SLA targets calculated, tracked, and visually prioritized in the Command Center. Background API /api/internal/cron/sla-tick handles automated breaches.
 - **Smart Routing & Policy:** Deterministic routing based on category/location; configurable evaluation engine.
-- **Offline Reliability:** IndexedDB-backed service worker queues mutations and synchronizes safely using idempotency keys.
-- **Security:** Hardened authorization, scope isolation, offline boundary isolation, idempotency on writes, and offline-sync conflict resolution.
+- **Offline Reliability:** Offline/PWA resilience for previously available application state and graceful network-failure handling. Network-dependent mutations require connectivity. Full offline mutation queuing/background synchronization is intentionally outside the current prototype scope.
+- **Security:** Hardened authorization, scope isolation, offline boundary isolation, idempotency on writes, and server-side authorization.
 
 ## 5. Technical Architecture Overview
 (See `architect.md` for full technical details)
@@ -69,7 +69,7 @@ One centralized notification service. Targeted, event-driven announcements rathe
 
 ## 12. Accessibility / Reality Layer
 - **PWA / Browser-First:** No app store installation required.
-- **Low-Bandwidth:** Lightweight UI, IndexedDB for offline request queue where required (syncs when connection returns).
+- **Low-Bandwidth:** Lightweight UI, graceful degradation.
 - **No-Smartphone Fallback (Assisted Filing):** Staff can log a request on behalf of a student using their Student ID.
 
 ## 13. AI / Intelligence Philosophy
@@ -197,4 +197,5 @@ Demo seeded properly with deterministic incidents, SLAs, and escalations. Reset 
 ## Prompt P Status
 Prompt P: CLOSED
 Security audit fixed a student state escalation path. Regression checked. Demo freeze established.
+
 

@@ -20,6 +20,59 @@ function clearScreen() {
   process.stdout.write(process.platform === 'win32' ? '\x1B[2J\x1B[0f' : '\x1B[2J\x1B[3J\x1B[H');
 }
 
+function clearStaleProcesses() {
+  if (process.platform === 'win32') {
+    try {
+      const { execSync } = require('child_process');
+      const psCmd = `Get-CimInstance Win32_Process | Where-Object Name -eq 'node.exe' | Select-Object ProcessId, CommandLine | ConvertTo-Json -Compress`;
+      const output = execSync(`powershell.exe -NoProfile -Command "${psCmd}"`, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] });
+      
+      let processes = [];
+      try {
+        if (output.trim()) {
+           processes = JSON.parse(output);
+           if (!Array.isArray(processes)) processes = [processes];
+        }
+      } catch(e) {}
+      
+      const currentPid = process.pid;
+      const pidsToKill = [];
+      const projectPath = require('path').resolve(__dirname, '..');
+      
+      for (const proc of processes) {
+        const cmd = proc.CommandLine || '';
+        if (proc.ProcessId !== currentPid) {
+          const isDormdesk = cmd.includes('DORMDESK') || cmd.includes('dormdesk');
+          const isSetup = cmd.includes('dormdesk-setup.js') || (cmd.includes('npm-cli.js') && cmd.includes('run DORMDESK')); 
+          
+          if (isDormdesk && !isSetup) {
+            pidsToKill.push(proc.ProcessId);
+          } else if (cmd.includes('scripts/local.js') || cmd.includes('scripts\\local.js')) {
+            pidsToKill.push(proc.ProcessId);
+          }
+        }
+      }
+      
+      if (pidsToKill.length > 0) {
+        process.stdout.write('  [preflight] Clearing stale DORMDESK process .... ');
+        for (const pid of pidsToKill) {
+          try { process.kill(pid, 'SIGINT'); } catch(e) {}
+        }
+        
+        const start = Date.now();
+        while (Date.now() - start < 1500) {}
+        
+        for (const pid of pidsToKill) {
+          try { process.kill(pid, 'SIGKILL'); } catch(e) {}
+        }
+        console.log(pc.green('OK'));
+      }
+    } catch(e) {
+      // safely ignore WMI/permissions errors
+    }
+  }
+}
+
 function centerText(text, totalWidth) {
   const visibleLength = text.replace(/\x1b\[[0-9;]*m/g, '').length;
   const padding = Math.max(0, totalWidth - visibleLength);
@@ -99,12 +152,36 @@ function exitSequence() {
 }
 
 function initialSetup() {
+  const isReset = process.argv.includes('--reset');
+
   clearScreen();
   printHeader();
 
-  console.log(pc.white('------------------------------------------------------------------'));
+  if (isReset) {
+    console.log(pc.yellow('  DORMDESK RESET'));
+    console.log(pc.yellow('  Database will be recreated with deterministic demo data.'));
+    rl.question(pc.yellow('  Continue? [y/N] '), (answer) => {
+      if (answer.trim().toLowerCase() !== 'y') {
+        console.log(pc.red('  Aborted.'));
+        process.exit(0);
+      }
+      runSetupFlow(true);
+    });
+  } else {
+    runSetupFlow(false);
+  }
+}
+
+function runSetupFlow(isReset) {
+  const fs = require('fs');
+  const path = require('path');
+  
+  console.log(pc.white('\n------------------------------------------------------------------'));
   console.log(pc.white('  DORMDESK INITIALIZATION'));
   console.log(pc.white('------------------------------------------------------------------\n'));
+
+  // Preflight: Clean up stale processes
+  clearStaleProcesses();
 
   // 1. Prisma Client
   process.stdout.write('  [1/4] Preparing Prisma ............ ');
@@ -112,40 +189,72 @@ function initialSetup() {
   if (res1.error || res1.status !== 0) {
     console.log(pc.red('FAILED'));
     console.error(pc.red('\nError generating Prisma client. Ensure dependencies are installed (npm install).'));
+    if (res1.stderr) console.error(res1.stderr.toString());
     process.exit(1);
   }
   console.log(pc.green('OK'));
+
+  const dbPath = path.resolve(__dirname, '../prisma/campus.db');
+  let dbExists = false;
+  try {
+    dbExists = fs.existsSync(dbPath) && fs.statSync(dbPath).size > 0;
+  } catch(e) {}
+
+  let needsInitialization = false;
 
   // 2. Preparing database
   process.stdout.write('  [2/4] Preparing database .......... ');
-  const res2 = runCommand('npx', ['prisma', 'migrate', 'reset', '--force', '--skip-generate', '--skip-seed'], true);
-  if (res2.error || res2.status !== 0) {
-    console.log(pc.red('FAILED'));
-    console.error(pc.red('\nError resetting database.'));
-    process.exit(1);
+  if (isReset) {
+    console.log(pc.yellow('RESETTING'));
+    const res2 = runCommand('npx', ['prisma', 'migrate', 'reset', '--force', '--skip-generate', '--skip-seed'], true);
+    if (res2.error || res2.status !== 0) {
+      console.error(pc.red('\nError resetting database.'));
+      if (res2.stderr) {
+        console.error(pc.yellow('\n--- Prisma Error Log ---'));
+        console.error(res2.stderr.toString());
+        console.error(pc.yellow('------------------------'));
+      }
+      process.exit(1);
+    }
+    needsInitialization = true;
+  } else if (!dbExists) {
+    console.log(pc.yellow('INITIALIZING'));
+    needsInitialization = true;
+  } else {
+    console.log(pc.green('EXISTING'));
+    // Still safely apply pending migrations if any
+    const resDeploy = runCommand('npx', ['prisma', 'migrate', 'deploy'], true);
+    if (resDeploy.error || resDeploy.status !== 0) {
+      console.error(pc.red('\nError verifying existing database migrations.'));
+      process.exit(1);
+    }
   }
+
+  if (needsInitialization) {
+    // We are either resetting or this is a first run
+    // Apply migrations
+    const res3 = runCommand('npx', ['prisma', 'migrate', 'deploy'], true);
+    if (res3.error || res3.status !== 0) {
+      console.error(pc.red('\nError applying migrations.'));
+      process.exit(1);
+    }
+    // Seed demo data
+    const res4 = runCommand('npx', ['prisma', 'db', 'seed'], true);
+    if (res4.error || res4.status !== 0) {
+      console.error(pc.red('\nError seeding database.'));
+      process.exit(1);
+    }
+  }
+
+  process.stdout.write('  [3/4] Starting DORMDESK ........... ');
   console.log(pc.green('OK'));
+  process.stdout.write('  [4/4] Ready ....................... ');
+  console.log(pc.cyan('http://localhost:3000\n'));
 
-  // 3. Applying migrations
-  process.stdout.write('  [3/4] Applying migrations ......... ');
-  const res3 = runCommand('npx', ['prisma', 'migrate', 'deploy'], true);
-  if (res3.error || res3.status !== 0) {
-    console.log(pc.red('FAILED'));
-    console.error(pc.red('\nError applying migrations.'));
-    process.exit(1);
-  }
-  console.log(pc.green('OK'));
-
-  // 4. Seeding demo data
-  process.stdout.write('  [4/4] Seeding demo data ........... ');
-  const res4 = runCommand('npx', ['prisma', 'db', 'seed'], true);
-  if (res4.error || res4.status !== 0) {
-    console.log(pc.red('FAILED'));
-    console.error(pc.red('\nError seeding database.'));
-    process.exit(1);
-  }
-  console.log(pc.green('OK\n'));
-
+  // Start the actual application
+  runCommand('npm', ['run', 'local']);
+  
+  // After Next.js exits
   showCompletionScreen();
 }
 

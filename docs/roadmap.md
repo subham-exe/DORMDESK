@@ -90,12 +90,10 @@ Offline-first sync · real SMS gateway · more than one non-English language · 
 
 ## R-Phase (Post-Mid-Evaluation)
 
-### R1: Mobile PWA + Offline Experience (COMPLETE)
+### R1: Mobile PWA + Offline Experience (PROTOTYPED)
 - Installable PWA with valid manifest and offline fallback.
-- IndexedDB cache for offline requests and queueing mutations.
-- Safe offline synchronization using idempotency keys and strict user cache isolation.
-- Background sync via OfflineProvider.
-- Security: IndexedDB cache cleared securely on explicit logout or cross-user login.
+- Offline resilience for previously available application state and graceful network-failure handling.
+- Full offline mutation queuing/background synchronization is intentionally outside the current prototype scope.
 
 
 
@@ -125,3 +123,4 @@ Offline-first sync · real SMS gateway · more than one non-English language · 
 - [x] T VERIFIED - Demo / Judge Experience Validation
 - [x] U VERIFIED - Independent Security & Regression
 - [x] V VERIFIED - Final Cleanup, Documentation Sync & Freeze
+

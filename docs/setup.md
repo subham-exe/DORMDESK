@@ -748,16 +748,16 @@ npx prisma db seed
 ## Quick Start (Normal Startup)
 DORMDESK is a Next.js full-stack application (frontend and API routes run together in one process). There is NO separate backend server to start.
 
-To start the development server against an already migrated database, run:
+To start the application locally with safety checks, run:
 `powershell
-npm run local
+npm run DORMDESK
 `
-*(Note: This command explicitly assumes the database exists and has been migrated. It will NOT run `prisma db push`.)*
+This command safely preserves an existing usable demo database, initializes and seeds only when required (e.g., first run), and launches the application.
 
 ## Demo Reset
 If you need to explicitly destroy and recreate the local deterministic demo state, use:
 `powershell
-npm run local:reset
+npm run DORMDESK:reset
 `
 *WARNING: This will destroy all your local data, redeploy all migrations from scratch, run the deterministic seed, and start the app.*
 
@@ -781,5 +781,7 @@ Run the test suite:
 `powershell
 npm test
 `
+
+
 
 

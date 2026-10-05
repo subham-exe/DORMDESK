@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "DORMDESK": "node scripts/dormdesk-setup.js",
+    "DORMDESK:reset": "node scripts/dormdesk-setup.js --reset",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
