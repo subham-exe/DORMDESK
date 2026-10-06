@@ -284,18 +284,19 @@ Resetting is intentionally separate to protect ongoing demo states.
 
 ## Demo Accounts
 
-DORMDESK provisions a fully-authorized campus hierarchy.
+DORMDESK provisions a fully-authorized campus hierarchy with a synthetic DEMO simulation.
+
+**Password (for all demo accounts):**
+`dormdesk2026`
 
 - **SYSTEM ADMIN:** `system@dormdesk.test`
 - **PRINCIPAL:** `principal.demo@dormdesk.local`
-- **HOD:** `hod.cse.demo@dormdesk.local`
-- **FACULTY:** `faculty.demo@dormdesk.local`
-- **WARDEN:** `warden.demo@dormdesk.local`
-- **STAFF:** `staff.demo@dormdesk.local`
-- **STUDENT:** `aarav.demo@dormdesk.local`
+- **CSE HOD:** `hod.cse@dormdesk.local`
+- **WARDEN:** `warden.boys@dormdesk.local`
+- **SIMULATION STUDENT:** `student001@dormdesk.local`
 
-**Password (for all accounts):**
-`dormdesk2026`
+**Simulation range:**
+`student001@dormdesk.local` -> `student100@dormdesk.local`
 
 ## Recommended Demo
 
@@ -344,6 +345,62 @@ The current implementation bounds:
 - room/asset module
 - bulk institutional import
 - deeper multilingual coverage
+
+## Future Scope
+
+The current hackathon build is deliberately a strong prototype. The architecture is designed to grow into a production campus platform.
+
+### Identity & Onboarding
+- Institutional student registration and approval workflows
+- HOD/Warden verification where appropriate
+- Institutional identity / admission-number verification
+- Account lifecycle management: onboarding, activation, suspension, graduation/deactivation
+- Stronger identity verification and recovery flows
+
+### Attendance
+- Attendance records and shortage monitoring
+- Faculty attendance entry
+- Student attendance visibility
+- Automated shortage alerts
+- Department/semester analytics
+
+### Mess & Campus Services
+- Mess menu management
+- Meal feedback and issue tracking
+- Mess quality/wastage analytics
+- Broader campus service workflows powered by the same Request Engine
+
+### Fees & Institutional Workflows
+- Fee/dues tracking
+- Payment status and receipts
+- Scholarships and financial workflows
+- More certificate/leave/approval workflows using the existing request architecture
+
+### Production Infrastructure
+- PostgreSQL for production-scale relational persistence
+- Redis/queue-backed asynchronous jobs
+- Distributed scheduling for SLA/escalation workloads
+- Object storage for evidence/attachments
+- Production-grade observability, backups and deployment infrastructure
+
+### Offline & Mobile
+- Installable PWA/mobile-friendly experience
+- Better offline resilience
+- Eventually support offline mutation queues and background synchronization
+
+### Campus Intelligence
+- Richer recurring-issue analytics
+- Cross-department and hostel trend analysis
+- Predictive maintenance / risk signals
+- Data-driven planning dashboards
+
+### Multi-College Platform
+- Multi-college deployment
+- College-specific policies and authority hierarchies
+- Central platform administration with strict tenant isolation
+- Institution-level analytics without exposing unrelated college operational data
+
+DORMDESK's goal is not to become another collection of disconnected campus modules. The same accountable workflow engine should remain the foundation as more campus operations move onto the platform.
 
 ## Closing
 
