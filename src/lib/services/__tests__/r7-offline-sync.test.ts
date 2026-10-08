@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 import { syncOfflineMutations } from '../sync-engine-client';
 import * as offlineStore from '../offline-store';
 import { POST } from '../../../app/api/requests/route';
+import { PATCH } from '../../../app/api/requests/[id]/route';
 import { NextRequest } from 'next/server';
 import { prisma } from '../../db/prisma';
 import { requireAuth } from '../../auth/session';
@@ -27,10 +28,25 @@ global.fetch = vi.fn(async (url, options) => {
     const res = await POST(req);
     return {
       ok: res.status === 201 || res.status === 200,
+      status: res.status,
       json: async () => res.json()
     };
+  } else if (url.startsWith('/api/requests/') && options.method === 'PATCH') {
+    const id = url.split('/').pop() || '';
+    const req = new NextRequest(`http://localhost${url}`, {
+      method: 'PATCH',
+      body: options.body
+    });
+    const res = await PATCH(req, { params: Promise.resolve({ id }) });
+    const jsonData = await res.json();
+    console.log("PATCH status:", res.status, jsonData);
+    return {
+      ok: res.status === 201 || res.status === 200,
+      status: res.status,
+      json: async () => jsonData
+    };
   }
-  return { ok: false, json: async () => ({ error: 'Not found' }) };
+  return { ok: false, status: 404, json: async () => ({ error: 'Not found' }) };
 }) as unknown as typeof fetch;
 
 describe('R7 - REAL Offline Sync Integration', () => {
@@ -142,6 +158,53 @@ describe('R7 - REAL Offline Sync Integration', () => {
     expect(count).toBe(1);
 
     // 4. Delete should STILL be called so it removes the retry loop
+    expect(offlineStore.deleteOfflineMutation).toHaveBeenCalledWith(idempotencyKey);
+  });
+
+  it('Flow: Full offline sync pipeline execution for TRANSITION_REQUEST', async () => {
+    // 1. Seed existing request
+    const existingReq = await prisma.request.create({
+      data: {
+        ticketNumber: 'COM-002',
+        requestType: 'COMPLAINT',
+        category: 'Plumbing',
+        requesterId: 'offline-user-1',
+        description: 'Test transition',
+        status: 'PENDING'
+      }
+    });
+
+    const idempotencyKey = 'offline-sync-transition-123';
+    const mockPayload = {
+      requestId: existingReq.id,
+      action: 'TRANSITION',
+      newStatus: 'CANCELLED',
+      notes: 'Cancel this please'
+    };
+
+    // 2. Simulate queued mutation in IndexedDB
+    (offlineStore.getOfflineMutations as Mock).mockResolvedValue([
+      {
+        idempotencyKey,
+        userId: 'offline-user-1',
+        type: 'TRANSITION_REQUEST',
+        payload: mockPayload,
+        status: 'PENDING_SYNC',
+        timestamp: Date.now()
+      }
+    ]);
+
+    // 3. Trigger sync
+    await syncOfflineMutations('offline-user-1');
+
+    // 4. Verify fetch was called bridging to API
+    expect(global.fetch).toHaveBeenCalledWith(`/api/requests/${existingReq.id}`, expect.objectContaining({ method: 'PATCH' }));
+
+    // 5. Verify request was updated correctly in DB
+    const req = await prisma.request.findUnique({ where: { id: existingReq.id } });
+    expect(req!.status).toBe('CANCELLED');
+    
+    // 6. Verify cleanup was called on successful sync
     expect(offlineStore.deleteOfflineMutation).toHaveBeenCalledWith(idempotencyKey);
   });
 });

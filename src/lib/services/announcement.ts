@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
+import { NotificationService, NotificationType } from './notification';
 
 export interface CreateAnnouncementPayload {
   title: string;
@@ -31,7 +32,7 @@ export class AnnouncementService {
       select: { id: true }
     });
 
-    // 2. Create Announcement, Receipts, and Notifications inside a transaction
+    // 2. Create Announcement, Receipts inside a transaction
     const announcement = await prisma.$transaction(async (tx) => {
       const createdAnnouncement = await tx.announcement.create({
         data: {
@@ -60,24 +61,8 @@ export class AnnouncementService {
         await tx.announcementReceipt.createMany({
           data: receiptsData,
         });
-
-        // Prepare Notifications
-        const notificationsData = eligibleStudents.map(student => ({
-          recipientId: student.id,
-          title: 'New Announcement: ' + payload.title,
-          message: payload.body.substring(0, 100) + (payload.body.length > 100 ? '...' : ''),
-          type: 'SYSTEM_ALERT',
-          createdAt: now,
-          metadata: JSON.stringify({ announcementId: createdAnnouncement.id })
-        }));
-
-        await tx.notification.createMany({
-          data: notificationsData,
-        });
       }
 
-      // Log the audit event using tx if possible, but AuditService uses global prisma. 
-      // We will create the audit log directly in the transaction to maintain atomicity.
       await tx.auditLog.create({
         data: {
           actorId: payload.createdById,
@@ -98,6 +83,21 @@ export class AnnouncementService {
 
       return createdAnnouncement;
     });
+
+    // 3. Delegate to canonical NotificationService AFTER successful transaction
+    // This preserves appropriate transaction semantics: we don't hold the DB transaction 
+    // hostage during potential email delivery and we avoid using global prisma inside tx.
+    if (eligibleStudents.length > 0) {
+      await Promise.all(eligibleStudents.map(student => 
+        NotificationService.create({
+          recipientId: student.id,
+          title: 'New Announcement: ' + payload.title,
+          message: payload.body.substring(0, 100) + (payload.body.length > 100 ? '...' : ''),
+          type: NotificationType.ANNOUNCEMENT,
+          metadata: { announcementId: announcement.id }
+        })
+      ));
+    }
 
     return { announcement, recipientsCount: eligibleStudents.length };
   }

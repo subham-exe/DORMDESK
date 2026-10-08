@@ -12,10 +12,10 @@ describe('AcademicService', () => {
     // Cleanup any orphaned records from failed test runs
     await prisma.notification.deleteMany({ where: { title: 'Class Cancelled' } });
     await prisma.auditLog.deleteMany({ where: { action: { in: ['ATTENDANCE_UPDATED', 'CLASS_CANCELLED'] } } });
-    await prisma.attendance.deleteMany();
-    await prisma.classSession.deleteMany();
-    await prisma.enrollment.deleteMany();
-    await prisma.course.deleteMany();
+    await prisma.attendance.deleteMany({ where: { student: { email: { contains: 'acad-test' } } } });
+    await prisma.classSession.deleteMany({ where: { course: { user: { email: { contains: 'acad-test' } } } } });
+    await prisma.enrollment.deleteMany({ where: { student: { email: { contains: 'acad-test' } } } });
+    await prisma.course.deleteMany({ where: { user: { email: { contains: 'acad-test' } } } });
     await prisma.user.deleteMany({ where: { email: { contains: '@acad-test.local' } } });
 
     // Setup users
@@ -42,10 +42,10 @@ describe('AcademicService', () => {
   afterAll(async () => {
     await prisma.notification.deleteMany({ where: { title: 'Class Cancelled' } });
     await prisma.auditLog.deleteMany({ where: { action: { in: ['ATTENDANCE_UPDATED', 'CLASS_CANCELLED'] } } });
-    await prisma.attendance.deleteMany();
-    await prisma.classSession.deleteMany();
-    await prisma.enrollment.deleteMany();
-    await prisma.course.deleteMany();
+    await prisma.attendance.deleteMany({ where: { student: { email: { contains: 'acad-test' } } } });
+    await prisma.classSession.deleteMany({ where: { course: { user: { email: { contains: 'acad-test' } } } } });
+    await prisma.enrollment.deleteMany({ where: { student: { email: { contains: 'acad-test' } } } });
+    await prisma.course.deleteMany({ where: { user: { email: { contains: 'acad-test' } } } });
     await prisma.user.deleteMany({ where: { email: { contains: '@acad-test.local' } } });
   });
 

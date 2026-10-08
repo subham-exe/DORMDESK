@@ -18,9 +18,9 @@ const DEFAULT_PREFERENCES: Preferences = {
 };
 
 const PURPOSES = [
-  { id: 'EMAIL_REQUEST_NOTIFICATIONS', label: 'Request Updates', desc: 'Get emails when your requests change status.' },
-  { id: 'EMAIL_SLA_NOTIFICATIONS', label: 'SLA Alerts', desc: 'Get emails about SLA breaches or escalations.' },
-  { id: 'EMAIL_CAMPUS_ANNOUNCEMENTS', label: 'Campus Announcements', desc: 'Get important campus-wide notices.' },
+  { id: 'EMAIL_REQUEST_NOTIFICATIONS', label: 'Request updates', desc: 'Receive email updates when your requests are assigned or otherwise require your attention.' },
+  { id: 'EMAIL_SLA_NOTIFICATIONS', label: 'SLA notifications', desc: 'Receive email notifications when request deadlines approach or are escalated.' },
+  { id: 'EMAIL_CAMPUS_ANNOUNCEMENTS', label: 'Campus announcements', desc: 'Receive institution-wide or targeted campus announcement emails.' },
 ] as const;
 
 export function NotificationPreferences() {
@@ -28,6 +28,7 @@ export function NotificationPreferences() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/auth/preferences')
@@ -46,6 +47,7 @@ export function NotificationPreferences() {
   const togglePreference = async (purpose: keyof Preferences, currentEnabled: boolean) => {
     setUpdating(purpose);
     setError(null);
+    setSuccessMsg(null);
     try {
       const res = await fetch('/api/auth/preferences', {
         method: 'PATCH',
@@ -56,6 +58,8 @@ export function NotificationPreferences() {
       if (!res.ok) throw new Error(data.error || 'Failed to update preference');
       
       setPreferences(prev => ({ ...prev, [purpose]: !currentEnabled }));
+      const label = PURPOSES.find(p => p.id === purpose)?.label || purpose;
+      setSuccessMsg(`${label} preferences updated successfully.`);
     } catch (err: unknown) {
       setError((err as Error).message);
     } finally {
@@ -97,6 +101,12 @@ export function NotificationPreferences() {
         {error && (
           <div className="text-sm text-error bg-error-bg p-3 rounded-md">
             {error}
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="text-sm text-success bg-success-bg p-3 rounded-md">
+            {successMsg}
           </div>
         )}
 

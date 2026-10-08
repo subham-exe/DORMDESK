@@ -65,7 +65,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (action === 'ASSIGN') {
         return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
       }
-      if (action === 'TRANSITION' && !['CANCELLED', 'VERIFIED'].includes(newStatus)) {
+      if (action === 'TRANSITION' && !['CANCELLED', 'VERIFIED', 'PROCESSING'].includes(newStatus)) {
         return NextResponse.json({ success: false, error: 'Unauthorized transition' }, { status: 403 });
       }
     }

@@ -10,7 +10,7 @@ export function WardenSidebar() {
   const navItems = [
     { label: "Warden Desk", href: "/warden", icon: LayoutDashboard },
     { label: "Manage Requests", href: "/admin/requests", icon: ListTodo },
-    { label: "Manage Incidents", href: "/admin/incidents", icon: AlertTriangle },
+    // { label: "Manage Incidents", href: "/admin/incidents", icon: AlertTriangle }, // P0: Hide until implemented
   ];
 
   return (

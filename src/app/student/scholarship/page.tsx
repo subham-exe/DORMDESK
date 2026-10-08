@@ -26,6 +26,26 @@ export default function ScholarshipDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      const response = await fetch("/api/scholarships/submit", { method: "POST" });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to submit scholarship");
+      }
+      const updated = await response.json();
+      setScholarship(updated);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+
   useEffect(() => {
     async function fetchScholarship() {
       try {
@@ -138,11 +158,11 @@ export default function ScholarshipDetailsPage() {
     <div className="space-y-6 max-w-3xl mx-auto pb-8">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/student" passHref className="md:hidden">
-          <Button variant="ghost" size="icon" className="rounded-full" aria-label="Go back">
+        <Button variant="ghost" size="icon" className="md:hidden rounded-full" aria-label="Go back" asChild>
+          <Link href="/student">
             <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold">Merit Scholarship {scholarship.academicYear}</h1>
@@ -251,9 +271,9 @@ export default function ScholarshipDetailsPage() {
                 You are eligible to apply for this scholarship. Please submit your application documents to proceed.
               </p>
             </div>
-            <Link href="/student/requests/new?type=OTHER&category=SCHOLARSHIP" passHref className="md:hidden">
-              <Button size="sm">Submit Documents</Button>
-            </Link>
+              <Button size="sm" onClick={handleSubmit} disabled={submitting}>
+                    {submitting ? "Submitting..." : "Submit Documents"}
+                  </Button>
           </CardContent>
         </Card>
       )}

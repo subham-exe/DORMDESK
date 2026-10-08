@@ -5,9 +5,9 @@ import { AdminSidebar } from "./components/admin-sidebar";
 import { AdminMobileNav } from "./components/admin-mobile-nav";
 import { AdminHeader } from "./components/admin-header";
 
-export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
-  
+import { WardenSidebar } from "@/app/warden/components/warden-sidebar";
 
+export default function AdminLayoutClient({ children, role = "SYSTEM_ADMIN" }: { children: React.ReactNode, role?: string }) {
   const pathname = usePathname();
 
   // If we are on the login page, do not render the shell
@@ -18,7 +18,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
   return (
     <div className="flex flex-col h-screen bg-surface-muted md:flex-row">
       {/* Sidebar for Desktop */}
-      <AdminSidebar />
+      {role === "SYSTEM_ADMIN" ? <AdminSidebar /> : <WardenSidebar />}
 
       {/* Main Content */}
       <main id="main" tabIndex={-1} className="focus:outline-none flex-1 overflow-y-auto pb-16 md:pb-0">
@@ -29,9 +29,8 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
         </div>
       </main>
 
+      {/* Mobile nav could also be made role-aware if needed, but keeping simple for now */}
       <AdminMobileNav />
     </div>
   );
 }
-
-

@@ -95,27 +95,83 @@ export class RequestEngine {
       location: payload.location
     });
 
-    // 2. Policy Evaluation
-    const policyResult = await PolicyService.resolvePolicyForRequest(
-      { requestType: payload.requestType, category: payload.category, domain: routeResult.domain },
-      { request: { metadata: payload.metadata ? JSON.stringify(payload.metadata) : null } }
+    // 1.5. Seriousness Evaluation
+    const { SeriousnessPolicy } = await import("./seriousness-policy");
+    const { resolveSeriousComplaintRecipients } = await import("../auth/authority");
+    
+    const studentFlaggedSerious = payload.metadata?.studentFlaggedSerious === true;
+    const isAgainstPrincipal = payload.metadata?.isAgainstPrincipal === true;
+
+    const seriousnessResult = SeriousnessPolicy.evaluate(
+      payload.requestType,
+      payload.category,
+      payload.description,
+      { studentFlaggedSerious, isAgainstPrincipal }
     );
 
-    const autoApprove = policyResult.autoApproveAllowed;
+    const isSerious = seriousnessResult.classification !== "NORMAL";
+    const seriousCategory = isSerious && seriousnessResult.reasons.length > 0 ? seriousnessResult.reasons[0] : null;
+
+    // Fetch requester college scope
+    const requester = await prisma.user.findUnique({ where: { id: payload.requesterId } });
+    const collegeId = requester?.collegeId || null;
+
+    let autoApprove = false;
+    let initialStatus = "PENDING";
+    let slaHours = null;
+    let policyId = null;
+    let policyName = null;
+    let policyExplanation = null;
+
+    if (isSerious) {
+      // 2. Protected Routing
+      const recipients = await resolveSeriousComplaintRecipients(isSerious, seriousCategory, collegeId, isAgainstPrincipal);
+      
+      if (recipients.principalIds.length > 0) {
+        routeResult.authorityUserId = recipients.principalIds[0];
+      } else if (recipients.systemAdminIds.length > 0) {
+        routeResult.authorityUserId = recipients.systemAdminIds[0];
+      } else {
+        routeResult.authorityUserId = undefined;
+      }
+      
+      routeResult.domain = "Administration";
+      routeResult.department = isAgainstPrincipal ? "System Administration" : "Principal Office";
+      routeResult.reason = "PROTECTED ROUTING: " + seriousCategory;
+      routeResult.manualReviewRequired = true;
+      
+      autoApprove = false;
+      initialStatus = routeResult.authorityUserId ? "ASSIGNED" : "PENDING";
+      
+      slaHours = 24; // Implicit strict SLA for serious
+      policyExplanation = "Strict 24h SLA applied to " + seriousnessResult.classification + " complaint.";
+    } else {
+      // 2. Normal Policy Evaluation
+      const policyResult = await PolicyService.resolvePolicyForRequest(
+        { requestType: payload.requestType, category: payload.category, domain: routeResult.domain },
+        { request: { metadata: payload.metadata ? JSON.stringify(payload.metadata) : null } }
+      );
+  
+      autoApprove = policyResult.autoApproveAllowed;
+      slaHours = policyResult.slaHours;
+      policyId = policyResult.policyId || null;
+      policyName = policyResult.policyName;
+      policyExplanation = policyResult.explanation;
+  
+      if (autoApprove) {
+         initialStatus = "APPROVED";
+      } else if (routeResult.authorityUserId) {
+         initialStatus = "ASSIGNED";
+      }
+    }
 
     const ticketNumber = `${payload.requestType.substring(0, 3).toUpperCase()}-${Math.floor(Math.random() * 90000 + 10000)}`;
-    
-    // Determine initial status
-    let initialStatus = 'PENDING';
-    if (autoApprove) {
-       initialStatus = 'APPROVED';
-    } else if (routeResult.authorityUserId) {
-       initialStatus = 'ASSIGNED';
-    }
 
     try {
       const request = await prisma.request.create({
         data: {
+          isSerious,
+          seriousCategory,
           ticketNumber,
           requestType: payload.requestType,
           category: payload.category,
@@ -128,13 +184,13 @@ export class RequestEngine {
           assignedAuthorityId: autoApprove ? null : (routeResult.authorityUserId || null),
           metadata: payload.metadata ? JSON.stringify(payload.metadata) : null,
           idempotencyKey: payload.idempotencyKey || null,
-          SLA: policyResult.slaHours,
-          dueAt: policyResult.slaHours ? new Date(Date.now() + policyResult.slaHours * 3600000) : null,
-          policyId: policyResult.policyId || null,
-          requestSla: policyResult.slaHours ? {
+          SLA: slaHours,
+          dueAt: slaHours ? new Date(Date.now() + slaHours * 3600000) : null,
+          policyId: policyId || null,
+          requestSla: slaHours ? {
             create: {
-              targetHours: policyResult.slaHours,
-              dueAt: new Date(Date.now() + policyResult.slaHours * 3600000)
+              targetHours: slaHours,
+              dueAt: new Date(Date.now() + slaHours * 3600000)
             }
           } : undefined,
           statusHistory: {
@@ -158,6 +214,13 @@ export class RequestEngine {
       await logAudit(request.id, payload.requesterId, 'CREATED');
       await triggerNotification(request.id, 'CREATED');
 
+      if (isSerious) {
+         await logAudit(request.id, null, 'SERIOUSNESS_CLASSIFIED', {
+            classification: seriousnessResult.classification,
+            reasons: seriousnessResult.reasons
+         });
+      }
+
       // Audit Routing
       await logAudit(request.id, null, 'ROUTED', {
          domain: routeResult.domain,
@@ -168,13 +231,13 @@ export class RequestEngine {
 
       // Audit Policy
       await logAudit(request.id, null, 'POLICY_EVALUATED', {
-         policyId: policyResult.policyId,
-         policyName: policyResult.policyName,
-         reason: policyResult.explanation
+         policyId: policyId,
+         policyName: policyName,
+         reason: policyExplanation
       });
       
       if (autoApprove) {
-        await logAudit(request.id, payload.requesterId, 'AUTO_APPROVED', { reason: policyResult.explanation, policyId: policyResult.policyId });
+        await logAudit(request.id, payload.requesterId, 'AUTO_APPROVED', { reason: policyExplanation, policyId: policyId });
       } else if (routeResult.authorityUserId) {
         await logAudit(request.id, null, 'ASSIGNED', { assigneeId: routeResult.authorityUserId, reason: routeResult.reason });
         await triggerNotification(request.id, 'ASSIGNED', routeResult.authorityUserId);

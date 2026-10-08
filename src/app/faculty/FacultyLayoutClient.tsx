@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar } from "lucide-react";
+import { Calendar, BookOpen, FileText, Clock } from "lucide-react";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 
 export default function FacultyLayout({ children }: { children: React.ReactNode }) {
@@ -10,6 +10,9 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
 
   const navItems = [
     { label: "Attendance", href: "/faculty/attendance", icon: Calendar },
+    { label: "Assignments", href: "/faculty/assignments", icon: BookOpen },
+    { label: "Materials", href: "/faculty/materials/new", icon: FileText },
+    { label: "Schedule", href: "/faculty/schedule", icon: Clock },
   ];
 
   return (

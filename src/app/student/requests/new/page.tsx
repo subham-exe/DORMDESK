@@ -249,11 +249,11 @@ export default function CreateRequestPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/student" passHref>
-          <Button variant="ghost" size="icon" className="rounded-full" aria-label="Go back">
+        <Button variant="ghost" size="icon" className="rounded-full" aria-label="Go back" asChild>
+          <Link href="/student">
             <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         <h1 className="text-2xl font-bold">New Request</h1>
       </div>
 

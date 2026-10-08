@@ -14,10 +14,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/admin/login");
   }
 
-  if (authName !== "SYSTEM_ADMIN") {
-    // Non-system admins just get the content with no admin sidebar
-    return <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto h-full">{children}</div>;
-  }
-
-  return <AdminLayoutClient>{children}</AdminLayoutClient>;
+  // Non-system admins need an operational shell
+  return <AdminLayoutClient role={authName}>{children}</AdminLayoutClient>;
 }

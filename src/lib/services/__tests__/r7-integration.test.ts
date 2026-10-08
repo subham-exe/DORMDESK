@@ -170,4 +170,22 @@ describe('R7 - Cross-Module Integration', () => {
     const count = await prisma.request.count({ where: { idempotencyKey: key } });
     expect(count).toBe(1); // No duplicates
   });
+
+  it('TEST: Verifies Seriousness classification integration', async () => {
+    const student1 = await prisma.user.findFirst({ where: { role: 'Student' } });
+    if (!student1) return;
+    const req = await RequestEngine.createRequest({
+      requestType: 'COMPLAINT',
+      category: 'Ragging',
+      description: 'Serious threat',
+      requesterId: student1.id
+    });
+    
+    expect(req.isSerious).toBe(true);
+    expect(req.seriousCategory).toBe('SAFETY_SENSITIVE_CATEGORY');
+    expect(req.status).toBe('ASSIGNED');
+    
+    const logs = await prisma.auditLog.findMany({ where: { entityId: req.id } });
+    expect(logs.some(l => l.action === 'SERIOUSNESS_CLASSIFIED')).toBe(true);
+  });
 });

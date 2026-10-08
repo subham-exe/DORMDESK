@@ -28,8 +28,8 @@ export const syncOfflineMutations = async (userId: string, onStatusUpdate?: (sta
         if (mutation.type === 'CREATE_REQUEST') {
           endpoint = '/api/requests';
         } else if (mutation.type === 'TRANSITION_REQUEST') {
-          endpoint = `/api/requests/${mutation.payload.requestId}/status`; // example
-          method = 'PUT';
+          endpoint = `/api/requests/${mutation.payload.requestId || mutation.payload.id}`;
+          method = 'PATCH';
         } else {
           continue; // unknown type
         }

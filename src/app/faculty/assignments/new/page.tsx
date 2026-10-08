@@ -1,36 +1,49 @@
-import { getCurrentUser } from '@/lib/auth/session';
-import { getAuthorityName } from '@/lib/auth/authority';
-import { CourseService } from '@/lib/services/course';
-import { prisma } from '@/lib/db/prisma';
-import { redirect } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+"use client";
 
-export default async function NewAssignmentPage({ searchParams }: { searchParams: { courseId?: string } }) {
-  const user = await getCurrentUser();
-  if (!user || getAuthorityName(user) !== 'FACULTY') redirect('/login');
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
-  const courses = await prisma.course.findMany({ where: { facultyId: user.id } });
-
-  async function createAssignment(formData: FormData) {
-    'use server';
-    const actionUser = await getCurrentUser();
-    if (!actionUser || actionUser.role !== 'Faculty') throw new Error('Unauthorized');
-
-    const courseId = formData.get('courseId') as string;
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const dueDateStr = formData.get('dueDate') as string;
-
-    if (!courseId || !title || !description || !dueDateStr) throw new Error('Missing required fields');
-
-    await CourseService.createAssignment(courseId, actionUser.id, { 
-      title, 
-      description, 
-      dueDate: new Date(dueDateStr) 
+export default function NewAssignmentPage() {
+  const [courses, setCourses] = useState<any[]>([]);
+  const router = useRouter();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    fetch("/api/faculty/courses").then(res => res.json()).then(data => {
+      if (data.success) setCourses(data.courses);
     });
-    redirect('/faculty');
-  }
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const payload = {
+      courseId: formData.get("courseId"),
+      title: formData.get("title"),
+      description: formData.get("description"),
+      dueDate: formData.get("dueDate"),
+    };
+
+    try {
+      const res = await fetch("/api/faculty/assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Success", description: "Assignment created successfully", variant: "success" });
+        router.push("/faculty/assignments");
+      } else {
+        toast({ title: "Error", description: data.error, variant: "default" });
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "default" });
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -38,11 +51,11 @@ export default async function NewAssignmentPage({ searchParams }: { searchParams
       
       <Card>
         <CardContent className="p-4 md:p-6">
-          <form action={createAssignment} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Select Course</label>
-              <select name="courseId" defaultValue={searchParams.courseId} required className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm">
-                <option value="" disabled>Select a course</option>
+              <select name="courseId" required className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm">
+                <option value="">Select a course</option>
                 {courses.map(c => (
                   <option key={c.id} value={c.id}>{c.code} - {c.name}</option>
                 ))}

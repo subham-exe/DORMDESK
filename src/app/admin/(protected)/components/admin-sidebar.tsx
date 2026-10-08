@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Utensils, ListTodo, AlertTriangle, BarChart, GraduationCap, Megaphone, Shield } from "lucide-react";
+import { DollarSign, LayoutDashboard, Utensils, ListTodo, AlertTriangle, BarChart, GraduationCap, Megaphone, Shield } from "lucide-react";
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -10,12 +10,13 @@ export function AdminSidebar() {
   const navItems = [
     { label: "Command Center", href: "/admin/command-center", icon: LayoutDashboard },
     { label: "Requests", href: "/admin/requests", icon: ListTodo },
-    { label: "Incidents", href: "/admin/incidents", icon: AlertTriangle },
-    { label: "Announcements", href: "/admin/announcements", icon: Megaphone },
-    { label: "Policies", href: "/admin/policies", icon: Shield },
-    { label: "Analytics", href: "/admin/analytics", icon: BarChart },
-    { label: "Scholarships", href: "/admin/scholarships", icon: GraduationCap },
-    { label: "Mess Menu", href: "/admin/mess", icon: Utensils },
+    // { label: "Incidents", href: "/admin/incidents", icon: AlertTriangle }, // P0: Hide until implemented
+    // { label: "Announcements", href: "/admin/announcements", icon: Megaphone }, // 404 gap removed
+    // { label: "Policies", href: "/admin/policies", icon: Shield }, // 404 gap removed
+    // { label: "Analytics", href: "/admin/analytics", icon: BarChart }, // 404 gap removed
+    // { label: "Scholarships", href: "/admin/scholarships", icon: GraduationCap }, // 404 gap removed
+    { label: "Fees & Dues", href: "/admin/fees", icon: DollarSign },
+    // { label: "Mess Menu", href: "/admin/mess", icon: Utensils }, // 404 gap removed
   ];
 
   return (

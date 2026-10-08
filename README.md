@@ -204,7 +204,7 @@ DORMDESK handles transactional emails with delivery logging, idempotency, email 
 
 ## Accessibility & Real Campus Conditions
 
-Offline/PWA resilience for previously available application state and graceful network-failure handling. Network-dependent mutations require connectivity. Full offline mutation queuing/background synchronization is intentionally outside the current prototype scope.
+Offline support queues supported request mutations until connectivity returns.
 
 - Responsive mobile/desktop UI
 - Kiosk / assisted access
@@ -249,7 +249,7 @@ The application is built as a highly robust modular monolith.
 
 ## Validation
 
-- 297 / 297 Vitest tests
+- 340 / 340 Vitest tests
 - 10 / 10 core Playwright flows
 - 1 / 1 request lifecycle E2E
 - 18 / 18 Prisma migrations
@@ -328,23 +328,16 @@ CLOSED
 5. **Why SQLite?**
    SQLite perfectly fits the hackathon requirement of local, reliable execution without depending on external network-bound managed databases.
 6. **What is intentionally outside the prototype?**
-   Full offline mutation queuing/background synchronization, SMS/WhatsApp integrations, and dedicated asset/gatepass/visitor/timetable modules.
+   Fuzzy/AI timetable conflict optimization, real SMS routing, native blob/S3 storage, and real payment gateway integration.
 
 ## Prototype Boundaries
 
-The current implementation bounds:
-- full offline mutation queues
-- background synchronization
-- distributed scheduler infrastructure
-- production-scale email infrastructure
-- production SMS provider
-- WhatsApp
-- dedicated timetable module
-- dedicated gatepass module
-- visitor management
-- room/asset module
-- bulk institutional import
-- deeper multilingual coverage
+The current implementation has the following known limitations:
+1. No fuzzy/AI timetable conflict optimizer (strict equality conflict blocks exist only).
+2. Materials/evidence use URL/reference-string semantics rather than native S3/blob storage.
+3. Fees are ledger/status tracking without real payment gateway integration.
+4. SMS is simulated/mock/outbox only; no real SMS routing.
+5. Broad unrestricted offline support (only supported request mutations queue offline).
 
 ## Future Scope
 
@@ -357,24 +350,15 @@ The current hackathon build is deliberately a strong prototype. The architecture
 - Account lifecycle management: onboarding, activation, suspension, graduation/deactivation
 - Stronger identity verification and recovery flows
 
-### Attendance
-- Attendance records and shortage monitoring
-- Faculty attendance entry
-- Student attendance visibility
-- Automated shortage alerts
-- Department/semester analytics
-
 ### Mess & Campus Services
 - Mess menu management
 - Meal feedback and issue tracking
 - Mess quality/wastage analytics
 - Broader campus service workflows powered by the same Request Engine
 
-### Fees & Institutional Workflows
-- Fee/dues tracking
-- Payment status and receipts
-- Scholarships and financial workflows
-- More certificate/leave/approval workflows using the existing request architecture
+### Institutional Workflows
+- Payment gateway integration for fee/dues collection
+- Advanced certificate/leave/approval workflows using the existing request architecture
 
 ### Production Infrastructure
 - PostgreSQL for production-scale relational persistence
@@ -385,8 +369,7 @@ The current hackathon build is deliberately a strong prototype. The architecture
 
 ### Offline & Mobile
 - Installable PWA/mobile-friendly experience
-- Better offline resilience
-- Eventually support offline mutation queues and background synchronization
+- Offline background synchronization for all datasets
 
 ### Campus Intelligence
 - Richer recurring-issue analytics

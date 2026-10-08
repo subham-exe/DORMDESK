@@ -2,6 +2,7 @@
 import { Breadcrumbs } from "@/components/ui/breadcrumb";
 /* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities, react-hooks/exhaustive-deps, @typescript-eslint/no-unused-vars, react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
+import { saveOfflineMutation } from "@/lib/services/offline-store";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import QRCode from "react-qr-code";
@@ -114,14 +115,34 @@ export default function RequestDetailsPage() {
         newStatus = 'PROCESSING';
       }
 
+      const requestPayload = { 
+        action: 'TRANSITION', 
+        newStatus, 
+        notes,
+        requestId: id
+      };
+
+      if (!navigator.onLine) {
+        await saveOfflineMutation({
+          idempotencyKey: 'transition-' + id + '-' + Date.now(),
+          userId: localStorage.getItem('dormdesk_user_id') || "unknown",
+          type: "TRANSITION_REQUEST",
+          payload: requestPayload,
+          status: "PENDING_SYNC",
+          timestamp: Date.now()
+        });
+        
+        setRequest((prev: any) => prev ? { ...prev, status: newStatus } : null);
+        setShowReopen(false);
+        setShowCancelConfirm(false);
+        toast({ title: "Offline", description: "Request transition queued for sync.", variant: "default" });
+        return;
+      }
+
       const res = await fetch(`/api/requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          action: 'TRANSITION', 
-          newStatus, 
-          notes 
-        })
+        body: JSON.stringify(requestPayload)
       });
       
       if (!res.ok) {
@@ -129,14 +150,32 @@ export default function RequestDetailsPage() {
         throw new Error(errorData.error || `Failed to transition request`);
       }
       
-      // Refresh data
       setShowReopen(false);
       setShowCancelConfirm(false);
       setActionError(null);
       toast({ title: "Request Updated", description: "Your request has been successfully updated.", variant: "success" });
       await fetchData();
     } catch (err: any) {
-      setActionError(err.message);
+      if (err.message.includes('fetch') || err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
+        let newStatus = payload.newStatus;
+        if (action === 'VERIFY') newStatus = 'VERIFIED';
+        else if (action === 'REOPEN') newStatus = 'PROCESSING';
+
+        await saveOfflineMutation({
+          idempotencyKey: 'transition-' + id + '-' + Date.now(),
+          userId: localStorage.getItem('dormdesk_user_id') || "unknown",
+          type: "TRANSITION_REQUEST",
+          payload: { requestId: id, action: 'TRANSITION', newStatus, notes: payload.reason },
+          status: "PENDING_SYNC",
+          timestamp: Date.now()
+        });
+        setRequest((prev: any) => prev ? { ...prev, status: newStatus } : null);
+        setShowReopen(false);
+        setShowCancelConfirm(false);
+        toast({ title: "Offline", description: "Request transition queued for sync.", variant: "default" });
+      } else {
+        setActionError(err.message);
+      }
     } finally {
       setActionLoading(false);
     }

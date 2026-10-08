@@ -1,5 +1,4 @@
-import { SLAScheduler } from './lib/services/scheduler';
-import { SystemClock } from './lib/services/clock';
+// Imports moved to dynamic imports to prevent Edge runtime tracing issues
 
 // Global singleton to prevent multiple intervals in dev mode or multiple module loads
 let isSchedulerRegistered = false;
@@ -14,11 +13,14 @@ export async function register() {
     isSchedulerRegistered = true;
     console.log('[Scheduler] SLA Scheduler registered in Node.js runtime');
 
+    const { SystemClock } = await import('./lib/services/clock');
+    const { SLAScheduler } = await import('./lib/services/scheduler');
+    const clock = new SystemClock();
+
     const INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
     setInterval(async () => {
       try {
-        const clock = new SystemClock();
         const result = await SLAScheduler.tick(clock);
         if (result.processed > 0 || result.errors > 0) {
            console.log(`[Scheduler] Tick completed. Processed: ${result.processed}, Errors: ${result.errors}`);

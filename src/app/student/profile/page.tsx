@@ -6,9 +6,10 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingState } from "@/components/ui/loading-state";
+import { NotificationPreferences } from "@/components/profile/NotificationPreferences";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<Record<string, string> | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -36,38 +37,55 @@ export default function ProfilePage() {
       ) : error ? (
         <ErrorState title="Failed to load profile" description="We couldn't load your profile information right now." />
       ) : user ? (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start gap-6">
-              <div className="w-16 h-16 bg-info-bg text-info rounded-full flex items-center justify-center text-xl font-bold shrink-0">
-                {user.name ? user.name.substring(0, 2).toUpperCase() : "ST"}
-              </div>
-              <div className="space-y-4 w-full">
-                <div>
-                  <h2 className="text-xl font-bold text-text-primary">{user.name}</h2>
-                  <p className="text-sm text-text-secondary font-mono">{user.email}</p>
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-start gap-6">
+                <div className="w-16 h-16 bg-info-bg text-info rounded-full flex items-center justify-center text-xl font-bold shrink-0">
+                  {user.name ? user.name.substring(0, 2).toUpperCase() : "ST"}
                 </div>
+                <div className="space-y-4 w-full">
+                  <div>
+                    <h2 className="text-xl font-bold text-text-primary">{user.name}</h2>
+                    <p className="text-sm text-text-secondary font-mono">{user.email}</p>
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-text-secondary flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      Email Address
-                    </p>
-                    <p className="font-medium">{user.email}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-text-secondary flex items-center gap-2">
-                      <Shield className="w-4 h-4" />
-                      Role
-                    </p>
-                    <p className="font-medium capitalize">{user.role.toLowerCase()}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-text-secondary flex items-center gap-2">
+                        <Mail className="w-4 h-4" />
+                        Email Address
+                      </p>
+                      <p className="font-medium flex items-center gap-2">
+                        {user.email}
+                        {user.emailVerified ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-success bg-success-bg px-2 py-0.5 rounded-full">
+                            <Shield className="w-3 h-3" />
+                            Email verified
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-warning bg-warning-bg px-2 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-warning"></span>
+                            Unverified
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-text-secondary flex items-center gap-2">
+                        <Shield className="w-4 h-4" />
+                        Role
+                      </p>
+                      <p className="font-medium capitalize">{user.role.toLowerCase()}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+          
+          <NotificationPreferences />
+        </div>
       ) : (
         <EmptyState
           icon={<User className="h-6 w-6" />}

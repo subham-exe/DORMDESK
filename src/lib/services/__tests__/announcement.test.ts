@@ -5,10 +5,10 @@ import { prisma } from '../../db/prisma';
 
 vi.mock('../../db/prisma', () => ({
   prisma: {
-    user: { findMany: vi.fn(), count: vi.fn() },
+    user: { findMany: vi.fn(), count: vi.fn(), findUnique: vi.fn() },
     announcement: { create: vi.fn(), findUnique: vi.fn() },
     announcementReceipt: { createMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
-    notification: { createMany: vi.fn() },
+    notification: { createMany: vi.fn(), create: vi.fn() },
     auditLog: { create: vi.fn() },
     $transaction: vi.fn((cb) => cb(prisma)),
   }

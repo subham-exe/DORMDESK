@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ListTodo, AlertTriangle, GraduationCap, Megaphone } from "lucide-react";
+import { LayoutDashboard, ListTodo, DollarSign } from "lucide-react";
 
 export function AdminMobileNav() {
   const pathname = usePathname();
@@ -10,9 +10,7 @@ export function AdminMobileNav() {
   const navItems = [
     { label: "Dashboard", href: "/admin/command-center", icon: LayoutDashboard },
     { label: "Requests", href: "/admin/requests", icon: ListTodo },
-    { label: "Announcements", href: "/admin/announcements", icon: Megaphone },
-    { label: "Incidents", href: "/admin/incidents", icon: AlertTriangle },
-    { label: "Scholarships", href: "/admin/scholarships", icon: GraduationCap },
+    { label: "Fees", href: "/admin/fees", icon: DollarSign },
   ];
 
   return (

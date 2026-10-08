@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars */
 const { spawnSync } = require('child_process');
 const readline = require('readline');
 const pc = require('picocolors');
@@ -165,14 +164,14 @@ function initialSetup() {
         console.log(pc.red('  Aborted.'));
         process.exit(0);
       }
-      runSetupFlow(true);
+      runSetupFlow(true).catch(console.error);
     });
   } else {
-    runSetupFlow(false);
+    runSetupFlow(false).catch(console.error);
   }
 }
 
-function runSetupFlow(isReset) {
+async function runSetupFlow(isReset) {
   const fs = require('fs');
   const path = require('path');
   
@@ -180,7 +179,6 @@ function runSetupFlow(isReset) {
   console.log(pc.white('  DORMDESK INITIALIZATION'));
   console.log(pc.white('------------------------------------------------------------------\n'));
 
-  // Preflight: Clean up stale processes
   clearStaleProcesses();
 
   // 1. Prisma Client
@@ -194,11 +192,15 @@ function runSetupFlow(isReset) {
   }
   console.log(pc.green('OK'));
 
-  const dbPath = path.resolve(__dirname, '../prisma/campus.db');
-  let dbExists = false;
+  const { execSync } = require('child_process');
+
+  let isDbReadyAndSeeded = false;
   try {
-    dbExists = fs.existsSync(dbPath) && fs.statSync(dbPath).size > 0;
-  } catch(e) {}
+    const out = execSync('node scripts/db-verify.js check_ready', { encoding: 'utf-8' });
+    isDbReadyAndSeeded = out.includes('READY');
+  } catch(e) {
+    isDbReadyAndSeeded = false;
+  }
 
   let needsInitialization = false;
 
@@ -208,21 +210,18 @@ function runSetupFlow(isReset) {
     console.log(pc.yellow('RESETTING'));
     const res2 = runCommand('npx', ['prisma', 'migrate', 'reset', '--force', '--skip-generate', '--skip-seed'], true);
     if (res2.error || res2.status !== 0) {
-      console.error(pc.red('\nError resetting database.'));
-      if (res2.stderr) {
-        console.error(pc.yellow('\n--- Prisma Error Log ---'));
-        console.error(res2.stderr.toString());
-        console.error(pc.yellow('------------------------'));
-      }
-      process.exit(1);
+       const dbPath = path.resolve(__dirname, '../prisma/campus.db');
+       try { fs.rmSync(dbPath, { force: true }); } catch(e){}
+       try { fs.rmSync(dbPath + '-journal', { force: true }); } catch(e){}
+       try { fs.rmSync(dbPath + '-wal', { force: true }); } catch(e){}
+       try { fs.rmSync(dbPath + '-shm', { force: true }); } catch(e){}
     }
     needsInitialization = true;
-  } else if (!dbExists) {
+  } else if (!isDbReadyAndSeeded) {
     console.log(pc.yellow('INITIALIZING'));
     needsInitialization = true;
   } else {
     console.log(pc.green('EXISTING'));
-    // Still safely apply pending migrations if any
     const resDeploy = runCommand('npx', ['prisma', 'migrate', 'deploy'], true);
     if (resDeploy.error || resDeploy.status !== 0) {
       console.error(pc.red('\nError verifying existing database migrations.'));
@@ -231,17 +230,23 @@ function runSetupFlow(isReset) {
   }
 
   if (needsInitialization) {
-    // We are either resetting or this is a first run
-    // Apply migrations
     const res3 = runCommand('npx', ['prisma', 'migrate', 'deploy'], true);
     if (res3.error || res3.status !== 0) {
       console.error(pc.red('\nError applying migrations.'));
       process.exit(1);
     }
-    // Seed demo data
     const res4 = runCommand('npx', ['prisma', 'db', 'seed'], true);
     if (res4.error || res4.status !== 0) {
       console.error(pc.red('\nError seeding database.'));
+      process.exit(1);
+    }
+
+    try {
+      execSync('node scripts/db-verify.js verify', { stdio: 'pipe' });
+    } catch (err) {
+      if (err.stdout) console.error(pc.red('\n[ERROR] Seed verification failed: ' + err.stdout.toString().trim()));
+      if (err.stderr) console.error(pc.red(err.stderr.toString().trim()));
+      console.error(pc.red('Initialization/seed failed. The database is empty or unusable.'));
       process.exit(1);
     }
   }
@@ -251,10 +256,17 @@ function runSetupFlow(isReset) {
   process.stdout.write('  [4/4] Ready ....................... ');
   console.log(pc.cyan('http://localhost:3000\n'));
 
-  // Start the actual application
+  console.log(pc.cyan('=================================================================='));
+  console.log('  Demo accounts (Password: dormdesk2026):');
+  console.log('    SYSTEM ADMIN : system@dormdesk.test');
+  console.log('    PRINCIPAL    : principal.demo@dormdesk.local');
+  console.log('    CSE HOD      : hod.cse@dormdesk.local');
+  console.log('    WARDEN       : warden.boys@dormdesk.local');
+  console.log('    STUDENT      : student001@dormdesk.local');
+  console.log(pc.cyan('==================================================================\n'));
+
   runCommand('npm', ['run', 'local']);
   
-  // After Next.js exits
   showCompletionScreen();
 }
 
@@ -266,14 +278,6 @@ function showCompletionScreen() {
   console.log(`  Database       ${pc.green('OK')} Ready`);
   console.log(`  Migrations     ${pc.green('OK')} Current`);
   console.log(`  Demo accounts  ${pc.green('OK')} Seeded\n`);
-
-  console.log('  Demo accounts:');
-  console.log('    Student : student@demo.local');
-  console.log('    Staff   : staff@demo.local');
-  console.log('    Warden  : warden@demo.local');
-  console.log('    Admin   : admin@demo.local\n');
-
-  console.log('  Password: dormdesk2026\n');
   
   showMenu();
 }
@@ -308,13 +312,7 @@ function promptMenu() {
       showMenu();
     } else if (choice === '2') {
       console.log('\nResetting and reseeding database...\n');
-      const res = runCommand('npm', ['run', 'local:reset']);
-      if (res.error || res.status !== 0) {
-        console.log(pc.red('\n[ERROR] Database reset failed.\n'));
-      } else {
-        console.log(pc.green('\n[SUCCESS] Database successfully reset and reseeded.\n'));
-      }
-      showMenu();
+      runSetupFlow(true).catch(console.error);
     } else if (choice === '3') {
       console.log('\nChecking database status...\n');
       runCommand('npx', ['prisma', 'migrate', 'status']);
@@ -329,5 +327,4 @@ function promptMenu() {
   });
 }
 
-// Start everything
 initialSetup();

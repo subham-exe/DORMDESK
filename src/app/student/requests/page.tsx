@@ -105,12 +105,12 @@ export default function RequestListPage() {
           <h1 className="text-2xl font-bold text-text-primary">{t("requests.title")}</h1>
           <p className="text-text-secondary">Track and manage your requests.</p>
         </div>
-        <Link href="/student/requests/new" passHref>
-          <Button>
+        <Button asChild>
+          <Link href="/student/requests/new">
             <Plus className="mr-2 h-4 w-4" />
             New Request
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       <div className="relative">
@@ -137,7 +137,13 @@ export default function RequestListPage() {
           icon={<AlertCircle className="h-6 w-6" />}
           title={searchTerm ? "No results found" : "No requests found"}
           description={searchTerm ? "Try adjusting your search query." : "You haven't made any requests yet."}
-          action={!searchTerm ? <Link href="/student/requests/new" passHref><Button>Create Request</Button></Link> : undefined}
+          action={!searchTerm ? (
+            <Button asChild>
+              <Link href="/student/requests/new">
+                Create Request
+              </Link>
+            </Button>
+          ) : undefined}
         />
       ) : (
         <div className="space-y-3">
