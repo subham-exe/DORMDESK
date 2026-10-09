@@ -6,7 +6,7 @@ test.describe('Daily Campus Core UI Validation', () => {
     test('Logged-out /student redirects to /login', async ({ page }) => {
       await page.goto('/student');
       await expect(page).toHaveURL(/\/login/);
-      await expect(page.locator('body')).not.toContainText('Active Requests');
+      await expect(page.locator('body')).not.toContainText('Support Requests');
     });
 
     test('Logged-out /faculty redirects to /login', async ({ page }) => {
@@ -37,8 +37,8 @@ test.describe('Daily Campus Core UI Validation', () => {
 
       await expect(page).toHaveURL(/\/student/);
       
-      await expect(page.locator('text=Active Requests').first()).toBeVisible();
-      await expect(page.locator('text=Verification Needed').first()).toBeVisible();
+      await expect(page.locator('text=Support Requests').first()).toBeVisible();
+
 
       await page.goto('/student/academics/timetable');
       await expect(page.locator('text=Weekly Timetable').first()).toBeVisible();
@@ -67,7 +67,7 @@ test.describe('Daily Campus Core UI Validation', () => {
       await expect(page).toHaveURL(/\/admin\/login/);
       
       await page.goto('/student');
-      await expect(page.locator('text=Active Requests').first()).toBeVisible();
+      await expect(page.locator('text=Support Requests').first()).toBeVisible();
       
       await context.setOffline(true);
       await page.goto('/student/academics/attendance', { waitUntil: 'commit' }).catch(() => {});

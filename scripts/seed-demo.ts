@@ -1,7 +1,9 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: process.env.TEST_DATABASE_URL ? { db: { url: process.env.TEST_DATABASE_URL } } : undefined,
+});
 
 const DEMO_COLLEGE_ID = 'demo-synergy-college';
 const PASS = 'dormdesk2026';

@@ -14,4 +14,12 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
+  webServer: {
+    command: 'node scripts/e2e-setup.js && npm run start',
+    port: 3000,
+    reuseExistingServer: !process.env.CI,
+    env: {
+      TEST_DATABASE_URL: 'file:../test_db/e2e.db'
+    }
+  },
 });

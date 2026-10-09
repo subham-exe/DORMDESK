@@ -12,7 +12,7 @@ test.describe('Phase Y - True Browser & Demo Validation', () => {
     await page.click('button[type="submit"]');
     
     // Wait for Student Dashboard
-    await expect(page.locator('h1').filter({ hasText: 'Dashboard' }).first()).toBeVisible();
+    await expect(page.locator('h1').filter({ hasText: 'Good morning' }).first()).toBeVisible();
 
     // 2. CREATE A REAL REQUEST
     await page.goto('/student/requests/new');
@@ -54,7 +54,7 @@ test.describe('Phase Y - True Browser & Demo Validation', () => {
     console.log("Current URL:", page.url());
     const content = await page.textContent('body');
     console.log("Body snippet:", content?.substring(0, 200));
-    await expect(page.locator('h3').filter({ hasText: 'Take Action' }).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('h3').filter({ hasText: 'Next Action' }).first()).toBeVisible({ timeout: 5000 });
     await expect(page.locator('text=Family emergency').first()).toBeVisible();
 
     // 7. PERFORM LIFECYCLE ACTION (PROCESS -> RESOLVE)

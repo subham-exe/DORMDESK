@@ -14,6 +14,7 @@ const getLogLevels = () => {
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
+    datasources: process.env.TEST_DATABASE_URL ? { db: { url: process.env.TEST_DATABASE_URL } } : undefined,
     log: getLogLevels(),
   });
 
